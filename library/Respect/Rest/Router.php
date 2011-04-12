@@ -33,7 +33,7 @@ class Router
     {
         $extra = '(/.*)?';
 
-        if (strlen($path) - 2 === strripos($path, '/**'))
+        if (strlen($path) - 3 === strripos($path, '/**'))
             $path = substr($path, 0, -3);
         else
             $extra = '';

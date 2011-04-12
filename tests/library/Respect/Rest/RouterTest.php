@@ -107,7 +107,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             array(
                 '/users/*/mounted-folder/**',
                 '/users/alganet/mounted-folder/home/alganet/Projects/RespectRest/',
-                array('alganet', 'home/alganet/Projects/RespectRest')
+                array('alganet', '/home/alganet/Projects/RespectRest')
             ),
         );
     }
