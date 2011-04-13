@@ -3,7 +3,7 @@ Respect\Rest
 
 Thin controller for RESTful applications
 
-**This is a work in progress and has been not tested on production environments**
+**This is a work in progress and has not been tested on production environments**
 
 Highlights:
 
