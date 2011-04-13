@@ -8,7 +8,7 @@ Thin controller for RESTful applications
 Highlights:
 
  * Thin. Does not try to change how PHP works (`$_POST`, `$_GET`, etc remains untouched by default);
- * Lightweight. Currently, a single 200-line class.
+ * Lightweight. Currently under 300 lines of PHP.
  * Maintainable. You can migrate from the microframework style to the class-controller style.
  * RESTful. The right way to create web apps.
 
