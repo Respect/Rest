@@ -20,6 +20,30 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testInsufficientParams()
+    {
+        $this->object->invalid();
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testNotRoutableController()
+    {
+        $this->object->addController('/', new \stdClass);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testNotRoutableControllerByName()
+    {
+        $this->object->addController('/', '\stdClass');
+    }
+
+    /**
      * @dataProvider providerForSingleRoutes
      */
     public function testSingleRoutes($route, $path, $expectedParams)
@@ -95,9 +119,44 @@ class RouterTest extends \PHPUnit_Framework_TestCase
                 array(1, 2)
             ),
             array(
+                '/users/*/lists/*',
+                '/users/1/lists/2/65465',
+                null //cant match
+            ),
+            array(
                 '/users/*/lists/*/*',
                 '/users/1/lists/2/3',
                 array(1, 2, 3)
+            ),
+            array(
+                '/posts/*/*/*',
+                '/posts/2010/10/10',
+                array(2010, 10, 10)
+            ),
+            array(
+                '/posts/*/*/*',
+                '/posts/2010/10',
+                array(2010, 10)
+            ),
+            array(
+                '/posts/*/*/*',
+                '/posts/2010',
+                array(2010)
+            ),
+            array(
+                '/posts/*/*/*',
+                '/posts/2010/10///',
+                array(2010, 10)
+            ),
+            array(
+                '/posts/*/*/*',
+                '/posts/2010/////',
+                array(2010)
+            ),
+            array(
+                '/posts/*/*/*',
+                '/posts/2010//10///',
+                null
             ),
             array(
                 '/users/*/*/lists/*/*',
@@ -114,8 +173,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function providerForLargeParams()
     {
-        return
-        array(
+        return array(
             array(
                 '/users/*/*/*/*/*/*/*',
                 '/users/1',
@@ -127,22 +185,26 @@ class RouterTest extends \PHPUnit_Framework_TestCase
                 array('a', 'a', 'a', 'a', 'a', 'a', 'a')
             ),
             array(
-                '/users' . str_repeat('/*', 300), //300 short parameters
-                '/users' . str_repeat('/xy', 300),
-                str_split(str_repeat('xy', 300), 2)
+                '/users' . str_repeat('/*', 2500), //2500 short parameters
+                '/users' . str_repeat('/xy', 2500),
+                str_split(str_repeat('xy', 2500), 2)
             ),
             array(
-                '/users' . str_repeat('/*', 60), //60 large parameters
-                '/users' . str_repeat('/abcdefghijklmnopqrstuvwxyz', 60),
-                str_split(str_repeat('abcdefghijklmnopqrstuvwxyz', 60), 26)
+                '/users' . str_repeat('/*', 2500), //2500 large parameters
+                '/users' . str_repeat('/abcdefghijklmnopqrstuvwxyz', 2500),
+                str_split(str_repeat('abcdefghijklmnopqrstuvwxyz', 2500), 26)
+            ),
+            array(
+                '/users' . str_repeat('/*', 2500), //2500 very large parameters
+                '/users' . str_repeat('/abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 2500),
+                str_split(str_repeat('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 2500), 26 * 3)
             ),
         );
     }
 
     public function providerForSpecialChars()
     {
-        return
-        array(
+        return array(
             array(
                 '/My Documents/*',
                 '/My Documents/1',
@@ -158,8 +220,87 @@ class RouterTest extends \PHPUnit_Framework_TestCase
                 '/(.*)/1/[a-z]/2', //create a route with those special chars
                 array(1, 2)
             ),
+            array(
+                '/shinny*/*',
+                '/shinny*/2',
+                array(2)
+            ),
         );
+    }
+
+    public function testBindControllerNoParams()
+    {
+        $this->object->addController('/users/*', 'Respect\Rest\MyController');
+        $result = $this->object->dispatch('get', '/users/alganet');
+        $this->assertEquals(array('alganet', 'get', array()), $result);
+    }
+
+    public function testBindControllerParams()
+    {
+        $this->object->addController('/users/*', 'Respect\Rest\MyController', 'ok');
+        $result = $this->object->dispatch('get', '/users/alganet');
+        $this->assertEquals(array('alganet', 'get', array('ok')), $result);
+    }
+
+    public function testBindControllerParams2()
+    {
+        $this->object->addController('/users/*', 'Respect\Rest\MyController', 'ok', 'foo', 'bar');
+        $result = $this->object->dispatch('get', '/users/alganet');
+        $this->assertEquals(array('alganet', 'get', array('ok', 'foo', 'bar')), $result);
+    }
+
+    public function testBindControllerStatic()
+    {
+        $this->object->addController('/users/*', 'Respect\Rest\MyController');
+        $result = $this->object->dispatch('foo', '/users/alganet');
+        $this->assertEquals(null, $result);
+    }
+
+    public function testBindControllerSpecial()
+    {
+        $this->object->addController('/users/*', 'Respect\Rest\MyController');
+        $result = $this->object->dispatch('__construct', '/users/alganet');
+        $this->assertEquals(null, $result);
+    }
+
+    public function testBindControllerMultiMethods()
+    {
+        $this->object->addController('/users/*', 'Respect\Rest\MyController');
+
+        $result = $this->object->dispatch('get', '/users/alganet');
+        $this->assertEquals(array('alganet', 'get', array()), $result);
+
+        $result = $this->object->dispatch('post', '/users/alganet');
+        $this->assertEquals(array('alganet', 'post', array()), $result);
     }
 
 }
 
+//couldn't mock this 'cause its read by reflection =/
+class MyController implements Routable
+{
+
+    protected $params = array();
+
+    public function __construct()
+    {
+        $this->params = func_get_args();
+        return 'whoops';
+    }
+
+    public static function foo()
+    {
+        return 'whoops';
+    }
+
+    public function get($user)
+    {
+        return array($user, 'get', $this->params);
+    }
+
+    public function post($user)
+    {
+        return array($user, 'post', $this->params);
+    }
+
+}
