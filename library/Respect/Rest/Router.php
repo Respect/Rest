@@ -89,7 +89,12 @@ class Router
         foreach ($this->routes[$httpMethod] as $pathRegex => $callback)
             if (preg_match($pathRegex, $httpUri, $params))
                 return call_user_func_array(
-                    $callback, array_filter(array_slice($params, 1))
+                    $callback, array_filter(
+                        array_slice($params, 1),
+                        function($p) {
+                            return $p !== '';
+                        }
+                    )
                 );
     }
 

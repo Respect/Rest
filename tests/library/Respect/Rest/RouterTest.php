@@ -159,6 +159,11 @@ class RouterTest extends \PHPUnit_Framework_TestCase
                 null
             ),
             array(
+                '/posts/*/*/*',
+                '/posts/2010/0/',
+                array(2010, 0)
+            ),
+            array(
                 '/users/*/*/lists/*/*',
                 '/users/1/1B/lists/2/3',
                 array(1, '1B', 2, 3)
