@@ -8,25 +8,43 @@ use InvalidArgumentException;
 
 class Router
 {
+    const PARAM_IDENTIFIER = '/*';
+    const CATCHALL_IDENTIFIER = '/**';
+    const REGEX_CATCHALL = '(/.*)?';
+    const REGEX_SINGLE_PARAM = '/([^/]+)';
+    const REGEX_TWO_ENDING_PARAMS = '/([^/]+)/([^/]+)';
+    const REGEX_TWO_OPTIONAL_ENDING_PARAMS = '/([^/]+)(?:/([^/]+))?';
+    const REGEX_THREE_MIXED_ENDING_PARAMS = '(?:/([^/]+))?/([^/]+)';
+    const REGEX_THREE_OPTIONAL_ENDING_PARAMS = '(?:/([^/]+))?(?:/([^/]+))?';
+
 
     protected $dispatched = false;
     protected $routes = array();
     protected $controllerInstances = array();
 
-    public function __call($httpMethod, $arguments)
+    public static function cleanUpParams($params)
+    {
+        return array_filter(
+            array_slice($params, 1),
+            function($param) {
+                return $param !== '';
+            }
+        );
+    }
+
+    public function __call($method, $arguments)
     {
         if (count($arguments) < 2)
             throw new InvalidArgumentException('Any route binding must have at least 2 arguments: a path and a callback');
 
-        list($path, $callback) = $arguments;
-        return $this->addRoute($httpMethod, $path, $callback);
+        $path = array_shift($arguments);
+        $callback = array_pop($arguments);
+        return $this->addRoute($method, $path, $callback, $arguments);
     }
 
     public function __destruct()
     {
-        if (!$this->dispatched
-            && isset($_SERVER['SERVER_PROTOCOL'])
-            && false !== stripos($_SERVER['SERVER_PROTOCOL'], 'http'))
+        if (!$this->dispatched && isset($_SERVER['SERVER_PROTOCOL']))
             echo $this->dispatch();
     }
 
@@ -58,53 +76,72 @@ class Router
                 );
     }
 
-    public function addRoute($httpMethod, $path, $callback)
+    public function addRoute($method, $path, $callback, array $proxies=array())
     {
-        $pathRegex = $this->compileRouteRegex($path);
-        return $this->addRouteByRegex($httpMethod, $pathRegex, $callback);
+        return $this->addRouteByRegex(
+            $method,
+            $this->compileRouteRegex($path),
+            $callback,
+            $proxies
+        );
     }
 
-    public function addRouteByRegex($httpMethod, $regex, $callback)
+    public function addRouteByRegex($method, $regex, $callback, array $proxies=array())
     {
-        $httpMethod = strtoupper($httpMethod);
-        $this->routes[$httpMethod][$regex] = $callback;
-        uksort($this->routes[$httpMethod],
+        if (!is_callable($callback))
+            throw new InvalidArgumentException('Route callback must be callable');
+
+        $method = strtoupper($method);
+        $route = new Route($method, $regex, $callback);
+
+        if ($proxies)
+            $route->setProxies($proxies);
+
+        $this->appendRoute($route);
+        return $route;
+    }
+
+    public function appendRoute(Route $route)
+    {
+        $method = $route->getMethod();
+        $this->routes[$method][$route->getRegex()] = $route;
+        uksort($this->routes[$method],
             function($a, $b) {
-                return substr_count($a, '[^/]+') < substr_count($b, '[^/]+');
+                return substr_count($a, static::REGEX_SINGLE_PARAM)
+                < substr_count($b, static::REGEX_SINGLE_PARAM);
             }
         );
-        return $callback;
     }
 
-    public function dispatch($httpMethod=null, $httpUri=null)
+    public function dispatch($method=null, $uri=null)
     {
         $this->dispatched = true;
-        $httpMethod = strtoupper($httpMethod ? : $_SERVER['REQUEST_METHOD']);
-        $httpUri = $httpUri ? : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $httpUri = rtrim($httpUri, ' /');
+        $method = strtoupper($method ? : $_SERVER['REQUEST_METHOD']);
+        $uri = $uri ? : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $uri = rtrim($uri, ' /');
 
-        if (!isset($this->routes[$httpMethod]))
+        if (!isset($this->routes[$method]))
             return;
 
-        foreach ($this->routes[$httpMethod] as $pathRegex => $callback)
-            if (preg_match($pathRegex, $httpUri, $params))
-                return call_user_func_array(
-                    $callback, array_filter(
-                        array_slice($params, 1),
-                        function($p) {
-                            return $p !== '';
-                        }
-                    )
-                );
+        foreach ($this->routes[$method] as $route)
+            if ($route->match($uri, $params))
+                return call_user_func_array($route, static::cleanUpParams($params));
     }
 
     //turn sequenced parameters optional, so /*/*/* will match /1/2/3, /1/2 and /1
     protected function compileOptionalParams($pathQuoted)
     {
-        if (strlen($pathQuoted) - 16 === strripos($pathQuoted, '/([^/]+)/([^/]+)'))
+        if (strlen($pathQuoted) - strlen(static::REGEX_TWO_ENDING_PARAMS)
+            === strripos($pathQuoted, static::REGEX_TWO_ENDING_PARAMS))
             $pathQuoted = str_replace(
-                    array('/([^/]+)/([^/]+)', '(?:/([^/]+))?/([^/]+)'),
-                    array('/([^/]+)(?:/([^/]+))?', '(?:/([^/]+))?(?:/([^/]+))?'),
+                    array(
+                        static::REGEX_TWO_ENDING_PARAMS,
+                        static::REGEX_THREE_MIXED_ENDING_PARAMS
+                    ),
+                    array(
+                        static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
+                        static::REGEX_THREE_OPTIONAL_ENDING_PARAMS
+                    ),
                     $pathQuoted
             );
 
@@ -134,7 +171,11 @@ class Router
     {
         $path = rtrim($path, ' /');
         $extra = $this->extractCatchAllPattern($path);
-        $pathQuoted = str_replace('/\*', '/([^/]+)', preg_quote($path));
+        $pathQuoted = str_replace(
+                preg_quote(static::PARAM_IDENTIFIER),
+                static::REGEX_SINGLE_PARAM,
+                preg_quote($path)
+        );
         $pathQuoted = $this->compileOptionalParams($pathQuoted);
         $pathRegex = "#^{$pathQuoted}{$extra}$#";
         return $pathRegex;
@@ -142,14 +183,18 @@ class Router
 
     protected function extractCatchAllPattern(&$path)
     {
-        $extra = '(/.*)?';
+        $extra = static::REGEX_CATCHALL;
 
-        if (strlen($path) - 3 === strripos($path, '/**'))
+        if (
+            (strlen($path) - strlen(static::CATCHALL_IDENTIFIER))
+            === strripos($path, static::CATCHALL_IDENTIFIER))
             $path = substr($path, 0, -3);
         else
             $extra = '';
 
-        $path = str_replace('**', '*', $path);
+        $path = str_replace(
+                static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $path
+        );
         return $extra;
     }
 

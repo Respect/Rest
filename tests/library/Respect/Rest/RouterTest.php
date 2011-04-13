@@ -279,6 +279,27 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(array('alganet', 'post', array()), $result);
     }
 
+    public function testProxy()
+    {
+        //TODO
+    }
+
+    public function testMultipleProxies()
+    {
+
+        //TODO
+    }
+
+    public function testMultipleProxiesParamsByReference()
+    {
+        //TODO
+    }
+
+    public function testMultipleProxiesReturnFalse()
+    {
+        //TODO
+    }
+
 }
 
 //couldn't mock this 'cause its read by reflection =/
