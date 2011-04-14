@@ -3,6 +3,10 @@
 namespace Respect\Rest;
 
 use InvalidArgumentException;
+use ReflectionFunction;
+use ReflectionFunctionAbstract;
+use ReflectionMethod;
+use ReflectionParameter;
 
 class Route
 {
@@ -11,6 +15,8 @@ class Route
     protected $callback;
     protected $method;
     protected $proxies = array();
+    protected $reflection;
+    protected $proxiesReflections = array();
 
     public function __construct($method, $regex, $callback)
     {
@@ -23,8 +29,8 @@ class Route
     {
         $params = func_get_args();
 
-        foreach ($this->proxies as $proxy)
-            if (false === call_user_func_array($proxy, &$params))
+        foreach ($this->proxies as $proxyKey => $proxy)
+            if (false === $this->callProxy($proxyKey, $params))
                 return false;
 
         return call_user_func_array($this->callback, $params);
@@ -45,12 +51,54 @@ class Route
         return preg_match($this->regex, $uri, $params);
     }
 
-    public function setProxies(array $proxies)
+    public function setProxies()
     {
+        $proxies = func_get_args();
+
         if (!array_filter($proxies, 'is_callable'))
             throw new InvalidArgumentException('Route proxies must be callable');
 
         $this->proxies = $proxies;
+    }
+
+    protected function callProxy($proxyKey, &$params)
+    {
+        $proxy = $this->proxies[$proxyKey];
+
+        if (!isset($this->proxiesReflections[$proxyKey]))
+            $this->proxiesReflections[$proxyKey]
+                = $this->getCallbackReflection($proxy);
+
+        if (!isset($this->reflection))
+            $this->reflection = $this->getCallbackReflection($this->callback);
+
+        $proxyParams = array();
+
+        foreach ($this->proxiesReflections[$proxyKey]->getParameters() as $p)
+            $proxyParams[] = $this->extractParam($this->reflection, $p, $params);
+
+        return call_user_func_array($proxy, $proxyParams);
+    }
+
+    protected function extractParam(ReflectionFunctionAbstract $callbackR, ReflectionParameter $proxyParam, &$params)
+    {
+        foreach ($callbackR->getParameters() as $callbackParam)
+            if ($callbackParam->getName() === $proxyParam->getName()
+                && isset($params[$callbackParam->getPosition()]))
+                return $params[$callbackParam->getPosition()];
+
+        if ($proxyParam->isDefaultValueAvailable())
+            return $proxyParam->getDefaultValue();
+
+        return null;
+    }
+
+    protected function getCallbackReflection($proxy)
+    {
+        if (is_array($proxy))
+            return new ReflectionMethod($proxy[0], $proxy[1]);
+        else
+            return new ReflectionFunction($proxy);
     }
 
 }

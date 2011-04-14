@@ -34,12 +34,11 @@ class Router
 
     public function __call($method, $arguments)
     {
-        if (count($arguments) < 2)
-            throw new InvalidArgumentException('Any route binding must have at least 2 arguments: a path and a callback');
+        if (count($arguments) !== 2)
+            throw new InvalidArgumentException('Any route binding must have exactly 2 arguments: a path and a callback');
 
-        $path = array_shift($arguments);
-        $callback = array_pop($arguments);
-        return $this->addRoute($method, $path, $callback, $arguments);
+        list($path, $callback) = $arguments;
+        return $this->addRoute($method, $path, $callback);
     }
 
     public function __destruct()
@@ -76,27 +75,20 @@ class Router
                 );
     }
 
-    public function addRoute($method, $path, $callback, array $proxies=array())
+    public function addRoute($method, $path, $callback)
     {
         return $this->addRouteByRegex(
             $method,
             $this->compileRouteRegex($path),
-            $callback,
-            $proxies
+            $callback
         );
     }
 
-    public function addRouteByRegex($method, $regex, $callback, array $proxies=array())
+    public function addRouteByRegex($method, $regex, $callback)
     {
         if (!is_callable($callback))
             throw new InvalidArgumentException('Route callback must be callable');
-
-        $method = strtoupper($method);
-        $route = new Route($method, $regex, $callback);
-
-        if ($proxies)
-            $route->setProxies($proxies);
-
+        $route = new Route(strtoupper($method), $regex, $callback);
         $this->appendRoute($route);
         return $route;
     }

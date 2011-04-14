@@ -290,12 +290,23 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         //TODO
     }
 
-    public function testMultipleProxiesParamsByReference()
+    public function testProxyParamsByReference()
     {
-        //TODO
+        $resultProxy = null;
+        $resultCallback = null;
+        $proxy1 = function($foo=null, $abc=null) use (&$resultProxy) {
+                $resultProxy = func_get_args();
+            };
+        $callback = function($bar, $foo=null) use(&$resultCallback) {
+                $resultCallback = func_get_args();
+            };
+        $this->object->get('/users/*/*', $callback)->setProxies($proxy1);
+        $this->object->dispatch('get', '/users/abc/def');
+        $this->assertEquals(array('def', null), $resultProxy);
+        $this->assertEquals(array('abc', 'def'), $resultCallback);
     }
 
-    public function testMultipleProxiesReturnFalse()
+    public function testProxyReturnFalse()
     {
         //TODO
     }
