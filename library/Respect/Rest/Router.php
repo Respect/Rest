@@ -25,8 +25,7 @@ class Router
     public static function cleanUpParams($params)
     {
         return array_filter(
-            array_slice($params, 1),
-            function($param) {
+            array_slice($params, 1), function($param) {
                 return $param !== '';
             }
         );
@@ -67,9 +66,7 @@ class Router
         foreach ($publicMethods as $method)
             if (false === stripos($method->getName(), '__'))
                 $this->addRoutebyRegex(
-                    $method->getName(),
-                    $pathRegex,
-                    (is_object($class) ?
+                    $method->getName(), $pathRegex, (is_object($class) ?
                         array($class, $method->getName()) :
                         $this->createLazyLoader($reflection, $method, $args, $pathRegex))
                 );
@@ -78,9 +75,7 @@ class Router
     public function addRoute($method, $path, $callback)
     {
         return $this->addRouteByRegex(
-            $method,
-            $this->compileRouteRegex($path),
-            $callback
+            $method, $this->compileRouteRegex($path), $callback
         );
     }
 
@@ -97,16 +92,16 @@ class Router
     {
         $method = $route->getMethod();
         $this->routes[$method][$route->getRegex()] = $route;
-        uksort($this->routes[$method],
-            function($a, $b) {
-                return substr_count($a, static::REGEX_SINGLE_PARAM)
-                < substr_count($b, static::REGEX_SINGLE_PARAM);
+        uksort($this->routes[$method], function($a, $b) {
+                return substr_count($a, Router::REGEX_SINGLE_PARAM)
+                < substr_count($b, Router::REGEX_SINGLE_PARAM);
             }
         );
     }
 
     public function dispatch($method=null, $uri=null)
     {
+
         $this->dispatched = true;
         $method = strtoupper($method ? : $_SERVER['REQUEST_METHOD']);
         $uri = $uri ? : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -126,15 +121,13 @@ class Router
         if (strlen($pathQuoted) - strlen(static::REGEX_TWO_ENDING_PARAMS)
             === strripos($pathQuoted, static::REGEX_TWO_ENDING_PARAMS))
             $pathQuoted = str_replace(
-                    array(
-                        static::REGEX_TWO_ENDING_PARAMS,
-                        static::REGEX_THREE_MIXED_ENDING_PARAMS
-                    ),
-                    array(
-                        static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
-                        static::REGEX_THREE_OPTIONAL_ENDING_PARAMS
-                    ),
-                    $pathQuoted
+                array(
+                static::REGEX_TWO_ENDING_PARAMS,
+                static::REGEX_THREE_MIXED_ENDING_PARAMS
+                ), array(
+                static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
+                static::REGEX_THREE_OPTIONAL_ENDING_PARAMS
+                ), $pathQuoted
             );
 
         return $pathQuoted;
@@ -149,7 +142,10 @@ class Router
             $className = $class->getName();
 
             if (!isset($instances[$className]))
-                $instances[$className] = $class->newInstanceArgs($args);
+                if (method_exists($className, '__construct'))
+                    $instances[$className] = $class->newInstanceArgs($args);
+                else
+                    $instances[$className] = new $className;
 
             $methodCall = array($instances[$className], $method->getName());
 
@@ -164,9 +160,7 @@ class Router
         $path = rtrim($path, ' /');
         $extra = $this->extractCatchAllPattern($path);
         $pathQuoted = str_replace(
-                preg_quote(static::PARAM_IDENTIFIER),
-                static::REGEX_SINGLE_PARAM,
-                preg_quote($path)
+            preg_quote(static::PARAM_IDENTIFIER), static::REGEX_SINGLE_PARAM, preg_quote($path)
         );
         $pathQuoted = $this->compileOptionalParams($pathQuoted);
         $pathRegex = "#^{$pathQuoted}{$extra}$#";
@@ -185,7 +179,7 @@ class Router
             $extra = '';
 
         $path = str_replace(
-                static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $path
+            static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $path
         );
         return $extra;
     }
