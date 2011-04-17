@@ -11,29 +11,47 @@ use ReflectionParameter;
 class Route
 {
 
-    protected $regex;
-    protected $callback;
+    protected $matchPattern;
+    protected $replacePattern;
     protected $method;
-    protected $proxies = array();
+    protected $callback;
     protected $reflection;
-    protected $proxiesReflections = array();
+    protected $conditions = array();
+    protected $preProxies = array();
+    protected $postProxies = array();
 
-    public function __construct($method, $regex, $callback)
+    public function __construct($method, $callback, $matchPattern, $replacePattern)
     {
         $this->method = $method;
-        $this->regex = $regex;
         $this->callback = $callback;
+        $this->matchPattern = $matchPattern;
+        $this->replacePattern = $replacePattern;
     }
 
-    public function __invoke()
+    public function __invoke($param1=null, $etc=null)
     {
         $params = func_get_args();
 
-        foreach ($this->proxies as $proxyKey => $proxy)
-            if (false === $this->callProxy($proxyKey, $params))
+        foreach ($this->preProxies as $preProxy)
+            if (false === $this->paramSyncCall($preProxy, $params))
                 return false;
 
-        return call_user_func_array($this->callback, $params);
+        $response = call_user_func_array($this->callback, $params);
+
+        foreach ($this->postProxies as $postProxy)
+            if (false === $this->paramSyncCall($postProxy, $params))
+                return $response;
+
+        return $response;
+    }
+
+    public function createUri($param1=null, $etc=null)
+    {
+        $params = func_get_args();
+        array_unshift($params, $this->replacePattern);
+        return call_user_func_array(
+            'sprintf', $params
+        );
     }
 
     public function getMethod()
@@ -43,62 +61,83 @@ class Route
 
     public function getRegex()
     {
-        return $this->regex;
+        return $this->matchPattern;
     }
 
     public function match($uri, &$params=array())
     {
-        return preg_match($this->regex, $uri, $params);
+        foreach ($this->conditions as $cond)
+            if (!$this->paramSyncCall($cond, $params))
+                return false;
+
+        return preg_match($this->matchPattern, $uri, $params);
     }
 
-    public function setProxies()
+    public function by($proxy1=null, $etc=null)
     {
-        $proxies = func_get_args();
-
-        if (!array_filter($proxies, 'is_callable'))
-            throw new InvalidArgumentException('Route proxies must be callable');
-
-        $this->proxies = $proxies;
+        $this->preProxies = $this->checkCallbackParams(
+                func_get_args(), 'Route proxies must be callable'
+        );
+        return $this;
     }
 
-    protected function callProxy($proxyKey, &$params)
+    public function when($condition1=null, $etc=null)
     {
-        $proxy = $this->proxies[$proxyKey];
+        $this->conditions = $this->checkCallbackParams(
+                func_get_args(), 'Route conditions must be callable'
+        );
+        return $this;
+    }
 
-        if (!isset($this->proxiesReflections[$proxyKey]))
-            $this->proxiesReflections[$proxyKey]
-                = $this->getCallbackReflection($proxy);
+    public function then($proxy1=null, $etc=null)
+    {
+        $this->postProxies = $this->checkCallbackParams(
+                func_get_args(), 'Route proxies must be callable'
+        );
+        return $this;
+    }
+
+    protected function checkCallbackParams($params, $message)
+    {
+        if (!array_filter($params, 'is_callable'))
+            throw new InvalidArgumentException($message);
+        return $params;
+    }
+
+    protected function paramSyncCall($callback, &$params)
+    {
+        $callbackReflection = $this->getCallbackReflection($callback);
 
         if (!isset($this->reflection))
             $this->reflection = $this->getCallbackReflection($this->callback);
 
-        $proxyParams = array();
+        $cbParams = array();
 
-        foreach ($this->proxiesReflections[$proxyKey]->getParameters() as $p)
-            $proxyParams[] = $this->extractParam($this->reflection, $p, $params);
+        foreach ($callbackReflection->getParameters() as $p)
+            $cbParams[] = $this->extractParam($this->reflection, $p, $params);
 
-        return call_user_func_array($proxy, $proxyParams);
+        return call_user_func_array($callback, $cbParams);
     }
 
-    protected function extractParam(ReflectionFunctionAbstract $callbackR, ReflectionParameter $proxyParam, &$params)
+    protected function extractParam(ReflectionFunctionAbstract $callbackR, ReflectionParameter $cbParam, &$params)
     {
         foreach ($callbackR->getParameters() as $callbackParam)
-            if ($callbackParam->getName() === $proxyParam->getName()
+            if ($callbackParam->getName() === $cbParam->getName()
                 && isset($params[$callbackParam->getPosition()]))
                 return $params[$callbackParam->getPosition()];
 
-        if ($proxyParam->isDefaultValueAvailable())
-            return $proxyParam->getDefaultValue();
+        if ($cbParam->isDefaultValueAvailable())
+            return $cbParam->getDefaultValue();
 
         return null;
     }
 
-    protected function getCallbackReflection($proxy)
+    protected function getCallbackReflection($callback)
     {
-        if (is_array($proxy))
-            return new ReflectionMethod($proxy[0], $proxy[1]);
+        if (is_array($callback))
+            return new ReflectionMethod($callback[0], $callback[1]);
         else
-            return new ReflectionFunction($proxy);
+            return new ReflectionFunction($callback);
     }
 
 }

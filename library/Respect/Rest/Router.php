@@ -9,16 +9,17 @@ use InvalidArgumentException;
 class Router
 {
     const PARAM_IDENTIFIER = '/*';
+    const QUOTED_PARAM_IDENTIFIER = '/\*';
     const CATCHALL_IDENTIFIER = '/**';
     const REGEX_CATCHALL = '(/.*)?';
     const REGEX_SINGLE_PARAM = '/([^/]+)';
     const REGEX_TWO_ENDING_PARAMS = '/([^/]+)/([^/]+)';
     const REGEX_TWO_OPTIONAL_ENDING_PARAMS = '/([^/]+)(?:/([^/]+))?';
-    const REGEX_THREE_MIXED_ENDING_PARAMS = '(?:/([^/]+))?/([^/]+)';
-    const REGEX_THREE_OPTIONAL_ENDING_PARAMS = '(?:/([^/]+))?(?:/([^/]+))?';
+    const REGEX_TWO_MIXED_PARAMS = '(?:/([^/]+))?/([^/]+)';
+    const REGEX_TWO_OPTIONAL_PARAMS = '(?:/([^/]+))?(?:/([^/]+))?';
 
-
-    protected $dispatched = false;
+    protected $mode = 2;
+    protected $autoDispatched = false;
     protected $routes = array();
     protected $controllerInstances = array();
 
@@ -42,7 +43,7 @@ class Router
 
     public function __destruct()
     {
-        if (!$this->dispatched && isset($_SERVER['SERVER_PROTOCOL']))
+        if (!$this->autoDispatched && isset($_SERVER['SERVER_PROTOCOL']))
             echo $this->dispatch();
     }
 
@@ -56,34 +57,37 @@ class Router
         $publicMethods = $reflection->getMethods(
                 ReflectionMethod::IS_PUBLIC ^ ~ ReflectionMethod::IS_STATIC
         );
-        $args = func_num_args() > 2 ? array_slice(func_get_args(), 2) : array();
-
         if (is_object($class))
             $this->controllerInstances[$reflection->getName()] = $class;
 
-        $pathRegex = $this->compileRouteRegex($path);
-
         foreach ($publicMethods as $method)
             if (false === stripos($method->getName(), '__'))
-                $this->addRoutebyRegex(
-                    $method->getName(), $pathRegex, (is_object($class) ?
+                $this->addRoute(
+                    $method->getName(),
+                    $path,
+                    (is_object($class) ?
                         array($class, $method->getName()) :
-                        $this->createLazyLoader($reflection, $method, $args, $pathRegex))
+                        $this->createLoader(
+                            $reflection,
+                            $method,
+                            (func_num_args() > 2 ?
+                                array_slice(func_get_args(), 2) :
+                                array()
+                            )
+                        )
+                    )
                 );
     }
 
     public function addRoute($method, $path, $callback)
     {
-        return $this->addRouteByRegex(
-            $method, $this->compileRouteRegex($path), $callback
-        );
-    }
-
-    public function addRouteByRegex($method, $regex, $callback)
-    {
         if (!is_callable($callback))
             throw new InvalidArgumentException('Route callback must be callable');
-        $route = new Route(strtoupper($method), $regex, $callback);
+
+        $patterns = $this->createRegexPatterns($path);
+        $route = new Route(
+                strtoupper($method), $callback, $patterns[0], $patterns[1]
+        );
         $this->appendRoute($route);
         return $route;
     }
@@ -91,7 +95,7 @@ class Router
     public function appendRoute(Route $route)
     {
         $method = $route->getMethod();
-        $this->routes[$method][$route->getRegex()] = $route;
+        $this->routes[$method][] = $route;
         uksort($this->routes[$method], function($a, $b) {
                 return substr_count($a, Router::REGEX_SINGLE_PARAM)
                 < substr_count($b, Router::REGEX_SINGLE_PARAM);
@@ -101,8 +105,7 @@ class Router
 
     public function dispatch($method=null, $uri=null)
     {
-
-        $this->dispatched = true;
+        $this->autoDispatched = true;
         $method = strtoupper($method ? : $_SERVER['REQUEST_METHOD']);
         $uri = $uri ? : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $uri = rtrim($uri, ' /');
@@ -112,33 +115,47 @@ class Router
 
         foreach ($this->routes[$method] as $route)
             if ($route->match($uri, $params))
-                return call_user_func_array($route, static::cleanUpParams($params));
+                return call_user_func_array(
+                    $route, static::cleanUpParams($params)
+                );
+    }
+
+    public function setAutoDispatched($autoDispatched)
+    {
+        $this->autoDispatched = $autoDispatched;
+    }
+
+    public function setMode($mode)
+    {
+        $this->mode = $mode;
     }
 
     //turn sequenced parameters optional, so /*/*/* will match /1/2/3, /1/2 and /1
-    protected function compileOptionalParams($pathQuoted)
+    protected function fixOptionalParams($pathQuoted)
     {
         if (strlen($pathQuoted) - strlen(static::REGEX_TWO_ENDING_PARAMS)
             === strripos($pathQuoted, static::REGEX_TWO_ENDING_PARAMS))
             $pathQuoted = str_replace(
-                array(
-                static::REGEX_TWO_ENDING_PARAMS,
-                static::REGEX_THREE_MIXED_ENDING_PARAMS
-                ), array(
-                static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
-                static::REGEX_THREE_OPTIONAL_ENDING_PARAMS
-                ), $pathQuoted
+                    array(
+                        static::REGEX_TWO_ENDING_PARAMS,
+                        static::REGEX_TWO_MIXED_PARAMS
+                    ),
+                    array(
+                        static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
+                        static::REGEX_TWO_OPTIONAL_PARAMS
+                    ),
+                    $pathQuoted
             );
 
         return $pathQuoted;
     }
 
-    protected function createLazyLoader(ReflectionClass $class, ReflectionMethod $method, $args, $routeKey)
+    protected function createLoader(ReflectionClass $class, ReflectionMethod $method, $args)
     {
         $instances = &$this->controllerInstances;
         $routes = &$this->routes;
 
-        return function() use(&$routes, &$instances, $class, $method, $args, $routeKey) {
+        return function() use(&$routes, &$instances, $class, $method, $args) {
             $className = $class->getName();
 
             if (!isset($instances[$className]))
@@ -148,38 +165,36 @@ class Router
                     $instances[$className] = new $className;
 
             $methodCall = array($instances[$className], $method->getName());
-
-            $routes[strtoupper($method->getName())][$routeKey] = $methodCall;
-
             return call_user_func_array($methodCall, func_get_args());
         };
     }
 
-    protected function compileRouteRegex($path)
+    protected function createRegexPatterns($path)
     {
         $path = rtrim($path, ' /');
         $extra = $this->extractCatchAllPattern($path);
-        $pathQuoted = str_replace(
-            preg_quote(static::PARAM_IDENTIFIER), static::REGEX_SINGLE_PARAM, preg_quote($path)
+        $matchPattern = str_replace(
+                static::QUOTED_PARAM_IDENTIFIER, static::REGEX_SINGLE_PARAM,
+                preg_quote($path), $paramCount
         );
-        $pathQuoted = $this->compileOptionalParams($pathQuoted);
-        $pathRegex = "#^{$pathQuoted}{$extra}$#";
-        return $pathRegex;
+        $replacePattern = str_replace(static::PARAM_IDENTIFIER, '/%s', $path);
+        $matchPattern = $this->fixOptionalParams($matchPattern);
+        $matchRegex = "#^{$matchPattern}{$extra}$#";
+        return array($matchRegex, $replacePattern);
     }
 
     protected function extractCatchAllPattern(&$path)
     {
         $extra = static::REGEX_CATCHALL;
 
-        if (
-            (strlen($path) - strlen(static::CATCHALL_IDENTIFIER))
+        if ((strlen($path) - strlen(static::CATCHALL_IDENTIFIER))
             === strripos($path, static::CATCHALL_IDENTIFIER))
             $path = substr($path, 0, -3);
         else
             $extra = '';
 
         $path = str_replace(
-            static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $path
+                static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $path
         );
         return $extra;
     }

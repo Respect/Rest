@@ -271,7 +271,6 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testBindControllerMultiMethods()
     {
         $this->object->addController('/users/*', 'Respect\Rest\MyController');
-
         $result = $this->object->dispatch('get', '/users/alganet');
         $this->assertEquals(array('alganet', 'get', array()), $result);
 
@@ -300,7 +299,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $callback = function($bar, $foo=null) use(&$resultCallback) {
                 $resultCallback = func_get_args();
             };
-        $this->object->get('/users/*/*', $callback)->setProxies($proxy1);
+        $this->object->get('/users/*/*', $callback)->by($proxy1);
         $this->object->dispatch('get', '/users/abc/def');
         $this->assertEquals(array('def', null), $resultProxy);
         $this->assertEquals(array('abc', 'def'), $resultCallback);
@@ -309,6 +308,16 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testProxyReturnFalse()
     {
         //TODO
+    }
+
+    public function testWhen()
+    {
+
+    }
+
+    public function testThen()
+    {
+
     }
 
 }
