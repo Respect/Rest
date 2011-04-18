@@ -19,7 +19,7 @@ class Router
     const REGEX_TWO_OPTIONAL_PARAMS = '(?:/([^/]+))?(?:/([^/]+))?';
 
     protected $mode = 2;
-    protected $autoDispatched = false;
+    protected $autoDispatched = true;
     protected $routes = array();
     protected $controllerInstances = array();
 
@@ -43,7 +43,7 @@ class Router
 
     public function __destruct()
     {
-        if (!$this->autoDispatched && isset($_SERVER['SERVER_PROTOCOL']))
+        if ($this->autoDispatched && isset($_SERVER['SERVER_PROTOCOL']))
             echo $this->dispatch();
     }
 
@@ -105,7 +105,7 @@ class Router
 
     public function dispatch($method=null, $uri=null)
     {
-        $this->autoDispatched = true;
+        $this->autoDispatched = false;
         $method = strtoupper($method ? : $_SERVER['REQUEST_METHOD']);
         $uri = $uri ? : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $uri = rtrim($uri, ' /');
