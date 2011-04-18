@@ -96,9 +96,9 @@ class Router
     {
         $method = $route->getMethod();
         $this->routes[$method][] = $route;
-        uksort($this->routes[$method], function($a, $b) {
-                return substr_count($a, Router::REGEX_SINGLE_PARAM)
-                < substr_count($b, Router::REGEX_SINGLE_PARAM);
+        usort($this->routes[$method], function($a, $b) {
+                return substr_count($a->getRegex(), Router::REGEX_SINGLE_PARAM)
+                < substr_count($b->getRegex(), Router::REGEX_SINGLE_PARAM);
             }
         );
     }
