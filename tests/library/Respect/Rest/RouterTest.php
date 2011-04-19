@@ -235,42 +235,61 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerNoParams()
     {
-        $this->object->addController('/users/*', 'Respect\Rest\MyController');
+        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
+                return new MyController;
+            });
         $result = $this->object->dispatch('get', '/users/alganet');
         $this->assertEquals(array('alganet', 'get', array()), $result);
     }
 
     public function testBindControllerParams()
     {
-        $this->object->addController('/users/*', 'Respect\Rest\MyController', 'ok');
+        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
+                return new MyController('ok');
+            });
+        $result = $this->object->dispatch('get', '/users/alganet');
+        $this->assertEquals(array('alganet', 'get', array('ok')), $result);
+    }
+
+    public function testBindControllerInstance()
+    {
+        $this->object->addControllerInstance('/users/*', new MyController('ok'));
         $result = $this->object->dispatch('get', '/users/alganet');
         $this->assertEquals(array('alganet', 'get', array('ok')), $result);
     }
 
     public function testBindControllerParams2()
     {
-        $this->object->addController('/users/*', 'Respect\Rest\MyController', 'ok', 'foo', 'bar');
+        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
+                return new MyController('ok', 'foo', 'bar');
+            });
         $result = $this->object->dispatch('get', '/users/alganet');
         $this->assertEquals(array('alganet', 'get', array('ok', 'foo', 'bar')), $result);
     }
 
     public function testBindControllerStatic()
     {
-        $this->object->addController('/users/*', 'Respect\Rest\MyController');
+        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
+                return new MyController;
+            });
         $result = $this->object->dispatch('foo', '/users/alganet');
         $this->assertEquals(null, $result);
     }
 
     public function testBindControllerSpecial()
     {
-        $this->object->addController('/users/*', 'Respect\Rest\MyController');
+        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
+                return new MyController;
+            });
         $result = $this->object->dispatch('__construct', '/users/alganet');
         $this->assertEquals(null, $result);
     }
 
     public function testBindControllerMultiMethods()
     {
-        $this->object->addController('/users/*', 'Respect\Rest\MyController');
+        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
+                return new MyController;
+            });
         $result = $this->object->dispatch('get', '/users/alganet');
         $this->assertEquals(array('alganet', 'get', array()), $result);
 
@@ -278,15 +297,66 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(array('alganet', 'post', array()), $result);
     }
 
-    public function testProxy()
+    public function testProxyBy()
     {
-        //TODO
+        $result = null;
+        $proxy = function() use (&$result) {
+                $result = 'ok';
+            };
+        $this->object->get('/users/*', function() {
+
+            })->by($proxy);
+        $this->object->dispatch('get', '/users/alganet');
+        $this->assertEquals('ok', $result);
+    }
+
+    public function testProxyThen()
+    {
+        $result = null;
+        $proxy = function() use (&$result) {
+                $result = 'ok';
+            };
+        $this->object->get('/users/*', function() {
+
+            })->then($proxy);
+        $this->object->dispatch('get', '/users/alganet');
+        $this->assertEquals('ok', $result);
+    }
+
+    public function testProxyThenOutput()
+    {
+        $proxy = function() {
+                return function($output) {
+                    return $output . 'ok';
+                };
+            };
+        $this->object->get('/users/*', function() {
+                return 'ok';
+            })->then($proxy);
+        $result = $this->object->dispatch('get', '/users/alganet');
+        $this->assertEquals('okok', $result);
     }
 
     public function testMultipleProxies()
     {
-
-        //TODO
+        $result = array();
+        $proxy1 = function($foo) use (&$result) {
+                $result[] = $foo;
+            };
+        $proxy2 = function($bar) use (&$result) {
+                $result[] = $bar;
+            };
+        $proxy3 = function($baz) use (&$result) {
+                $result[] = $baz;
+            };
+        $this->object->get('/users/*/*/*', function($foo, $bar, $baz) use(&$result) {
+                $result[] = 'main';
+            })->by($proxy1)->then($proxy2, $proxy3);
+        $this->object->dispatch('get', '/users/abc/def/ghi');
+        $this->assertSame(
+            array('abc', 'main', 'def', 'ghi'),
+            $result
+        );
     }
 
     public function testProxyParamsByReference()
@@ -307,17 +377,38 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testProxyReturnFalse()
     {
-        //TODO
+        $result = array();
+        $proxy1 = function($foo) use (&$result) {
+                $result[] = $foo;
+                return false;
+            };
+        $proxy2 = function($bar) use (&$result) {
+                $result[] = $bar;
+            };
+        $proxy3 = function($baz) use (&$result) {
+                $result[] = $baz;
+            };
+        $this->object->get('/users/*/*/*', function($foo, $bar, $baz) use(&$result) {
+                $result[] = 'main';
+            })->by($proxy1)->then($proxy2, $proxy3);
+        $this->object->dispatch('get', '/users/abc/def/ghi');
+        $this->assertSame(
+            array('abc'),
+            $result
+        );
     }
 
-    public function testWhen()
+    public function testConditions()
     {
-
-    }
-
-    public function testThen()
-    {
-
+        $result = 'ok';
+        $condition = function() {
+                return false;
+            };
+        $this->object->get('/users/*', function() use (&$result) {
+                $result = null;
+            })->when($condition);
+        $this->object->dispatch('get', '/users/alganet');
+        $this->assertEquals('ok', $result);
     }
 
 }

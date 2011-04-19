@@ -47,36 +47,42 @@ class Router
             echo $this->dispatch();
     }
 
-    public function addController($path, $class)
+    public function addControllerInstance($path, $instance)
+    {
+        $methods = $this->getControllerMethods($instance);
+        $this->controllerInstances[get_class($instance)] = $instance;
+        foreach ($methods as $m)
+            $this->addRoute(
+                $m->getName(), $path, array($instance, $m->getName())
+            );
+    }
+
+    public function addControllerLoader($path, $class, $loader)
+    {
+        $methods = $this->getControllerMethods($class);
+        foreach ($methods as $m)
+            $this->addRoute(
+                $m->getName(),
+                $path,
+                $this->createCallbackLoader($loader, $class, $m)
+            );
+    }
+
+    protected function getControllerMethods($class)
     {
         $reflection = new ReflectionClass($class);
-
         if (!$reflection->implementsInterface('\\Respect\\Rest\\Routable'))
             throw new InvalidArgumentException('Binded controllers must implement the \\Respect\\Rest\\Routable interface');
 
         $publicMethods = $reflection->getMethods(
                 ReflectionMethod::IS_PUBLIC ^ ~ ReflectionMethod::IS_STATIC
         );
-        if (is_object($class))
-            $this->controllerInstances[$reflection->getName()] = $class;
 
-        foreach ($publicMethods as $method)
-            if (false === stripos($method->getName(), '__'))
-                $this->addRoute(
-                    $method->getName(),
-                    $path,
-                    (is_object($class) ?
-                        array($class, $method->getName()) :
-                        $this->createLoader(
-                            $reflection,
-                            $method,
-                            (func_num_args() > 2 ?
-                                array_slice(func_get_args(), 2) :
-                                array()
-                            )
-                        )
-                    )
-                );
+        return array_filter($publicMethods,
+            function($method) {
+                return 0 !== stripos($method->getName(), '__');
+            }
+        );
     }
 
     public function addRoute($method, $path, $callback)
@@ -150,19 +156,14 @@ class Router
         return $pathQuoted;
     }
 
-    protected function createLoader(ReflectionClass $class, ReflectionMethod $method, $args)
+    protected function createCallbackLoader($loader, $className, ReflectionMethod $method)
     {
         $instances = &$this->controllerInstances;
         $routes = &$this->routes;
 
-        return function() use(&$routes, &$instances, $class, $method, $args) {
-            $className = $class->getName();
-
+        return function() use(&$routes, &$instances, $loader, $method, $className) {
             if (!isset($instances[$className]))
-                if (method_exists($className, '__construct'))
-                    $instances[$className] = $class->newInstanceArgs($args);
-                else
-                    $instances[$className] = new $className;
+                $instances[$className] = $loader();
 
             $methodCall = array($instances[$className], $method->getName());
             return call_user_func_array($methodCall, func_get_args());

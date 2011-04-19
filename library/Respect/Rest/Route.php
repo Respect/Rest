@@ -39,7 +39,7 @@ class Route
         $response = call_user_func_array($this->callback, $params);
 
         foreach ($this->postProxies as $postProxy) {
-            $proxyResponse === $this->paramSyncCall($postProxy, $params);
+            $proxyResponse = $this->paramSyncCall($postProxy, $params);
 
             if (is_callable($proxyResponse))
                 $response = $proxyResponse($response);
