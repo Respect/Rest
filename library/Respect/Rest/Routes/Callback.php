@@ -2,32 +2,28 @@
 
 namespace Respect\Rest\Routes;
 
-class InstanceRoute extends AbstractRoute
+class Callback extends AbstractRoute
 {
 
-    protected $reflection = null;
-    protected $instance = null;
+    protected $reflection;
+    protected $callback;
 
-    public function setInstance($instance)
+    public function setCallback($callback)
     {
-        $this->instance = $instance;
+        $this->callback = $callback;
     }
 
     protected function getReflection($method)
     {
         if (empty($this->reflection))
-            $this->reflection = $this->getCallbackReflection(
-                    array(get_class($this->instance), $method)
-            );
+            $this->reflection = $this->getCallbackReflection($this->callback);
 
         return $this->reflection;
     }
 
     protected function runTarget($method, &$params)
     {
-        return call_user_func_array(
-            array($this->instance, $method), $params
-        );
+        return call_user_func_array($this->callback, $params);
     }
 
 }

@@ -2,27 +2,29 @@
 
 namespace Respect\Rest\Routes;
 
-use ReflectionClass;
+use Respect\Rest\Routable;
+use InvalidArgumentException;
 
-class ClassRoute extends AbstractRoute
+class Lazy extends AbstractRoute
 {
 
+    protected $loader = null;
     protected $reflection = null;
-    protected $class;
-    protected $constructorParams = array();
     protected $instance = null;
 
-    public function setClass($class, $constructorParams)
+    public function setLoader($loader)
     {
-        $this->class = $class;
-        $this->constructorParams = $constructorParams;
+        $this->loader = $loader;
     }
 
     protected function getReflection($method)
     {
+        if (is_null($this->instance))
+            $this->instance = $this->createInstance();
+
         if (empty($this->reflection))
             $this->reflection = $this->getCallbackReflection(
-                    array($this->class, $method)
+                    array(get_class($this->instance), $method)
             );
 
         return $this->reflection;
@@ -40,13 +42,12 @@ class ClassRoute extends AbstractRoute
 
     protected function createInstance()
     {
-        $className = $this->class;
-        if (empty($this->constructorParams) || !method_exists($this->class,
-                '__construct'))
-            return new $className;
+        $instance = call_user_func($this->loader);
 
-        $reflection = new ReflectionClass($this->class);
-        return $reflection->newInstanceArgs($this->constructorParams);
+        if (!$instance instanceof Routable)
+            throw new InvalidArgumentException(''); //TODO
+
+        return $instance;
     }
 
 }

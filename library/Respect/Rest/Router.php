@@ -9,15 +9,6 @@ use Respect\Rest\Routes;
 
 class Router
 {
-    const PARAM_IDENTIFIER = '/*';
-    const QUOTED_PARAM_IDENTIFIER = '/\*';
-    const CATCHALL_IDENTIFIER = '/**';
-    const REGEX_CATCHALL = '(/.*)?';
-    const REGEX_SINGLE_PARAM = '/([^/]+)';
-    const REGEX_TWO_ENDING_PARAMS = '/([^/]+)/([^/]+)';
-    const REGEX_TWO_OPTIONAL_ENDING_PARAMS = '/([^/]+)(?:/([^/]+))?';
-    const REGEX_TWO_MIXED_PARAMS = '(?:/([^/]+))?/([^/]+)';
-    const REGEX_TWO_OPTIONAL_PARAMS = '(?:/([^/]+))?(?:/([^/]+))?';
 
     protected $mode = 2;
     protected $autoDispatched = true;
@@ -39,7 +30,7 @@ class Router
             throw new InvalidArgumentException('Any route binding must have exactly 2 arguments: a path and a callback');
 
         list($path, $callback) = $arguments;
-        return $this->addCallbackRoute($method, $path, $callback);
+        return $this->callbackRoute($method, $path, $callback);
     }
 
     public function __destruct()
@@ -48,54 +39,49 @@ class Router
             echo $this->dispatch();
     }
 
-    public function addCallbackRoute($method, $path, $callback)
+    public function callbackRoute($method, $path, $callback)
     {
-        $method = strtoupper($method);
-        $patterns = $this->createRegexPatterns($path);
-        $route = new Routes\CallbackRoute($method, $patterns[0], $patterns[1]);
+        $route = new Routes\Callback($method, $path);
         $route->setCallback($callback);
-        $this->appendRoute($route);
+        $this->append($route);
         return $route;
     }
 
-    public function addClassRoute($method, $path, $class, $arg1=null, $etc=null)
+    public function classRoute($method, $path, $class, $arg1=null, $etc=null)
     {
-        $method = strtoupper($method);
         $args = func_num_args() > 3 ? array_slice(func_get_args(), 3) : array();
-        $patterns = $this->createRegexPatterns($path);
-        $route = new Routes\ClassRoute($method, $patterns[0], $patterns[1]);
-        $route->setClass($class, $args);
-        $this->appendRoute($route);
+        $route = new Routes\ClassName($method, $path);
+        $route->setClass($class);
+        call_user_func_array(array($route, 'setArguments'), $args);
+        $this->append($route);
         return $route;
     }
 
-    public function addInstanceRoute($method, $path, $instance)
+    public function instanceRoute($method, $path, $instance)
     {
-        $method = strtoupper($method);
-        $patterns = $this->createRegexPatterns($path);
-        $route = new Routes\InstanceRoute($method, $patterns[0], $patterns[1]);
+        $route = new Routes\Instance($method, $path);
         $route->setInstance($instance);
-        $this->appendRoute($route);
+        $this->append($route);
         return $route;
     }
 
-    public function addLoaderRoute($method, $path, $class, $loader)
+    public function lazyRoute($method, $path, $loader)
     {
-        $method = strtoupper($method);
-        $patterns = $this->createRegexPatterns($path);
-        $route = new Routes\LoaderRoute($method, $patterns[0], $patterns[1]);
+        $route = new Routes\Lazy($method, $path);
         $route->setLoader($loader);
-        $this->appendRoute($route);
+        $this->append($route);
         return $route;
     }
 
-    public function appendRoute(Routes\AbstractRoute $route)
+    public function append(Routes\AbstractRoute $route)
     {
         $this->routes[] = $route;
         usort($this->routes,
             function($a, $b) {
-                return substr_count($a->getRegex(), Router::REGEX_SINGLE_PARAM)
-                < substr_count($b->getRegex(), Router::REGEX_SINGLE_PARAM);
+                return substr_count($a->getMatchPattern(),
+                    Routes\AbstractRoute::REGEX_SINGLE_PARAM)
+                < substr_count($b->getMatchPattern(),
+                    Routes\AbstractRoute::REGEX_SINGLE_PARAM);
             }
         );
     }
@@ -120,55 +106,6 @@ class Router
     public function setMode($mode)
     {
         $this->mode = $mode;
-    }
-
-    //turn sequenced parameters optional, so /*/*/* will match /1/2/3, /1/2 and /1
-    protected function fixOptionalParams($pathQuoted)
-    {
-        if (strlen($pathQuoted) - strlen(static::REGEX_TWO_ENDING_PARAMS)
-            === strripos($pathQuoted, static::REGEX_TWO_ENDING_PARAMS))
-            $pathQuoted = str_replace(
-                array(
-                static::REGEX_TWO_ENDING_PARAMS,
-                static::REGEX_TWO_MIXED_PARAMS
-                ),
-                array(
-                static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
-                static::REGEX_TWO_OPTIONAL_PARAMS
-                ), $pathQuoted
-            );
-
-        return $pathQuoted;
-    }
-
-    protected function createRegexPatterns($path)
-    {
-        $path = rtrim($path, ' /');
-        $extra = $this->extractCatchAllPattern($path);
-        $matchPattern = str_replace(
-            static::QUOTED_PARAM_IDENTIFIER, static::REGEX_SINGLE_PARAM,
-            preg_quote($path), $paramCount
-        );
-        $replacePattern = str_replace(static::PARAM_IDENTIFIER, '/%s', $path);
-        $matchPattern = $this->fixOptionalParams($matchPattern);
-        $matchRegex = "#^{$matchPattern}{$extra}$#";
-        return array($matchRegex, $replacePattern);
-    }
-
-    protected function extractCatchAllPattern(&$path)
-    {
-        $extra = static::REGEX_CATCHALL;
-
-        if ((strlen($path) - strlen(static::CATCHALL_IDENTIFIER))
-            === strripos($path, static::CATCHALL_IDENTIFIER))
-            $path = substr($path, 0, -3);
-        else
-            $extra = '';
-
-        $path = str_replace(
-            static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $path
-        );
-        return $extra;
     }
 
 }

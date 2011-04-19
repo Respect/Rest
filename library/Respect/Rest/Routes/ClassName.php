@@ -2,28 +2,60 @@
 
 namespace Respect\Rest\Routes;
 
-class CallbackRoute extends AbstractRoute
+use ReflectionClass;
+use Respect\Rest\Routable;
+use InvalidArgumentException;
+
+class ClassName extends AbstractRoute
 {
 
-    protected $reflection;
-    protected $callback;
+    protected $reflection = null;
+    protected $class;
+    protected $constructorParams = array();
+    protected $instance = null;
 
-    public function setCallback($callback)
+    public function setClass($class)
     {
-        $this->callback = $callback;
+        if (!$class instanceof Routable)
+            throw new InvalidArgumentException(''); //TODO
+
+        $this->class = $class;
+    }
+
+    public function setArguments()
+    {
+        $this->constructorParams = func_get_args();
     }
 
     protected function getReflection($method)
     {
         if (empty($this->reflection))
-            $this->reflection = $this->getCallbackReflection($this->callback);
+            $this->reflection = $this->getCallbackReflection(
+                    array($this->class, $method)
+            );
 
         return $this->reflection;
     }
 
     protected function runTarget($method, &$params)
     {
-        return call_user_func_array($this->callback, $params);
+        if (is_null($this->instance))
+            $this->instance = $this->createInstance();
+
+        return call_user_func_array(
+            array($this->instance, $method), $params
+        );
+    }
+
+    protected function createInstance()
+    {
+        $className = $this->class;
+        if (empty($this->constructorParams) || !method_exists($this->class,
+                '__construct'))
+            return new $className;
+
+        $reflection = new ReflectionClass($this->class);
+        return $reflection->newInstanceArgs($this->constructorParams);
     }
 
 }

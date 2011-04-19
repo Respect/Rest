@@ -2,23 +2,25 @@
 
 namespace Respect\Rest\Routes;
 
-class LoaderRoute extends AbstractRoute
+use Respect\Rest\Routable;
+use InvalidArgumentException;
+
+class Instance extends AbstractRoute
 {
 
-    protected $loader = null;
     protected $reflection = null;
     protected $instance = null;
 
-    public function setLoader($loader)
+    public function setInstance($instance)
     {
-        $this->loader = $loader;
+        if (!$instance instanceof Routable)
+            throw new InvalidArgumentException(''); //TODO
+
+        $this->instance = $instance;
     }
 
     protected function getReflection($method)
     {
-        if (is_null($this->instance))
-            $this->instance = $this->createInstance();
-
         if (empty($this->reflection))
             $this->reflection = $this->getCallbackReflection(
                     array(get_class($this->instance), $method)
@@ -29,17 +31,9 @@ class LoaderRoute extends AbstractRoute
 
     protected function runTarget($method, &$params)
     {
-        if (is_null($this->instance))
-            $this->instance = $this->createInstance();
-
         return call_user_func_array(
             array($this->instance, $method), $params
         );
-    }
-
-    protected function createInstance()
-    {
-        return call_user_func($this->loader);
     }
 
 }

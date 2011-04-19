@@ -10,6 +10,15 @@ use ReflectionParameter;
 
 abstract class AbstractRoute
 {
+    const PARAM_IDENTIFIER = '/*';
+    const QUOTED_PARAM_IDENTIFIER = '/\*';
+    const CATCHALL_IDENTIFIER = '/**';
+    const REGEX_CATCHALL = '(/.*)?';
+    const REGEX_SINGLE_PARAM = '/([^/]+)';
+    const REGEX_TWO_ENDING_PARAMS = '/([^/]+)/([^/]+)';
+    const REGEX_TWO_OPTIONAL_ENDING_PARAMS = '/([^/]+)(?:/([^/]+))?';
+    const REGEX_TWO_MIXED_PARAMS = '(?:/([^/]+))?/([^/]+)';
+    const REGEX_TWO_OPTIONAL_PARAMS = '(?:/([^/]+))?(?:/([^/]+))?';
 
     protected $matchPattern;
     protected $replacePattern;
@@ -19,11 +28,11 @@ abstract class AbstractRoute
     protected $preProxies = array();
     protected $postProxies = array();
 
-    public function __construct($method, $matchPattern, $replacePattern)
+    public function __construct($method, $path)
     {
-        $this->method = $method;
-        $this->matchPattern = $matchPattern;
-        $this->replacePattern = $replacePattern;
+        $this->method = strtoupper($method);
+        list($this->matchPattern, $this->replacePattern)
+            = $this->createRegexPatterns($path);
     }
 
     abstract protected function runTarget($method, &$params);
@@ -65,7 +74,7 @@ abstract class AbstractRoute
         return $this->method;
     }
 
-    public function getRegex()
+    public function getMatchPattern()
     {
         return $this->matchPattern;
     }
@@ -148,6 +157,55 @@ abstract class AbstractRoute
             return new ReflectionMethod($callback[0], $callback[1]);
         else
             return new ReflectionFunction($callback);
+    }
+
+    //turn sequenced parameters optional, so /*/*/* will match /1/2/3, /1/2 and /1
+    protected function fixOptionalParams($pathQuoted)
+    {
+        if (strlen($pathQuoted) - strlen(static::REGEX_TWO_ENDING_PARAMS)
+            === strripos($pathQuoted, static::REGEX_TWO_ENDING_PARAMS))
+            $pathQuoted = str_replace(
+                array(
+                static::REGEX_TWO_ENDING_PARAMS,
+                static::REGEX_TWO_MIXED_PARAMS
+                ),
+                array(
+                static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
+                static::REGEX_TWO_OPTIONAL_PARAMS
+                ), $pathQuoted
+            );
+
+        return $pathQuoted;
+    }
+
+    protected function createRegexPatterns($path)
+    {
+        $path = rtrim($path, ' /');
+        $extra = $this->extractCatchAllPattern($path);
+        $matchPattern = str_replace(
+            static::QUOTED_PARAM_IDENTIFIER, static::REGEX_SINGLE_PARAM,
+            preg_quote($path), $paramCount
+        );
+        $replacePattern = str_replace(static::PARAM_IDENTIFIER, '/%s', $path);
+        $matchPattern = $this->fixOptionalParams($matchPattern);
+        $matchRegex = "#^{$matchPattern}{$extra}$#";
+        return array($matchRegex, $replacePattern);
+    }
+
+    protected function extractCatchAllPattern(&$path)
+    {
+        $extra = static::REGEX_CATCHALL;
+
+        if ((strlen($path) - strlen(static::CATCHALL_IDENTIFIER))
+            === strripos($path, static::CATCHALL_IDENTIFIER))
+            $path = substr($path, 0, -3);
+        else
+            $extra = '';
+
+        $path = str_replace(
+            static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $path
+        );
+        return $extra;
     }
 
 }

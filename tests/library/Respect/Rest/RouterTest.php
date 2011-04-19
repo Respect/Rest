@@ -32,7 +32,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
      */
     public function testNotRoutableController()
     {
-        $this->object->addControllerInstance('*', '/', new \stdClass);
+        $this->object->instanceRoute('*', '/', new \stdClass);
     }
 
     /**
@@ -40,7 +40,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
      */
     public function testNotRoutableControllerByName()
     {
-        $this->object->addControllerClass('*', '/', '\stdClass');
+        $this->object->classRoute('*', '/', '\stdClass');
     }
 
     /**
@@ -48,7 +48,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
      */
     public function testSingleRoutes($route, $path, $expectedParams)
     {
-        $this->object->addCallbackRoute('get', $route, $this->callback);
+        $this->object->callbackRoute('get', $route, $this->callback);
         $this->object->dispatch('get', $path);
         $this->assertEquals($expectedParams, $this->result);
     }
@@ -59,7 +59,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testLargeParams($route, $path, $expectedParams)
     {
 
-        $this->object->addCallbackRoute('get', $route, $this->callback);
+        $this->object->callbackRoute('get', $route, $this->callback);
         $this->object->dispatch('get', $path);
         $this->assertEquals($expectedParams, $this->result);
     }
@@ -70,7 +70,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testSpecialChars($route, $path, $expectedParams)
     {
 
-        $this->object->addCallbackRoute('get', $route, $this->callback);
+        $this->object->callbackRoute('get', $route, $this->callback);
         $this->object->dispatch('get', $path);
         $this->assertEquals($expectedParams, $this->result);
     }
@@ -237,8 +237,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerNoParams()
     {
-        $this->object->addLoaderRoute('*', '/users/*',
-            'Respect\\Rest\\MyController',
+        $this->object->lazyRoute('*', '/users/*',
             function() {
                 return new MyController;
             });
@@ -248,8 +247,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerParams()
     {
-        $this->object->addLoaderRoute('*', '/users/*',
-            'Respect\\Rest\\MyController',
+        $this->object->lazyRoute('*', '/users/*',
             function() {
                 return new MyController('ok');
             });
@@ -259,15 +257,14 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerInstance()
     {
-        $this->object->addInstanceRoute('*', '/users/*', new MyController('ok'));
+        $this->object->instanceRoute('*', '/users/*', new MyController('ok'));
         $result = $this->object->dispatch('get', '/users/alganet');
         $this->assertEquals(array('alganet', 'get', array('ok')), $result);
     }
 
     public function testBindControllerParams2()
     {
-        $this->object->addLoaderRoute('*', '/users/*',
-            'Respect\\Rest\\MyController',
+        $this->object->lazyRoute('*', '/users/*',
             function() {
                 return new MyController('ok', 'foo', 'bar');
             });
@@ -278,8 +275,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerSpecial()
     {
-        $this->object->addLoaderRoute('*', '/users/*',
-            'Respect\\Rest\\MyController',
+        $this->object->lazyRoute('*', '/users/*',
             function() {
                 return new MyController;
             });
@@ -289,8 +285,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerMultiMethods()
     {
-        $this->object->addLoaderRoute('*', '/users/*',
-            'Respect\\Rest\\MyController',
+        $this->object->lazyRoute('*', '/users/*',
             function() {
                 return new MyController;
             });
