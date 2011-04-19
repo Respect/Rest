@@ -5,6 +5,7 @@ namespace Respect\Rest;
 use ReflectionClass;
 use ReflectionMethod;
 use InvalidArgumentException;
+use Respect\Rest\Routes;
 
 class Router
 {
@@ -21,12 +22,12 @@ class Router
     protected $mode = 2;
     protected $autoDispatched = true;
     protected $routes = array();
-    protected $controllerInstances = array();
 
     public static function cleanUpParams($params)
     {
         return array_filter(
-            array_slice($params, 1), function($param) {
+            array_slice($params, 1),
+            function($param) {
                 return $param !== '';
             }
         );
@@ -38,7 +39,7 @@ class Router
             throw new InvalidArgumentException('Any route binding must have exactly 2 arguments: a path and a callback');
 
         list($path, $callback) = $arguments;
-        return $this->addRoute($method, $path, $callback);
+        return $this->addCallbackRoute($method, $path, $callback);
     }
 
     public function __destruct()
@@ -47,62 +48,52 @@ class Router
             echo $this->dispatch();
     }
 
-    public function addControllerInstance($path, $instance)
+    public function addCallbackRoute($method, $path, $callback)
     {
-        $methods = $this->getControllerMethods($instance);
-        $this->controllerInstances[get_class($instance)] = $instance;
-        foreach ($methods as $m)
-            $this->addRoute(
-                $m->getName(), $path, array($instance, $m->getName())
-            );
-    }
-
-    public function addControllerLoader($path, $class, $loader)
-    {
-        $methods = $this->getControllerMethods($class);
-        foreach ($methods as $m)
-            $this->addRoute(
-                $m->getName(),
-                $path,
-                $this->createCallbackLoader($loader, $class, $m)
-            );
-    }
-
-    protected function getControllerMethods($class)
-    {
-        $reflection = new ReflectionClass($class);
-        if (!$reflection->implementsInterface('\\Respect\\Rest\\Routable'))
-            throw new InvalidArgumentException('Binded controllers must implement the \\Respect\\Rest\\Routable interface');
-
-        $publicMethods = $reflection->getMethods(
-                ReflectionMethod::IS_PUBLIC ^ ~ ReflectionMethod::IS_STATIC
-        );
-
-        return array_filter($publicMethods,
-            function($method) {
-                return 0 !== stripos($method->getName(), '__');
-            }
-        );
-    }
-
-    public function addRoute($method, $path, $callback)
-    {
-        if (!is_callable($callback))
-            throw new InvalidArgumentException('Route callback must be callable');
-
+        $method = strtoupper($method);
         $patterns = $this->createRegexPatterns($path);
-        $route = new Route(
-                strtoupper($method), $callback, $patterns[0], $patterns[1]
-        );
+        $route = new Routes\CallbackRoute($method, $patterns[0], $patterns[1]);
+        $route->setCallback($callback);
         $this->appendRoute($route);
         return $route;
     }
 
-    public function appendRoute(Route $route)
+    public function addClassRoute($method, $path, $class, $arg1=null, $etc=null)
     {
-        $method = $route->getMethod();
-        $this->routes[$method][] = $route;
-        usort($this->routes[$method], function($a, $b) {
+        $method = strtoupper($method);
+        $args = func_num_args() > 3 ? array_slice(func_get_args(), 3) : array();
+        $patterns = $this->createRegexPatterns($path);
+        $route = new Routes\ClassRoute($method, $patterns[0], $patterns[1]);
+        $route->setClass($class, $args);
+        $this->appendRoute($route);
+        return $route;
+    }
+
+    public function addInstanceRoute($method, $path, $instance)
+    {
+        $method = strtoupper($method);
+        $patterns = $this->createRegexPatterns($path);
+        $route = new Routes\InstanceRoute($method, $patterns[0], $patterns[1]);
+        $route->setInstance($instance);
+        $this->appendRoute($route);
+        return $route;
+    }
+
+    public function addLoaderRoute($method, $path, $class, $loader)
+    {
+        $method = strtoupper($method);
+        $patterns = $this->createRegexPatterns($path);
+        $route = new Routes\LoaderRoute($method, $patterns[0], $patterns[1]);
+        $route->setLoader($loader);
+        $this->appendRoute($route);
+        return $route;
+    }
+
+    public function appendRoute(Routes\AbstractRoute $route)
+    {
+        $this->routes[] = $route;
+        usort($this->routes,
+            function($a, $b) {
                 return substr_count($a->getRegex(), Router::REGEX_SINGLE_PARAM)
                 < substr_count($b->getRegex(), Router::REGEX_SINGLE_PARAM);
             }
@@ -116,14 +107,9 @@ class Router
         $uri = $uri ? : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
         $uri = rtrim($uri, ' /');
 
-        if (!isset($this->routes[$method]))
-            return;
-
-        foreach ($this->routes[$method] as $route)
-            if ($route->match($uri, $params))
-                return call_user_func_array(
-                    $route, static::cleanUpParams($params)
-                );
+        foreach ($this->routes as $route)
+            if ($route->match($uri, $method, $params))
+                return $route->run($method, static::cleanUpParams($params));
     }
 
     public function setAutoDispatched($autoDispatched)
@@ -142,32 +128,17 @@ class Router
         if (strlen($pathQuoted) - strlen(static::REGEX_TWO_ENDING_PARAMS)
             === strripos($pathQuoted, static::REGEX_TWO_ENDING_PARAMS))
             $pathQuoted = str_replace(
-                    array(
-                        static::REGEX_TWO_ENDING_PARAMS,
-                        static::REGEX_TWO_MIXED_PARAMS
-                    ),
-                    array(
-                        static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
-                        static::REGEX_TWO_OPTIONAL_PARAMS
-                    ),
-                    $pathQuoted
+                array(
+                static::REGEX_TWO_ENDING_PARAMS,
+                static::REGEX_TWO_MIXED_PARAMS
+                ),
+                array(
+                static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
+                static::REGEX_TWO_OPTIONAL_PARAMS
+                ), $pathQuoted
             );
 
         return $pathQuoted;
-    }
-
-    protected function createCallbackLoader($loader, $className, ReflectionMethod $method)
-    {
-        $instances = &$this->controllerInstances;
-        $routes = &$this->routes;
-
-        return function() use(&$routes, &$instances, $loader, $method, $className) {
-            if (!isset($instances[$className]))
-                $instances[$className] = $loader();
-
-            $methodCall = array($instances[$className], $method->getName());
-            return call_user_func_array($methodCall, func_get_args());
-        };
     }
 
     protected function createRegexPatterns($path)
@@ -175,8 +146,8 @@ class Router
         $path = rtrim($path, ' /');
         $extra = $this->extractCatchAllPattern($path);
         $matchPattern = str_replace(
-                static::QUOTED_PARAM_IDENTIFIER, static::REGEX_SINGLE_PARAM,
-                preg_quote($path), $paramCount
+            static::QUOTED_PARAM_IDENTIFIER, static::REGEX_SINGLE_PARAM,
+            preg_quote($path), $paramCount
         );
         $replacePattern = str_replace(static::PARAM_IDENTIFIER, '/%s', $path);
         $matchPattern = $this->fixOptionalParams($matchPattern);
@@ -195,7 +166,7 @@ class Router
             $extra = '';
 
         $path = str_replace(
-                static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $path
+            static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $path
         );
         return $extra;
     }

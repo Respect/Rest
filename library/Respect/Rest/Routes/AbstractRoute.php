@@ -1,6 +1,6 @@
 <?php
 
-namespace Respect\Rest;
+namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
 use ReflectionFunction;
@@ -8,38 +8,38 @@ use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use ReflectionParameter;
 
-class Route
+abstract class AbstractRoute
 {
 
     protected $matchPattern;
     protected $replacePattern;
     protected $method;
-    protected $callback;
     protected $reflection;
     protected $conditions = array();
     protected $preProxies = array();
     protected $postProxies = array();
 
-    public function __construct($method, $callback, $matchPattern, $replacePattern)
+    public function __construct($method, $matchPattern, $replacePattern)
     {
         $this->method = $method;
-        $this->callback = $callback;
         $this->matchPattern = $matchPattern;
         $this->replacePattern = $replacePattern;
     }
 
-    public function __invoke($param1=null, $etc=null)
-    {
-        $params = func_get_args();
+    abstract protected function runTarget($method, &$params);
 
+    abstract protected function getReflection($method);
+
+    public function run($method, array $params=array())
+    {
         foreach ($this->preProxies as $preProxy)
-            if (false === $this->paramSyncCall($preProxy, $params))
+            if (false === $this->paramSyncCall($method, $preProxy, $params))
                 return false;
 
-        $response = call_user_func_array($this->callback, $params);
+        $response = $this->runTarget($method, $params);
 
         foreach ($this->postProxies as $postProxy) {
-            $proxyResponse = $this->paramSyncCall($postProxy, $params);
+            $proxyResponse = $this->paramSyncCall($method, $postProxy, $params);
 
             if (is_callable($proxyResponse))
                 $response = $proxyResponse($response);
@@ -70,10 +70,14 @@ class Route
         return $this->matchPattern;
     }
 
-    public function match($uri, &$params=array())
+    public function match($uri, $method, &$params=array())
     {
+        if (($method !== $this->method && $this->method !== '*')
+            || 0 === stripos($method, '__'))
+            return false;
+
         foreach ($this->conditions as $cond)
-            if (!$this->paramSyncCall($cond, $params))
+            if (!$this->paramSyncCall($method, $cond, $params))
                 return false;
 
         return preg_match($this->matchPattern, $uri, $params);
@@ -110,22 +114,22 @@ class Route
         return $params;
     }
 
-    protected function paramSyncCall($callback, &$params)
+    protected function paramSyncCall($method, $callback, &$params)
     {
         $callbackReflection = $this->getCallbackReflection($callback);
 
-        if (!isset($this->reflection))
-            $this->reflection = $this->getCallbackReflection($this->callback);
+        $reflection = $this->getReflection($method);
 
         $cbParams = array();
 
         foreach ($callbackReflection->getParameters() as $p)
-            $cbParams[] = $this->extractParam($this->reflection, $p, $params);
+            $cbParams[] = $this->extractParam($reflection, $p, $params);
 
         return call_user_func_array($callback, $cbParams);
     }
 
-    protected function extractParam(ReflectionFunctionAbstract $callbackR, ReflectionParameter $cbParam, &$params)
+    protected function extractParam(ReflectionFunctionAbstract $callbackR,
+                                    ReflectionParameter $cbParam, &$params)
     {
         foreach ($callbackR->getParameters() as $callbackParam)
             if ($callbackParam->getName() === $cbParam->getName()

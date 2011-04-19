@@ -32,7 +32,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
      */
     public function testNotRoutableController()
     {
-        $this->object->addController('/', new \stdClass);
+        $this->object->addControllerInstance('*', '/', new \stdClass);
     }
 
     /**
@@ -40,7 +40,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
      */
     public function testNotRoutableControllerByName()
     {
-        $this->object->addController('/', '\stdClass');
+        $this->object->addControllerClass('*', '/', '\stdClass');
     }
 
     /**
@@ -48,7 +48,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
      */
     public function testSingleRoutes($route, $path, $expectedParams)
     {
-        $this->object->addRoute('get', $route, $this->callback);
+        $this->object->addCallbackRoute('get', $route, $this->callback);
         $this->object->dispatch('get', $path);
         $this->assertEquals($expectedParams, $this->result);
     }
@@ -59,7 +59,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testLargeParams($route, $path, $expectedParams)
     {
 
-        $this->object->addRoute('get', $route, $this->callback);
+        $this->object->addCallbackRoute('get', $route, $this->callback);
         $this->object->dispatch('get', $path);
         $this->assertEquals($expectedParams, $this->result);
     }
@@ -70,7 +70,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testSpecialChars($route, $path, $expectedParams)
     {
 
-        $this->object->addRoute('get', $route, $this->callback);
+        $this->object->addCallbackRoute('get', $route, $this->callback);
         $this->object->dispatch('get', $path);
         $this->assertEquals($expectedParams, $this->result);
     }
@@ -201,8 +201,10 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             ),
             array(
                 '/users' . str_repeat('/*', 2500), //2500 very large parameters
-                '/users' . str_repeat('/abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 2500),
-                str_split(str_repeat('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 2500), 26 * 3)
+                '/users' . str_repeat('/abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz',
+                    2500),
+                str_split(str_repeat('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz',
+                        2500), 26 * 3)
             ),
         );
     }
@@ -235,7 +237,9 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerNoParams()
     {
-        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
+        $this->object->addLoaderRoute('*', '/users/*',
+            'Respect\\Rest\\MyController',
+            function() {
                 return new MyController;
             });
         $result = $this->object->dispatch('get', '/users/alganet');
@@ -244,7 +248,9 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerParams()
     {
-        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
+        $this->object->addLoaderRoute('*', '/users/*',
+            'Respect\\Rest\\MyController',
+            function() {
                 return new MyController('ok');
             });
         $result = $this->object->dispatch('get', '/users/alganet');
@@ -253,32 +259,28 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerInstance()
     {
-        $this->object->addControllerInstance('/users/*', new MyController('ok'));
+        $this->object->addInstanceRoute('*', '/users/*', new MyController('ok'));
         $result = $this->object->dispatch('get', '/users/alganet');
         $this->assertEquals(array('alganet', 'get', array('ok')), $result);
     }
 
     public function testBindControllerParams2()
     {
-        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
+        $this->object->addLoaderRoute('*', '/users/*',
+            'Respect\\Rest\\MyController',
+            function() {
                 return new MyController('ok', 'foo', 'bar');
             });
         $result = $this->object->dispatch('get', '/users/alganet');
-        $this->assertEquals(array('alganet', 'get', array('ok', 'foo', 'bar')), $result);
-    }
-
-    public function testBindControllerStatic()
-    {
-        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
-                return new MyController;
-            });
-        $result = $this->object->dispatch('foo', '/users/alganet');
-        $this->assertEquals(null, $result);
+        $this->assertEquals(array('alganet', 'get', array('ok', 'foo', 'bar')),
+            $result);
     }
 
     public function testBindControllerSpecial()
     {
-        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
+        $this->object->addLoaderRoute('*', '/users/*',
+            'Respect\\Rest\\MyController',
+            function() {
                 return new MyController;
             });
         $result = $this->object->dispatch('__construct', '/users/alganet');
@@ -287,7 +289,9 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerMultiMethods()
     {
-        $this->object->addControllerLoader('/users/*', 'Respect\\Rest\\MyController', function() {
+        $this->object->addLoaderRoute('*', '/users/*',
+            'Respect\\Rest\\MyController',
+            function() {
                 return new MyController;
             });
         $result = $this->object->dispatch('get', '/users/alganet');
@@ -303,8 +307,9 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $proxy = function() use (&$result) {
                 $result = 'ok';
             };
-        $this->object->get('/users/*', function() {
-
+        $this->object->get('/users/*',
+            function() {
+                
             })->by($proxy);
         $this->object->dispatch('get', '/users/alganet');
         $this->assertEquals('ok', $result);
@@ -316,8 +321,9 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $proxy = function() use (&$result) {
                 $result = 'ok';
             };
-        $this->object->get('/users/*', function() {
-
+        $this->object->get('/users/*',
+            function() {
+                
             })->then($proxy);
         $this->object->dispatch('get', '/users/alganet');
         $this->assertEquals('ok', $result);
@@ -330,7 +336,8 @@ class RouterTest extends \PHPUnit_Framework_TestCase
                     return $output . 'ok';
                 };
             };
-        $this->object->get('/users/*', function() {
+        $this->object->get('/users/*',
+            function() {
                 return 'ok';
             })->then($proxy);
         $result = $this->object->dispatch('get', '/users/alganet');
@@ -349,13 +356,13 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $proxy3 = function($baz) use (&$result) {
                 $result[] = $baz;
             };
-        $this->object->get('/users/*/*/*', function($foo, $bar, $baz) use(&$result) {
+        $this->object->get('/users/*/*/*',
+            function($foo, $bar, $baz) use(&$result) {
                 $result[] = 'main';
             })->by($proxy1)->then($proxy2, $proxy3);
         $this->object->dispatch('get', '/users/abc/def/ghi');
         $this->assertSame(
-            array('abc', 'main', 'def', 'ghi'),
-            $result
+            array('abc', 'main', 'def', 'ghi'), $result
         );
     }
 
@@ -388,13 +395,13 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $proxy3 = function($baz) use (&$result) {
                 $result[] = $baz;
             };
-        $this->object->get('/users/*/*/*', function($foo, $bar, $baz) use(&$result) {
+        $this->object->get('/users/*/*/*',
+            function($foo, $bar, $baz) use(&$result) {
                 $result[] = 'main';
             })->by($proxy1)->then($proxy2, $proxy3);
         $this->object->dispatch('get', '/users/abc/def/ghi');
         $this->assertSame(
-            array('abc'),
-            $result
+            array('abc'), $result
         );
     }
 
@@ -404,7 +411,8 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $condition = function() {
                 return false;
             };
-        $this->object->get('/users/*', function() use (&$result) {
+        $this->object->get('/users/*',
+            function() use (&$result) {
                 $result = null;
             })->when($condition);
         $this->object->dispatch('get', '/users/alganet');
@@ -422,11 +430,6 @@ class MyController implements Routable
     public function __construct()
     {
         $this->params = func_get_args();
-        return 'whoops';
-    }
-
-    public static function foo()
-    {
         return 'whoops';
     }
 
