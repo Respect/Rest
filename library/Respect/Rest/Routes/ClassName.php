@@ -16,7 +16,9 @@ class ClassName extends AbstractRoute
 
     public function setClass($class)
     {
-        if (!$class instanceof Routable)
+        //dunno why instanceof does not work here
+        $reflection = new ReflectionClass($class);
+        if (!$reflection->implementsInterface('Respect\\Rest\\Routable'))
             throw new InvalidArgumentException(''); //TODO
 
         $this->class = $class;

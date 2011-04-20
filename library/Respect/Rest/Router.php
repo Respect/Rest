@@ -26,17 +26,28 @@ class Router
 
     public function __call($method, $arguments)
     {
-        if (count($arguments) !== 2)
-            throw new InvalidArgumentException('Any route binding must have exactly 2 arguments: a path and a callback');
+        if (count($arguments) < 2)
+            throw new InvalidArgumentException('Any route binding must at least 2 arguments');
 
-        list($path, $callback) = $arguments;
-        return $this->callbackRoute($method, $path, $callback);
+        list ($path, $routeTarget) = $arguments;
+        if (is_callable($routeTarget))
+            return $this->callbackRoute($method, $path, $routeTarget);
+        elseif (is_object($routeTarget))
+            return $this->instanceRoute($method, $path, $routeTarget);
+        elseif (is_string($routeTarget)) {
+            array_unshift($arguments, $method);
+            return call_user_func_array(array($this, 'classRoute'), $arguments);
+        }
     }
 
     public function __destruct()
     {
-        if ($this->autoDispatched && isset($_SERVER['SERVER_PROTOCOL']))
-            echo $this->dispatch();
+        if (!$this->autoDispatched || !isset($_SERVER['SERVER_PROTOCOL']))
+            return;
+
+        $route = $this->dispatch();
+        if ($route)
+            echo $route->run();
     }
 
     public function callbackRoute($method, $path, $callback)
@@ -65,14 +76,6 @@ class Router
         return $route;
     }
 
-    public function lazyRoute($method, $path, $loader)
-    {
-        $route = new Routes\Lazy($method, $path);
-        $route->setLoader($loader);
-        $this->append($route);
-        return $route;
-    }
-
     public function append(Routes\AbstractRoute $route)
     {
         $this->routes[] = $route;
@@ -94,8 +97,9 @@ class Router
         $uri = rtrim($uri, ' /');
 
         foreach ($this->routes as $route)
-            if ($route->match($uri, $method, $params))
-                return $route->run($method, static::cleanUpParams($params));
+            if ($route->match($uri, $method, $params)
+                && $route->configure($method, static::cleanUpParams($params)))
+                return $route;
     }
 
     public function setAutoDispatched($autoDispatched)

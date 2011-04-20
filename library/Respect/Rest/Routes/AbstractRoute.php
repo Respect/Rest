@@ -23,13 +23,18 @@ abstract class AbstractRoute
     protected $matchPattern;
     protected $replacePattern;
     protected $method;
+    protected $path;
     protected $reflection;
     protected $conditions = array();
     protected $preProxies = array();
     protected $postProxies = array();
+    protected $runMethod = null;
+    protected $runParams = array();
+    protected $configured = false;
 
     public function __construct($method, $path)
     {
+        $this->path = $path;
         $this->method = strtoupper($method);
         list($this->matchPattern, $this->replacePattern)
             = $this->createRegexPatterns($path);
@@ -39,8 +44,25 @@ abstract class AbstractRoute
 
     abstract protected function getReflection($method);
 
-    public function run($method, array $params=array())
+    public function reset()
     {
+        $this->runMethod = null;
+        $this->runParams = array();
+        $this->configured = false;
+    }
+
+    public function configure($method, array $params=array())
+    {
+        $this->runMethod = $method;
+        $this->runParams = $params;
+        $this->configured = true;
+        return true;
+    }
+
+    public function run()
+    {
+        $method = $this->runMethod;
+        $params = $this->runParams;
         foreach ($this->preProxies as $preProxy)
             if (false === $this->paramSyncCall($method, $preProxy, $params))
                 return false;
@@ -56,7 +78,7 @@ abstract class AbstractRoute
             if (false === $proxyResponse)
                 return $response;
         }
-
+        $this->reset();
         return $response;
     }
 
@@ -67,6 +89,11 @@ abstract class AbstractRoute
         return call_user_func_array(
             'sprintf', $params
         );
+    }
+
+    public function getPath()
+    {
+        return $this->path;
     }
 
     public function getMethod()
@@ -81,7 +108,7 @@ abstract class AbstractRoute
 
     public function match($uri, $method, &$params=array())
     {
-        if (($method !== $this->method && $this->method !== '*')
+        if (($method !== $this->method && $this->method !== 'ANY')
             || 0 === stripos($method, '__'))
             return false;
 

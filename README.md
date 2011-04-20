@@ -32,11 +32,11 @@ Simple Routing
         return 'Hello World';
     });
 
-    echo $r3->dispatch();
-
  1. *get* is the equivalent of the HTTP GET method. You can use post, put, delete
     or any other. You can even use custom methods if you want.
  2. *return* sends the output string to the dispatcher
+ 3. The route is automatically dispatched. You can `$r3->setAutoDispatched(false)`
+    if you want.
 
 Parameters
 ----------
@@ -45,9 +45,7 @@ Parameters
         return "Hello {$screen_name}";
     });
 
- 1. You can ommit the `echo $r3->dispatch();` if you want. It will be called
-    automatically.
- 2. Parameters are defined by a `/*` on the route path and passed to the
+ 1. Parameters are defined by a `/*` on the route path and passed to the
     callback function in the same order as they appear
 
 Multiple Parameters
@@ -71,15 +69,25 @@ Optional Parameters
 Catch-all Parameters
 --------------------
 
-    $r3->get('/user/*/documents/**', function($user, $documentPath) {
+    $r3->get('/users/*/documents/**', function($user, $documentPath) {
         return readfile(PATH_STORAGE.$documentPath);
     });
 
- 1. The above sample will match `/user/alganet/documents/foo/bar/baz/anything`,
+ 1. The above sample will match `/users/alganet/documents/foo/bar/baz/anything`,
     and the entire string will be passed as a single parameter to the callback;
  2. Catch-all parameters are defined by a double asterisk \*\*.
  3. Catch-all parameters must appear only on the end of the path. Double
     asterisks in any other position will be converted to single asterisks.
+
+Matching any HTTP Method
+------------------------
+
+    $r3->any('/users/*', function($userName) {
+        //do anything
+    });
+
+ 1. Any HTTP method will match this same route. 
+ 2. You can figure out the method using the standard PHP `$_SERVER['REQUEST_METHOD']`
 
 Bind Controller Classes
 -----------------------
@@ -90,7 +98,7 @@ Bind Controller Classes
         public function put($id) { }
     }
 
-    $r3->addController('/article/*', 'MyArticle');
+    $r3->any('/article/*', 'MyArticle');
 
   1. The above will bind the class methods to the HTTP methods using the same
      path.
@@ -103,7 +111,7 @@ Bind Controller Classes
 Controller Classes Constructors
 -------------------------------
 
-    $r3->addController('/images/*', 'ImageController', $myImageHandler, $myDb);
+    $r3->any('/images/*', 'ImageController', $myImageHandler, $myDb);
 
   1. This will pass `$myImageHandler` and `$myDb` as parameters for the
      *ImageController* class.
@@ -111,11 +119,59 @@ Controller Classes Constructors
 Direct Instances
 ----------------
 
-    $r3->addController('/downloads/*', $myDownloadManager);
+    $r3->any('/downloads/*', $myDownloadManager);
 
   1. Sample above will assign the existent `$myDownloadManager` as a controller.
   2. This instance is also reused by Respect\Rest
 
+Route Conditions
+----------------
+
+    $r3->get('/documents/*', function($documentId) {
+        //do something
+    })->when(function($documentId) {
+        return is_numeric($documentId) && $documentId > 0;
+    });
+
+  1. This will match the route only if the callback on *when* is matched.
+  2. The `$documentId` param must have the same name in the action and the 
+     condition (but does not need to appear in the same order)
+  3. You can specify more than one parameter per condition callback.
+  4. You can specify more than one callback: `when($cb1, $cb2, $etc)`
+  5. Conditions will also sync with parameters on binded classes and instances
+     methods
+
+Route Proxies (Before)
+----------------------
+
+    $r3->get('/artists/*/albums/*', function($artistName, $albumName) {
+        //do something
+    })->by(function($albumName) {
+        $myLogger->logAlbumVisit($albumName);
+    });
+
+  1. This will execute the callback defined on *by* before the route action.
+  2. Parameters are also synced by name, not order, like `when`.
+  3. You can specify more than one parameter per proxy callback.
+  4. You can specify more than one proxy: `by($cb1, $cb2, $etc)`
+  5. A `return false` on a proxy will stop the execution of following proxies
+     and the route action.
+  6. Proxies will also sync with parameters on binded classes and instances
+     methods
+
+Route Proxies (After)
+----------------------
+
+    $r3->get('/artists/*/albums/*', function($artistName, $albumName) {
+        //do something
+    })->then(function() {
+        //do something nice
+    });
+
+  1. `by` proxies will be executed before the route action, `then proxies` will
+     be executed after.
+  2. You don't need to use them both at the same time.
+  3. `then` can also receive parameters by name
 
 License Information
 ===================
