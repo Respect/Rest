@@ -13,9 +13,6 @@ class Instance extends AbstractRoute
 
     public function setInstance($instance)
     {
-        if (!$instance instanceof Routable)
-            throw new InvalidArgumentException(''); //TODO
-
         $this->instance = $instance;
     }
 
@@ -31,6 +28,9 @@ class Instance extends AbstractRoute
 
     protected function runTarget($method, &$params)
     {
+        if (!$this->instance instanceof Routable)
+            throw new InvalidArgumentException(''); //TODO
+
         return call_user_func_array(
             array($this->instance, $method), $params
         );

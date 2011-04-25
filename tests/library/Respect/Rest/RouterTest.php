@@ -33,6 +33,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testNotRoutableController()
     {
         $this->object->instanceRoute('ANY', '/', new \stdClass);
+        $this->object->dispatch('get', '/')->run();
     }
 
     /**
@@ -41,6 +42,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testNotRoutableControllerByName()
     {
         $this->object->classRoute('ANY', '/', '\stdClass');
+        $this->object->dispatch('get', '/')->run();
     }
 
     /**
@@ -404,6 +406,46 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             })->when($condition);
         $this->object->dispatch('get', '/users/alganet');
         $this->assertEquals('ok', $result);
+    }
+
+    public function testWildcardOrdering()
+    {
+        $this->object->any('/**',
+            function($userName) {
+                return 5;
+            }
+        );
+        $this->object->any('/posts/*/*',
+            function($year, $month) {
+                return 10;
+            }
+        );
+        $this->assertEquals(
+            10, $this->object->dispatch('get', '/posts/2010/20')->run()
+        );
+        $this->assertEquals(
+            5, $this->object->dispatch('get', '/anything')->run()
+        );
+    }
+
+    public function testOrdering()
+    {
+        $this->object->any('/users/*',
+            function($userName) {
+                return 5;
+            }
+        );
+        $this->object->any('/users/*/*',
+            function($year, $month) {
+                return 10;
+            }
+        );
+        $this->assertEquals(
+            5, $this->object->dispatch('get', '/users/alganet')->run()
+        );
+        $this->assertEquals(
+            10, $this->object->dispatch('get', '/users/2010/20')->run()
+        );
     }
 
 }

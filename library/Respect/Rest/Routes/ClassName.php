@@ -16,11 +16,6 @@ class ClassName extends AbstractRoute
 
     public function setClass($class)
     {
-        //dunno why instanceof does not work here
-        $reflection = new ReflectionClass($class);
-        if (!$reflection->implementsInterface('Respect\\Rest\\Routable'))
-            throw new InvalidArgumentException(''); //TODO
-
         $this->class = $class;
     }
 
@@ -52,6 +47,11 @@ class ClassName extends AbstractRoute
     protected function createInstance()
     {
         $className = $this->class;
+
+        $reflection = new ReflectionClass($className);
+        if (!$reflection->implementsInterface('Respect\\Rest\\Routable'))
+            throw new InvalidArgumentException(''); //TODO
+
         if (empty($this->constructorParams) || !method_exists($this->class,
                 '__construct'))
             return new $className;

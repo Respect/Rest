@@ -81,9 +81,18 @@ class Router
         $this->routes[] = $route;
         usort($this->routes,
             function($a, $b) {
-                return substr_count($a->getMatchPattern(),
+                $aPath = $a->getPath();
+                $bPath = $b->getPath();
+                if (0 === stripos($aPath, $bPath))
+                    return 1;
+                elseif (0 === stripos($bPath, $aPath))
+                    return -1;
+
+                $aPattern = $a->getMatchPattern();
+                $bPattern = $b->getMatchPattern();
+                return substr_count($aPattern,
                     Routes\AbstractRoute::REGEX_SINGLE_PARAM)
-                < substr_count($b->getMatchPattern(),
+                < substr_count($bPattern,
                     Routes\AbstractRoute::REGEX_SINGLE_PARAM);
             }
         );
