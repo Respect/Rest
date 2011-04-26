@@ -6,6 +6,7 @@ use ReflectionClass;
 use ReflectionMethod;
 use InvalidArgumentException;
 use Respect\Rest\Routes;
+use Respect\Rest\Routes\AbstractRoute;
 
 class Router
 {
@@ -76,24 +77,24 @@ class Router
         return $route;
     }
 
-    public function append(Routes\AbstractRoute $route)
+    public function append(AbstractRoute $route)
     {
         $this->routes[] = $route;
         usort($this->routes,
             function($a, $b) {
-                $aPath = $a->getPath();
-                $bPath = $b->getPath();
-                if (0 === stripos($aPath, $bPath))
-                    return 1;
-                elseif (0 === stripos($bPath, $aPath))
-                    return -1;
+                $a = $a->getPath();
+                $b = $b->getPath();
 
-                $aPattern = $a->getMatchPattern();
-                $bPattern = $b->getMatchPattern();
-                return substr_count($aPattern,
-                    Routes\AbstractRoute::REGEX_SINGLE_PARAM)
-                < substr_count($bPattern,
-                    Routes\AbstractRoute::REGEX_SINGLE_PARAM);
+                if (0 === stripos($a, $b))
+                    return 1;
+                elseif (0 === stripos($b, $a))
+                    return -1;
+                elseif (substr_count($a, '/')
+                    < substr_count($b, '/'))
+                    return 1;
+
+                return substr_count($a, AbstractRoute::PARAM_IDENTIFIER)
+                < substr_count($b, AbstractRoute::PARAM_IDENTIFIER) ? -1 : 1;
             }
         );
     }

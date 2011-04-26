@@ -28,9 +28,9 @@ abstract class AbstractRoute
     protected $conditions = array();
     protected $preProxies = array();
     protected $postProxies = array();
-    protected $runMethod = null;
-    protected $runParams = array();
-    protected $configured = false;
+    protected $dispatchedMethod = null;
+    protected $dispatchedParams = array();
+    protected $dispatched = false;
 
     public function __construct($method, $path)
     {
@@ -46,23 +46,23 @@ abstract class AbstractRoute
 
     public function reset()
     {
-        $this->runMethod = null;
-        $this->runParams = array();
-        $this->configured = false;
+        $this->dispatchedMethod = null;
+        $this->dispatchedParams = array();
+        $this->dispatched = false;
     }
 
     public function configure($method, array $params=array())
     {
-        $this->runMethod = $method;
-        $this->runParams = $params;
-        $this->configured = true;
+        $this->dispatchedMethod = $method;
+        $this->dispatchedParams = $params;
+        $this->dispatched = true;
         return true;
     }
 
     public function run()
     {
-        $method = $this->runMethod;
-        $params = $this->runParams;
+        $method = $this->dispatchedMethod;
+        $params = $this->dispatchedParams;
         foreach ($this->preProxies as $preProxy)
             if (false === $this->paramSyncCall($method, $preProxy, $params))
                 return false;
@@ -104,6 +104,21 @@ abstract class AbstractRoute
     public function getMatchPattern()
     {
         return $this->matchPattern;
+    }
+
+    public function getDispatchedMethod()
+    {
+        return $this->dispatchedMethod;
+    }
+
+    public function getDispatchedParams()
+    {
+        return $this->dispatchedParams;
+    }
+
+    public function getDispatched()
+    {
+        return $this->dispatched;
     }
 
     public function match($uri, $method, &$params=array())

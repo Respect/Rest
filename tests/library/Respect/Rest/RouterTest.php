@@ -410,14 +410,14 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testWildcardOrdering()
     {
-        $this->object->any('/**',
-            function($userName) {
-                return 5;
-            }
-        );
         $this->object->any('/posts/*/*',
             function($year, $month) {
                 return 10;
+            }
+        );
+        $this->object->any('/**',
+            function($userName) {
+                return 5;
             }
         );
         $this->assertEquals(
@@ -445,6 +445,26 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         );
         $this->assertEquals(
             10, $this->object->dispatch('get', '/users/2010/20')->run()
+        );
+    }
+
+    public function testOrderingSpecific()
+    {
+        $this->object->any('/users/*/*',
+            function($year, $month) {
+                return 10;
+            }
+        );
+        $this->object->any('/users/lists/*',
+            function($userName) {
+                return 5;
+            }
+        );
+        $this->assertEquals(
+            5, $this->object->dispatch('get', '/users/lists/alganet')->run()
+        );
+        $this->assertEquals(
+            10, $this->object->dispatch('get', '/users/foobar/alganet')->run()
         );
     }
 
