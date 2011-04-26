@@ -468,6 +468,50 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    public function testOrderingSpecific2()
+    {
+        $this->object->any('/',
+            function() {
+                return 2;
+            }
+        );
+        $this->object->any('/*',
+            function() {
+                return 3;
+            }
+        );
+        $this->object->any('/*/versions',
+            function() {
+                return 4;
+            }
+        );
+        $this->object->any('/*/versions/*',
+            function() {
+                return 5;
+            }
+        );
+        $this->object->any('/*/*',
+            function() {
+                return 6;
+            }
+        );
+        $this->assertEquals(
+            2, $this->object->dispatch('get', '/')->run()
+        );
+        $this->assertEquals(
+            3, $this->object->dispatch('get', '/foo')->run()
+        );
+        $this->assertEquals(
+            4, $this->object->dispatch('get', '/foo/versions')->run()
+        );
+        $this->assertEquals(
+            5, $this->object->dispatch('get', '/foo/versions/1.0')->run()
+        );
+        $this->assertEquals(
+            6, $this->object->dispatch('get', '/foo/bar')->run()
+        );
+    }
+
 }
 
 //couldn't mock this 'cause its read by reflection =/
