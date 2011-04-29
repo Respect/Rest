@@ -304,6 +304,36 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('ok', $result);
     }
 
+    public function testSimpleAlways()
+    {
+        $result = null;
+        $proxy = function() use (&$result) {
+                $result = 'ok';
+            };
+        $this->object->always('by', $proxy);
+        $this->object->get('/users/*',
+            function() {
+                
+            });
+        $this->object->dispatch('get', '/users/alganet')->run();
+        $this->assertEquals('ok', $result);
+    }
+
+    public function testSimpleAlwaysAfter()
+    {
+        $result = null;
+        $proxy = function() use (&$result) {
+                $result = 'ok';
+            };
+        $this->object->get('/users/*',
+            function() {
+                
+            });
+        $this->object->always('by', $proxy);
+        $this->object->dispatch('get', '/users/alganet')->run();
+        $this->assertEquals('ok', $result);
+    }
+
     public function testProxyThen()
     {
         $result = null;

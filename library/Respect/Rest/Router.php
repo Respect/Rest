@@ -12,6 +12,7 @@ class Router
 {
 
     protected $autoDispatched = true;
+    protected $globalRoutines = array();
     protected $routes = array();
 
     public static function cleanUpParams($params)
@@ -51,9 +52,25 @@ class Router
             echo $route->run();
     }
 
-    public function append(AbstractRoute $route)
+    public function always($routine, $routineParam)
+    {
+        $routineClass = 'Respect\\Rest\\Routines\\' . $routine;
+        $routineInstance = new $routineClass($routineParam);
+        $this->globalRoutines[] = $routineInstance;
+
+        foreach ($this->routes as $route)
+            $route->appendRoutine($routineInstance);
+
+        return $this;
+    }
+
+    public function appendRoute(AbstractRoute $route)
     {
         $this->routes[] = $route;
+
+        foreach ($this->globalRoutines as $routine)
+            $route->appendRoutine($routine);
+
         usort($this->routes,
             function($a, $b) {
                 $a = $a->getPath();
@@ -77,7 +94,7 @@ class Router
     {
         $route = new Routes\Callback($method, $path);
         $route->setCallback($callback);
-        $this->append($route);
+        $this->appendRoute($route);
         return $route;
     }
 
@@ -87,7 +104,7 @@ class Router
         $route = new Routes\ClassName($method, $path);
         $route->setClass($class);
         call_user_func_array(array($route, 'setArguments'), $args);
-        $this->append($route);
+        $this->appendRoute($route);
         return $route;
     }
 
@@ -108,7 +125,7 @@ class Router
     {
         $route = new Routes\Instance($method, $path);
         $route->setInstance($instance);
-        $this->append($route);
+        $this->appendRoute($route);
         return $route;
     }
 

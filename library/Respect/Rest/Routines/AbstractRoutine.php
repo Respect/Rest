@@ -5,6 +5,7 @@ namespace Respect\Rest\Routines;
 use InvalidArgumentException;
 use ReflectionFunction;
 use ReflectionMethod;
+use Respect\Rest\Routes\AbstractRoute;
 
 abstract class AbstractRoutine
 {
@@ -19,12 +20,7 @@ abstract class AbstractRoutine
         $this->callback = $callback;
     }
 
-    public function __invoke()
-    {
-        return call_user_func_array($this->callback, func_get_args());
-    }
-
-    public function call($params)
+    public function call(AbstractRoute $route, $params)
     {
         return call_user_func_array($this->callback, $params);
     }

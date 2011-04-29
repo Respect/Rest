@@ -51,12 +51,12 @@ abstract class AbstractRoute
         $routineClass = 'Respect\\Rest\\Routines\\' . ucfirst($method);
 
         foreach ($arguments as $param)
-            $this->addRoutine(new $routineClass($param));
+            $this->appendRoutine(new $routineClass($param));
 
         return $this;
     }
 
-    public function addRoutine(AbstractRoutine $routine)
+    public function appendRoutine(AbstractRoutine $routine)
     {
         $this->routines[] = $routine;
     }
@@ -250,7 +250,7 @@ abstract class AbstractRoute
         foreach ($routine->getParameters() as $p)
             $cbParams[] = $this->extractParam($reflection, $p, $params);
 
-        return $routine->call($cbParams);
+        return $routine->call($this, $cbParams);
     }
 
 }
