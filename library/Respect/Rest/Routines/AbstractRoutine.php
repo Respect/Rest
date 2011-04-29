@@ -1,40 +1,50 @@
 <?php
 
-namespace Respect\Rest\Routes;
+namespace Respect\Rest\Routines;
 
+use InvalidArgumentException;
 use ReflectionFunction;
 use ReflectionMethod;
 
-class Callback extends AbstractRoute
+abstract class AbstractRoutine
 {
 
     protected $callback;
     protected $reflection;
 
-    public function getCallbackReflection()
+    public function __construct($callback)
+    {
+        if (!is_callable($callback))
+            throw new InvalidArgumentException('Routine callback must be... guess what... callable!');
+        $this->callback = $callback;
+    }
+
+    public function __invoke()
+    {
+        return call_user_func_array($this->callback, func_get_args());
+    }
+
+    public function call($params)
+    {
+        return call_user_func_array($this->callback, $params);
+    }
+
+    public function getCallback()
+    {
+        return $this->callback;
+    }
+
+    public function getParameters()
+    {
+        return $this->getReflection()->getParameters();
+    }
+
+    public function getReflection()
     {
         if (is_array($this->callback))
             return new ReflectionMethod($this->callback[0], $this->callback[1]);
         else
             return new ReflectionFunction($this->callback);
-    }
-
-    public function setCallback($callback)
-    {
-        $this->callback = $callback;
-    }
-
-    protected function getReflection($method)
-    {
-        if (empty($this->reflection))
-            $this->reflection = $this->getCallbackReflection();
-
-        return $this->reflection;
-    }
-
-    protected function runTarget($method, &$params)
-    {
-        return call_user_func_array($this->callback, $params);
     }
 
 }

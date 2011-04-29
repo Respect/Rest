@@ -4,7 +4,7 @@ namespace Respect\Rest;
 
 interface Routable
 {
-
+    
 }
 
 /**

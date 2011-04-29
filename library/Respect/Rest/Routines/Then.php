@@ -1,42 +1,10 @@
 <?php
 
-namespace Respect\Rest\Routes;
+namespace Respect\Rest\Routines;
 
-use ReflectionFunction;
-use ReflectionMethod;
-
-class Callback extends AbstractRoute
+class Then extends AbstractRoutine
 {
-
-    protected $callback;
-    protected $reflection;
-
-    public function getCallbackReflection()
-    {
-        if (is_array($this->callback))
-            return new ReflectionMethod($this->callback[0], $this->callback[1]);
-        else
-            return new ReflectionFunction($this->callback);
-    }
-
-    public function setCallback($callback)
-    {
-        $this->callback = $callback;
-    }
-
-    protected function getReflection($method)
-    {
-        if (empty($this->reflection))
-            $this->reflection = $this->getCallbackReflection();
-
-        return $this->reflection;
-    }
-
-    protected function runTarget($method, &$params)
-    {
-        return call_user_func_array($this->callback, $params);
-    }
-
+    
 }
 
 /**

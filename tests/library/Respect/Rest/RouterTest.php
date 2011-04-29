@@ -179,7 +179,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             array(
                 '/users/*/mounted-folder/**',
                 '/users/alganet/mounted-folder/home/alganet/Projects/RespectRest/',
-                array('alganet', '/home/alganet/Projects/RespectRest')
+                array('alganet', 'home', 'alganet', 'Projects', 'RespectRest')
             ),
         );
     }
@@ -510,6 +510,22 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(
             6, $this->object->dispatch('get', '/foo/bar')->run()
         );
+    }
+
+    public function testExperimentalShell()
+    {
+        $router = new Router;
+        $router->install('/**',
+            function() {
+                return 'Installed ' . implode(', ', func_get_args());
+            }
+        );
+        $commandLine = 'install apache php mysql';
+        $commandArgs = explode(' ', $commandLine);
+        $output = $router->dispatch(
+                array_shift($commandArgs), '/' . implode('/', $commandArgs)
+            )->run();
+        $this->assertEquals('Installed apache, php, mysql', $output);
     }
 
 }

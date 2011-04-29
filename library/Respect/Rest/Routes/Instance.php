@@ -2,14 +2,14 @@
 
 namespace Respect\Rest\Routes;
 
-use Respect\Rest\Routable;
 use InvalidArgumentException;
+use Respect\Rest\Routable;
 
 class Instance extends AbstractRoute
 {
 
-    protected $reflection = null;
     protected $instance = null;
+    protected $reflection = null;
 
     public function setInstance($instance)
     {

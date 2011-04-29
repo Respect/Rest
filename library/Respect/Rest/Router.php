@@ -11,7 +11,6 @@ use Respect\Rest\Routes\AbstractRoute;
 class Router
 {
 
-    protected $mode = 2;
     protected $autoDispatched = true;
     protected $routes = array();
 
@@ -31,6 +30,7 @@ class Router
             throw new InvalidArgumentException('Any route binding must at least 2 arguments');
 
         list ($path, $routeTarget) = $arguments;
+
         if (is_callable($routeTarget))
             return $this->callbackRoute($method, $path, $routeTarget);
         elseif (is_object($routeTarget))
@@ -49,32 +49,6 @@ class Router
         $route = $this->dispatch();
         if ($route)
             echo $route->run();
-    }
-
-    public function callbackRoute($method, $path, $callback)
-    {
-        $route = new Routes\Callback($method, $path);
-        $route->setCallback($callback);
-        $this->append($route);
-        return $route;
-    }
-
-    public function classRoute($method, $path, $class, $arg1=null, $etc=null)
-    {
-        $args = func_num_args() > 3 ? array_slice(func_get_args(), 3) : array();
-        $route = new Routes\ClassName($method, $path);
-        $route->setClass($class);
-        call_user_func_array(array($route, 'setArguments'), $args);
-        $this->append($route);
-        return $route;
-    }
-
-    public function instanceRoute($method, $path, $instance)
-    {
-        $route = new Routes\Instance($method, $path);
-        $route->setInstance($instance);
-        $this->append($route);
-        return $route;
     }
 
     public function append(AbstractRoute $route)
@@ -99,6 +73,24 @@ class Router
         );
     }
 
+    public function callbackRoute($method, $path, $callback)
+    {
+        $route = new Routes\Callback($method, $path);
+        $route->setCallback($callback);
+        $this->append($route);
+        return $route;
+    }
+
+    public function classRoute($method, $path, $class, $arg1=null, $etc=null)
+    {
+        $args = func_num_args() > 3 ? array_slice(func_get_args(), 3) : array();
+        $route = new Routes\ClassName($method, $path);
+        $route->setClass($class);
+        call_user_func_array(array($route, 'setArguments'), $args);
+        $this->append($route);
+        return $route;
+    }
+
     public function dispatch($method=null, $uri=null)
     {
         $this->autoDispatched = false;
@@ -112,14 +104,17 @@ class Router
                 return $route;
     }
 
+    public function instanceRoute($method, $path, $instance)
+    {
+        $route = new Routes\Instance($method, $path);
+        $route->setInstance($instance);
+        $this->append($route);
+        return $route;
+    }
+
     public function setAutoDispatched($autoDispatched)
     {
         $this->autoDispatched = $autoDispatched;
-    }
-
-    public function setMode($mode)
-    {
-        $this->mode = $mode;
     }
 
 }
