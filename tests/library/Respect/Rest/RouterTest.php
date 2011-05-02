@@ -334,7 +334,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('ok', $result);
     }
 
-    public function testProxyThen()
+    public function testProxyThrough()
     {
         $result = null;
         $proxy = function() use (&$result) {
@@ -343,12 +343,12 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->object->get('/users/*',
             function() {
                 
-            })->then($proxy);
+            })->through($proxy);
         $this->object->dispatch('get', '/users/alganet')->run();
         $this->assertEquals('ok', $result);
     }
 
-    public function testProxyThenOutput()
+    public function testProxyThroughOutput()
     {
         $proxy = function() {
                 return function($output) {
@@ -358,7 +358,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->object->get('/users/*',
             function() {
                 return 'ok';
-            })->then($proxy);
+            })->through($proxy);
         $result = $this->object->dispatch('get', '/users/alganet')->run();
         $this->assertEquals('okok', $result);
     }
@@ -378,7 +378,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->object->get('/users/*/*/*',
             function($foo, $bar, $baz) use(&$result) {
                 $result[] = 'main';
-            })->by($proxy1)->then($proxy2, $proxy3);
+            })->by($proxy1)->through($proxy2, $proxy3);
         $this->object->dispatch('get', '/users/abc/def/ghi')->run();
         $this->assertSame(
             array('abc', 'main', 'def', 'ghi'), $result
@@ -417,7 +417,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->object->get('/users/*/*/*',
             function($foo, $bar, $baz) use(&$result) {
                 $result[] = 'main';
-            })->by($proxy1)->then($proxy2, $proxy3);
+            })->by($proxy1)->through($proxy2, $proxy3);
         $this->object->dispatch('get', '/users/abc/def/ghi')->run();
         $this->assertSame(
             array('abc'), $result

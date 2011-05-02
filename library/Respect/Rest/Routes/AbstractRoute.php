@@ -6,7 +6,7 @@ use ReflectionFunctionAbstract;
 use ReflectionParameter;
 use Respect\Rest\Routines\AbstractRoutine;
 use Respect\Rest\Routines\By;
-use Respect\Rest\Routines\Then;
+use Respect\Rest\Routines\Through;
 use Respect\Rest\Routines\When;
 
 abstract class AbstractRoute
@@ -165,7 +165,7 @@ abstract class AbstractRoute
         $proxyResponse = false;
 
         foreach ($this->routines as $r)
-            if ($r instanceof Then)
+            if ($r instanceof Through)
                 $proxyResponse = $this->syncCall($method, $r, $params);
 
         if (is_callable($proxyResponse))

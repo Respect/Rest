@@ -2,7 +2,7 @@
 
 namespace Respect\Rest\Routines;
 
-class Then extends AbstractRoutine
+class Through extends AbstractRoutine
 {
     
 }
