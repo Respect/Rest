@@ -76,12 +76,11 @@ class Router
                 $a = $a->getPath();
                 $b = $b->getPath();
 
-                if (0 === stripos($a, $b))
+                if (0 === stripos($a, $b) || $a == AbstractRoute::CATCHALL_IDENTIFIER)
                     return 1;
-                elseif (0 === stripos($b, $a))
+                elseif (0 === stripos($b, $a) || $b == AbstractRoute::CATCHALL_IDENTIFIER)
                     return -1;
-                elseif (substr_count($a, '/')
-                    < substr_count($b, '/'))
+                elseif (substr_count($a, '/') < substr_count($b, '/'))
                     return 1;
 
                 return substr_count($a, AbstractRoute::PARAM_IDENTIFIER)
@@ -117,7 +116,8 @@ class Router
 
         foreach ($this->routes as $route)
             if ($route->match($uri, $method, $params)
-                && $route->configure($method, static::cleanUpParams($params)))
+                && $route->configure($uri, $method,
+                    static::cleanUpParams($params)))
                 return $route;
     }
 

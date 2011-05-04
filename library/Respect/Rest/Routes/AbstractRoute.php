@@ -24,9 +24,7 @@ abstract class AbstractRoute
     protected $dispatched = false;
     protected $dispatchedMethod = null;
     protected $dispatchedParams = array();
-    protected $dispatchedEnv = array();
-    protected $dispatchedGet = array();
-    protected $dispatchedPost = array();
+    protected $dispatchedUri = null;
     protected $matchPattern;
     protected $method;
     protected $path;
@@ -61,8 +59,9 @@ abstract class AbstractRoute
         $this->routines[] = $routine;
     }
 
-    public function configure($method, array $params=array())
+    public function configure($uri, $method, array $params=array())
     {
+        $this->dispatchedUri = $uri;
         $this->dispatchedMethod = $method;
         $this->dispatchedParams = $params;
         $this->dispatched = true;
@@ -83,16 +82,6 @@ abstract class AbstractRoute
         return $this->dispatched;
     }
 
-    public function getDispatchedEnv()
-    {
-        return $this->dispatchedEnv;
-    }
-
-    public function getDispatchedGet()
-    {
-        return $this->dispatchedGet;
-    }
-
     public function getDispatchedMethod()
     {
         return $this->dispatchedMethod;
@@ -103,9 +92,9 @@ abstract class AbstractRoute
         return $this->dispatchedParams;
     }
 
-    public function getDispatchedPost()
+    public function getDispatchedUri()
     {
-        return $this->dispatchedPost;
+        return $this->dispatchedUri;
     }
 
     public function getMatchPattern()

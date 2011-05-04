@@ -4,6 +4,7 @@ namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
 use ReflectionClass;
+use ReflectionMethod;
 use Respect\Rest\Routable;
 
 class ClassName extends AbstractRoute
@@ -42,12 +43,7 @@ class ClassName extends AbstractRoute
 
     protected function getReflection($method)
     {
-        if (empty($this->reflection))
-            $this->reflection = $this->getCallbackReflection(
-                    array($this->class, $method)
-            );
-
-        return $this->reflection;
+        return new ReflectionMethod($this->class, $method);
     }
 
     protected function runTarget($method, &$params)
