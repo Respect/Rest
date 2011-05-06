@@ -276,7 +276,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testBindControllerSpecial()
     {
         $this->object->instanceRoute('ANY', '/users/*', new MyController);
-        $result = $this->object->dispatch('__construct', '/users/alganet');
+        $result = $this->object->dispatch('__construct', '/users/alganet')->response();
         $this->assertEquals(null, $result);
     }
 
@@ -491,10 +491,12 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             }
         );
         $this->assertEquals(
-            5, $this->object->dispatch('get', '/users/lists/alganet')->response()
+            5,
+            $this->object->dispatch('get', '/users/lists/alganet')->response()
         );
         $this->assertEquals(
-            10, $this->object->dispatch('get', '/users/foobar/alganet')->response()
+            10,
+            $this->object->dispatch('get', '/users/foobar/alganet')->response()
         );
     }
 
@@ -556,6 +558,130 @@ class RouterTest extends \PHPUnit_Framework_TestCase
                 array_shift($commandArgs), '/' . implode('/', $commandArgs)
             )->response();
         $this->assertEquals('Installed apache, php, mysql', $output);
+    }
+
+    public function testAccept()
+    {
+        $request = new Request('get', '/users/alganet');
+        $request['SERVER']['HTTP_ACCEPT'] = 'application/json';
+        $this->object->get('/users/*',
+            function() {
+                return range(0, 10);
+            })->accept(array('application/json' => 'json_encode'));
+        $r = $this->object->dispatchRequest($request)->response();
+        $this->assertEquals(json_encode(range(0, 10)), $r);
+    }
+
+    public function testAcceptGeneric()
+    {
+        $request = new Request('get', '/users/alganet');
+        $request['SERVER']['HTTP_ACCEPT'] = 'application/*';
+        $this->object->get('/users/*',
+            function() {
+                return range(0, 10);
+            })->accept(array('application/json' => 'json_encode'));
+        $r = $this->object->dispatchRequest($request)->response();
+        $this->assertEquals(json_encode(range(0, 10)), $r);
+    }
+
+    public function testAcceptGeneric2()
+    {
+        $request = new Request('get', '/users/alganet');
+        $request['SERVER']['HTTP_ACCEPT'] = '*/*';
+        $this->object->get('/users/*',
+            function() {
+                return range(0, 10);
+            })->accept(array('application/json' => 'json_encode'));
+        $r = $this->object->dispatchRequest($request)->response();
+        $this->assertEquals(json_encode(range(0, 10)), $r);
+    }
+
+    public function testAcceptGeneric3()
+    {
+        $request = new Request('get', '/users/alganet');
+        $request['SERVER']['HTTP_ACCEPT'] = 'text/*';
+        $this->object->get('/users/*',
+            function() {
+                return range(0, 10);
+            })->accept(array('application/json' => 'json_encode'));
+        $r = $this->object->dispatchRequest($request)->response();
+        $this->assertEquals(null, $r);
+    }
+
+    public function testAcceptLanguage()
+    {
+        $requestEn = new Request('get', '/users/alganet');
+        $requestEn['SERVER']['HTTP_ACCEPT_LANGUAGE'] = 'en';
+        $requestPt = new Request('get', '/users/alganet');
+        $requestPt['SERVER']['HTTP_ACCEPT_LANGUAGE'] = 'pt';
+        $this->object->get('/users/*',
+            function() {
+                
+            })->acceptLanguage(array(
+            'en-US' => function() {
+                return 'Hi there';
+            },
+            'pt-BR' => function() {
+                return 'Olá!';
+            }));
+        $r = $this->object->dispatchRequest($requestEn)->response();
+        $this->assertEquals('Hi there', $r);
+        $r = $this->object->dispatchRequest($requestPt)->response();
+        $this->assertEquals('Olá!', $r);
+    }
+
+    public function testAcceptOrder()
+    {
+        $requestBoth = new Request('get', '/users/alganet');
+        $requestBoth['SERVER']['HTTP_ACCEPT_LANGUAGE'] = 'pt,en';
+        $this->object->get('/users/*',
+            function() {
+                
+            })->acceptLanguage(array(
+            'en' => function() {
+                return 'Hi there';
+            },
+            'pt' => function() {
+                return 'Olá!';
+            }));
+        $r = $this->object->dispatchRequest($requestBoth)->response();
+        $this->assertEquals('Olá!', $r);
+    }
+
+    public function testAcceptOrderX()
+    {
+        $requestBoth = new Request('get', '/users/alganet');
+        $requestBoth['SERVER']['HTTP_ACCEPT_LANGUAGE'] = 'x-klingon,en';
+        $this->object->get('/users/*',
+            function() {
+                
+            })->acceptLanguage(array(
+            'en' => function() {
+                return 'Hi there';
+            },
+            'klingon-tr' => function() {
+                return 'nuqneH';
+            }));
+        $r = $this->object->dispatchRequest($requestBoth)->response();
+        $this->assertEquals('nuqneH', $r);
+    }
+
+    public function testAcceptOrderQuality()
+    {
+        $requestBoth = new Request('get', '/users/alganet');
+        $requestBoth['SERVER']['HTTP_ACCEPT_LANGUAGE'] = 'pt;q=0.7,en';
+        $this->object->get('/users/*',
+            function() {
+                
+            })->acceptLanguage(array(
+            'en-US' => function() {
+                return 'Hi there';
+            },
+            'pt-BR' => function() {
+                return 'Olá!';
+            }));
+        $r = $this->object->dispatchRequest($requestBoth)->response();
+        $this->assertEquals('Hi there', $r);
     }
 
 }

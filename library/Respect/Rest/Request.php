@@ -2,6 +2,7 @@
 
 namespace Respect\Rest;
 
+use ArrayAccess;
 use ReflectionFunctionAbstract;
 use ReflectionParameter;
 use Respect\Rest\Routes\AbstractRoute;
@@ -11,26 +12,25 @@ use Respect\Rest\Routines\ProxyableThrough;
 use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\ParamSynced;
 
-class Request
+class Request implements ArrayAccess
 {
 
     protected $route;
     protected $method;
     protected $uri;
     protected $params = array();
+    protected $vars = array();
 
-    public function __construct(AbstractRoute $route, $uri, $method,
-        array $params)
+    public function __construct($method=null, $uri=null)
     {
-        $this->route = $route;
-        $this->uri = $uri;
-        $this->method = $method;
-        $this->params = $params;
+        $uri = $uri ? : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $this->uri = rtrim($uri, ' /');
+        $this->method = strtoupper($method ? : $_SERVER['REQUEST_METHOD']);
     }
 
-    public function getRoute()
+    public function __toString()
     {
-        return $this->route;
+        return $this->response();
     }
 
     public function getMethod()
@@ -38,18 +38,58 @@ class Request
         return $this->method;
     }
 
-    public function getUri()
-    {
-        return $this->uri;
-    }
-
     public function getParams()
     {
         return $this->params;
     }
 
+    public function getRoute()
+    {
+        return $this->route;
+    }
+
+    public function getUri()
+    {
+        return $this->uri;
+    }
+
+    public function getVar($type, $name)
+    {
+        $this->loadVar($type);
+        if (!isset($this->vars[$type][$name]))
+            return false;
+        return $this->vars[$type][$name];
+    }
+
+    public function offsetExists($offset)
+    {
+
+        throw new \Exception(''); //TODO
+    }
+
+    public function &offsetGet($varType)
+    {
+        $this->loadVar($varType);
+        return $this->vars[$varType];
+    }
+
+    public function offsetSet($offset, $value)
+    {
+
+        throw new \Exception(''); //TODO
+    }
+
+    public function offsetUnset($offset)
+    {
+
+        throw new \Exception(''); //TODO
+    }
+
     public function response()
     {
+        if (!$this->route)
+            return null;
+
         foreach ($this->route->getRoutines() as $r)
             if ($r instanceof ProxyableBy
                 && false === $this->syncCall('by', $this->method, $r,
@@ -73,7 +113,23 @@ class Request
         return $response;
     }
 
-    protected function syncCall($op, $method, AbstractRoutine $routine, &$params)
+    public function setParams(array $params)
+    {
+        $this->params = $params;
+    }
+
+    public function setRoute($route)
+    {
+        $this->route = $route;
+    }
+
+    public function setVar($type, $name, $value)
+    {
+        $this->loadVar($type);
+        $this->vars[$type][$name] = $value;
+    }
+
+    public function syncCall($op, $method, AbstractRoutine $routine, &$params)
     {
         $reflection = $this->route->getReflection($method);
 
@@ -85,6 +141,16 @@ class Request
             $cbParams = $params;
 
         return $routine->{$op}($this, $cbParams);
+    }
+
+    protected function loadVar($type)
+    {
+        $globalVar = "_$type";
+
+        global $$globalVar;
+
+        if (!isset($this->vars[$type]))
+            $this->vars[$type] = $$globalVar;
     }
 
     protected function extractParam(ReflectionFunctionAbstract $callbackR,

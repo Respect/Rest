@@ -2,23 +2,9 @@
 
 namespace Respect\Rest\Routines;
 
-use InvalidArgumentException;
-use ReflectionFunction;
-use ReflectionMethod;
-use Respect\Rest\Routes\AbstractRoute;
-
-abstract class AbstractRoutine
+class AcceptCharset extends AbstractAccept
 {
-
-    protected $callback;
-
-    public function __construct($callback)
-    {
-        if (!is_callable($callback))
-            throw new InvalidArgumentException('Routine callback must be... guess what... callable!');
-        $this->callback = $callback;
-    }
-
+    const ACCEPT_HEADER = 'HTTP_ACCEPT_CHARSET';
 }
 
 /**
@@ -53,3 +39,4 @@ abstract class AbstractRoutine
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+

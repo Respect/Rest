@@ -2,50 +2,22 @@
 
 namespace Respect\Rest\Routines;
 
-use SplObjectStorage;
-use Respect\Rest\Request;
-
-class Accept extends AbstractRoutine implements ProxyableWhen, ProxyableThrough
+class Accept extends AbstractAccept
 {
+    const ACCEPT_HEADER = 'HTTP_ACCEPT';
 
-    protected $mimeTypes = array();
-    protected $negotiated = null;
-
-    public function __construct($mimeType1, $mimeType2=null, $etc=null)
+    protected function compareItens($requested, $provided)
     {
-        $this->negotiated = new SplObjectStorage;
-        $this->mimeTypes = func_get_args();
-    }
+        if ($requested == $provided || $requested == '*/*')
+            return true;
 
-    protected function negotiate(Request $request)
-    {
-        $acceptHeader = $_SERVER['HTTP_ACCEPT'];
-        $acceptParts = explode(',', $acceptHeader);
-        $acceptMimes = array();
-        foreach ($acceptParts as &$acceptPart) {
-            list($mime, $quality) = explode(';q=', trim($acceptPart));
-            $acceptMimes[$mime] = $quality;
-        }
-        arsort($acceptMimes);
-        foreach ($this->mimeTypes as $mime)
-            foreach ($acceptMimes as $accepted)
-                if ($mime == $accepted)
-                    return $this->negotiated[$request] = $mime;
+        list($requestedA, $requestedB) = explode('/', $requested);
+        list($providedA, ) = explode('/', $provided);
+
+        if ($providedA == $requestedA && $requestedB == '*')
+            return true;
 
         return false;
-    }
-
-    public function when(Request $request, $params)
-    {
-        return false !== $this->negotiate($request);
-    }
-
-    public function through(Request $request, $params)
-    {
-        if (!$this->negotiated[$request])
-            return;
-        
-        //TODO
     }
 
 }

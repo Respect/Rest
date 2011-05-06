@@ -5,6 +5,7 @@ namespace Respect\Rest\Routes;
 use ReflectionClass;
 use Respect\Rest\Request;
 use \Respect\Rest\Routines\AbstractRoutine;
+use \Respect\Rest\Routines\ProxyableWhen;
 
 abstract class AbstractRoute
 {
@@ -82,18 +83,19 @@ abstract class AbstractRoute
         return $this->path;
     }
 
-    public function match($uri, $method, &$params=array())
+    public function match(Request $request, &$params=array())
     {
-        if (($method !== $this->method && $this->method !== 'ANY')
-            || 0 === stripos($method, '__'))
+        if (($request->getMethod() !== $this->method && $this->method !== 'ANY')
+            || 0 === stripos($request->getMethod(), '__'))
             return false;
 
-        foreach ($this->routines as $r)
-            if ($r instanceof ProxyableWhen
-                && !$this->syncCall('when', $method, $r, $params))
+        foreach ($this->routines as $routine)
+            if ($routine instanceof ProxyableWhen
+                && !$request->syncCall('when', $request->getMethod(), $routine,
+                    $params))
                 return false;
 
-        if (!preg_match($this->matchPattern, $uri, $params))
+        if (!preg_match($this->matchPattern, $request->getUri(), $params))
             return false;
 
         if (count($params) > 1 && false !== stripos(end($params), '/')) {
@@ -102,11 +104,6 @@ abstract class AbstractRoute
         }
 
         return true;
-    }
-
-    public function createRequest($uri, $method, $params)
-    {
-        return new Request($this, $uri, $method, $params);
     }
 
     protected function createRegexPatterns($path)

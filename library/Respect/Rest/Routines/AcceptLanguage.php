@@ -2,21 +2,27 @@
 
 namespace Respect\Rest\Routines;
 
-use InvalidArgumentException;
-use ReflectionFunction;
-use ReflectionMethod;
-use Respect\Rest\Routes\AbstractRoute;
-
-abstract class AbstractRoutine
+class AcceptLanguage extends AbstractAccept
 {
+    const ACCEPT_HEADER = 'HTTP_ACCEPT_LANGUAGE';
 
-    protected $callback;
-
-    public function __construct($callback)
+    protected function compareItens($requested, $provided)
     {
-        if (!is_callable($callback))
-            throw new InvalidArgumentException('Routine callback must be... guess what... callable!');
-        $this->callback = $callback;
+        $requested = preg_replace('/^x\-/', '', $requested);
+        $provided = preg_replace('/^x\-/', '', $provided);
+
+        if ($requested == $provided)
+            return true;
+
+        if (stripos($requested, '-') || !stripos($provided, '-'))
+            return false;
+
+        list($providedA, ) = explode('-', $provided);
+
+        if ($requested == $providedA)
+            return true;
+
+        return false;
     }
 
 }
@@ -53,3 +59,4 @@ abstract class AbstractRoutine
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+

@@ -70,23 +70,6 @@ class Router
 
         foreach ($this->globalRoutines as $routine)
             $route->appendRoutine($routine);
-
-        usort($this->routes,
-            function($a, $b) {
-                $a = $a->getPath();
-                $b = $b->getPath();
-
-                if (0 === stripos($a, $b) || $a == AbstractRoute::CATCHALL_IDENTIFIER)
-                    return 1;
-                elseif (0 === stripos($b, $a) || $b == AbstractRoute::CATCHALL_IDENTIFIER)
-                    return -1;
-                elseif (substr_count($a, '/') < substr_count($b, '/'))
-                    return 1;
-
-                return substr_count($a, AbstractRoute::PARAM_IDENTIFIER)
-                < substr_count($b, AbstractRoute::PARAM_IDENTIFIER) ? -1 : 1;
-            }
-        );
     }
 
     public function callbackRoute($method, $path, $callback)
@@ -109,15 +92,38 @@ class Router
 
     public function dispatch($method=null, $uri=null)
     {
+        return $this->dispatchRequest(new Request($method, $uri));
+    }
+
+    public function dispatchRequest(Request $request=null)
+    {
+        usort($this->routes,
+            function($a, $b) {
+                $a = $a->getPath();
+                $b = $b->getPath();
+
+                if (0 === stripos($a, $b) || $a == AbstractRoute::CATCHALL_IDENTIFIER)
+                    return 1;
+                elseif (0 === stripos($b, $a) || $b == AbstractRoute::CATCHALL_IDENTIFIER)
+                    return -1;
+                elseif (substr_count($a, '/') < substr_count($b, '/'))
+                    return 1;
+
+                return substr_count($a, AbstractRoute::PARAM_IDENTIFIER)
+                < substr_count($b, AbstractRoute::PARAM_IDENTIFIER) ? -1 : 1;
+            }
+        );
         $this->autoDispatched = false;
-        $method = strtoupper($method ? : $_SERVER['REQUEST_METHOD']);
-        $uri = $uri ? : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-        $uri = rtrim($uri, ' /');
+        if (!$request)
+            $request = new Request;
 
         foreach ($this->routes as $route)
-            if ($route->match($uri, $method, $params))
-                return $route->createRequest($uri, $method,
+            if ($this->matchRoute($request, $route, $params))
+                return $this->configureRequest($request, $route,
                     static::cleanUpParams($params));
+
+        $request->setRoute(null);
+        return $request;
     }
 
     public function instanceRoute($method, $path, $instance)
@@ -131,6 +137,21 @@ class Router
     public function setAutoDispatched($autoDispatched)
     {
         $this->autoDispatched = $autoDispatched;
+    }
+
+    protected function configureRequest(Request $request, AbstractRoute $route,
+        array $params)
+    {
+        $request->setRoute($route);
+        $request->setParams($params);
+        return $request;
+    }
+
+    protected function matchRoute(Request $request, AbstractRoute $route,
+        &$params=array())
+    {
+        $request->setRoute($route);
+        return $route->match($request, $params);
     }
 
 }
