@@ -47,9 +47,9 @@ class Router
         if (!$this->autoDispatched || !isset($_SERVER['SERVER_PROTOCOL']))
             return;
 
-        $route = $this->dispatch();
-        if ($route)
-            echo $route->run();
+        $response = $this->dispatch();
+        if ($response)
+            echo $response->response();
     }
 
     public function always($routine, $routineParam)
@@ -115,10 +115,9 @@ class Router
         $uri = rtrim($uri, ' /');
 
         foreach ($this->routes as $route)
-            if ($route->match($uri, $method, $params)
-                && $route->configure($uri, $method,
-                    static::cleanUpParams($params)))
-                return $route;
+            if ($route->match($uri, $method, $params))
+                return $route->createRequest($uri, $method,
+                    static::cleanUpParams($params));
     }
 
     public function instanceRoute($method, $path, $instance)

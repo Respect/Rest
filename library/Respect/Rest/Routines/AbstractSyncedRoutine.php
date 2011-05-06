@@ -2,14 +2,32 @@
 
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
+use InvalidArgumentException;
+use ReflectionFunction;
+use ReflectionMethod;
+use Respect\Rest\Routes\AbstractRoute;
 
-class By extends AbstractSyncedRoutine implements ProxyableBy
+abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSynced
 {
 
-    public function by(Request $request, $params)
+    protected $reflection;
+
+    protected function getCallback()
     {
-        return call_user_func_array($this->callback, $params);
+        return $this->callback;
+    }
+
+    public function getParameters()
+    {
+        return $this->getReflection()->getParameters();
+    }
+
+    protected function getReflection()
+    {
+        if (is_array($this->callback))
+            return new ReflectionMethod($this->callback[0], $this->callback[1]);
+        else
+            return new ReflectionFunction($this->callback);
     }
 
 }

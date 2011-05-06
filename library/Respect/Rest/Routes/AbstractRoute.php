@@ -2,12 +2,9 @@
 
 namespace Respect\Rest\Routes;
 
-use ReflectionFunctionAbstract;
-use ReflectionParameter;
-use Respect\Rest\Routines\AbstractRoutine;
-use Respect\Rest\Routines\By;
-use Respect\Rest\Routines\Through;
-use Respect\Rest\Routines\When;
+use ReflectionClass;
+use Respect\Rest\Request;
+use \Respect\Rest\Routines\AbstractRoutine;
 
 abstract class AbstractRoute
 {
@@ -21,10 +18,6 @@ abstract class AbstractRoute
     const REGEX_TWO_OPTIONAL_ENDING_PARAMS = '/([^/]+)(?:/([^/]+))?';
     const REGEX_TWO_OPTIONAL_PARAMS = '(?:/([^/]+))?(?:/([^/]+))?';
 
-    protected $dispatched = false;
-    protected $dispatchedMethod = null;
-    protected $dispatchedParams = array();
-    protected $dispatchedUri = null;
     protected $matchPattern;
     protected $method;
     protected $path;
@@ -32,9 +25,9 @@ abstract class AbstractRoute
     protected $replacePattern;
     protected $routines = array();
 
-    abstract protected function getReflection($method);
+    abstract public function getReflection($method);
 
-    abstract protected function runTarget($method, &$params);
+    abstract public function runTarget($method, &$params);
 
     public function __construct($method, $path)
     {
@@ -46,10 +39,11 @@ abstract class AbstractRoute
 
     public function __call($method, $arguments)
     {
-        $routineClass = 'Respect\\Rest\\Routines\\' . ucfirst($method);
+        $routineReflection = new ReflectionClass(
+                'Respect\\Rest\\Routines\\' . ucfirst($method)
+        );
 
-        foreach ($arguments as $param)
-            $this->appendRoutine(new $routineClass($param));
+        $this->appendRoutine($routineReflection->newInstanceArgs($arguments));
 
         return $this;
     }
@@ -57,15 +51,6 @@ abstract class AbstractRoute
     public function appendRoutine(AbstractRoutine $routine)
     {
         $this->routines[] = $routine;
-    }
-
-    public function configure($uri, $method, array $params=array())
-    {
-        $this->dispatchedUri = $uri;
-        $this->dispatchedMethod = $method;
-        $this->dispatchedParams = $params;
-        $this->dispatched = true;
-        return true;
     }
 
     public function createUri($param1=null, $etc=null)
@@ -77,24 +62,9 @@ abstract class AbstractRoute
         );
     }
 
-    public function getDispatched()
+    public function getRoutines()
     {
-        return $this->dispatched;
-    }
-
-    public function getDispatchedMethod()
-    {
-        return $this->dispatchedMethod;
-    }
-
-    public function getDispatchedParams()
-    {
-        return $this->dispatchedParams;
-    }
-
-    public function getDispatchedUri()
-    {
-        return $this->dispatchedUri;
+        return $this->routines;
     }
 
     public function getMatchPattern()
@@ -119,7 +89,8 @@ abstract class AbstractRoute
             return false;
 
         foreach ($this->routines as $r)
-            if ($r instanceof When && !$this->syncCall($method, $r, $params))
+            if ($r instanceof ProxyableWhen
+                && !$this->syncCall('when', $method, $r, $params))
                 return false;
 
         if (!preg_match($this->matchPattern, $uri, $params))
@@ -133,38 +104,9 @@ abstract class AbstractRoute
         return true;
     }
 
-    public function reset()
+    public function createRequest($uri, $method, $params)
     {
-        $this->dispatchedMethod = null;
-        $this->dispatchedParams = array();
-        $this->dispatched = false;
-    }
-
-    public function run()
-    {
-        $method = $this->dispatchedMethod;
-        $params = $this->dispatchedParams;
-
-        foreach ($this->routines as $r)
-            if ($r instanceof By
-                && false === $this->syncCall($method, $r, $params))
-                return false;
-
-        $response = $this->runTarget($method, $params);
-        $proxyResponse = false;
-
-        foreach ($this->routines as $r)
-            if ($r instanceof Through)
-                $proxyResponse = $this->syncCall($method, $r, $params);
-
-        if (is_callable($proxyResponse))
-            $response = $proxyResponse($response);
-
-        if (false === $proxyResponse)
-            return $response;
-
-        $this->reset();
-        return $response;
+        return new Request($this, $uri, $method, $params);
     }
 
     protected function createRegexPatterns($path)
@@ -197,20 +139,6 @@ abstract class AbstractRoute
         return $extra;
     }
 
-    protected function extractParam(ReflectionFunctionAbstract $callbackR,
-                                    ReflectionParameter $cbParam, &$params)
-    {
-        foreach ($callbackR->getParameters() as $callbackParam)
-            if ($callbackParam->getName() === $cbParam->getName()
-                && isset($params[$callbackParam->getPosition()]))
-                return $params[$callbackParam->getPosition()];
-
-        if ($cbParam->isDefaultValueAvailable())
-            return $cbParam->getDefaultValue();
-
-        return null;
-    }
-
     //turn sequenced parameters optional, so /*/*/* will match /1/2/3, /1/2 and /1
     protected function fixOptionalParams($pathQuoted)
     {
@@ -228,18 +156,6 @@ abstract class AbstractRoute
             );
 
         return $pathQuoted;
-    }
-
-    protected function syncCall($method, AbstractRoutine $routine, &$params)
-    {
-        $reflection = $this->getReflection($method);
-
-        $cbParams = array();
-
-        foreach ($routine->getParameters() as $p)
-            $cbParams[] = $this->extractParam($reflection, $p, $params);
-
-        return $routine->call($this, $cbParams);
     }
 
 }

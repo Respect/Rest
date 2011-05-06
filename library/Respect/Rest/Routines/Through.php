@@ -2,9 +2,16 @@
 
 namespace Respect\Rest\Routines;
 
-class Through extends AbstractRoutine
+use Respect\Rest\Request;
+
+class Through extends AbstractSyncedRoutine implements ProxyableThrough
 {
-    
+
+    public function through(Request $request, $params)
+    {
+        return call_user_func_array($this->callback, $params);
+    }
+
 }
 
 /**

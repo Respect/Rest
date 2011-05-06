@@ -41,12 +41,12 @@ class ClassName extends AbstractRoute
         return $reflection->newInstanceArgs($this->constructorParams);
     }
 
-    protected function getReflection($method)
+    public function getReflection($method)
     {
         return new ReflectionMethod($this->class, $method);
     }
 
-    protected function runTarget($method, &$params)
+    public function runTarget($method, &$params)
     {
         if (is_null($this->instance))
             $this->instance = $this->createInstance();

@@ -16,7 +16,7 @@ class Instance extends AbstractRoute
         $this->instance = $instance;
     }
 
-    protected function getReflection($method)
+    public function getReflection($method)
     {
         if (empty($this->reflection))
             $this->reflection = $this->getCallbackReflection(
@@ -26,7 +26,7 @@ class Instance extends AbstractRoute
         return $this->reflection;
     }
 
-    protected function runTarget($method, &$params)
+    public function runTarget($method, &$params)
     {
         if (!$this->instance instanceof Routable)
             throw new InvalidArgumentException(''); //TODO

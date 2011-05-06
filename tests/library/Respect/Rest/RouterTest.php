@@ -33,7 +33,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testNotRoutableController()
     {
         $this->object->instanceRoute('ANY', '/', new \stdClass);
-        $this->object->dispatch('get', '/')->run();
+        $this->object->dispatch('get', '/')->response();
     }
 
     /**
@@ -42,7 +42,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testNotRoutableControllerByName()
     {
         $this->object->classRoute('ANY', '/', '\stdClass');
-        $this->object->dispatch('get', '/')->run();
+        $this->object->dispatch('get', '/')->response();
     }
 
     /**
@@ -53,7 +53,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->object->callbackRoute('get', $route, $this->callback);
         $r = $this->object->dispatch('get', $path);
         if ($r)
-            $r->run();
+            $r->response();
         $this->assertEquals($expectedParams, $this->result);
     }
 
@@ -66,7 +66,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->object->callbackRoute('get', $route, $this->callback);
         $r = $this->object->dispatch('get', $path);
         if ($r)
-            $r->run();
+            $r->response();
         $this->assertEquals($expectedParams, $this->result);
     }
 
@@ -79,7 +79,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->object->callbackRoute('get', $route, $this->callback);
         $r = $this->object->dispatch('get', $path);
         if ($r)
-            $r->run();
+            $r->response();
         $this->assertEquals($expectedParams, $this->result);
     }
 
@@ -246,21 +246,21 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testBindControllerNoParams()
     {
         $this->object->any('/users/*', new MyController);
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
+        $result = $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals(array('alganet', 'get', array()), $result);
     }
 
     public function testBindControllerParams()
     {
         $this->object->any('/users/*', 'Respect\\Rest\\MyController', 'ok');
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
+        $result = $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals(array('alganet', 'get', array('ok')), $result);
     }
 
     public function testBindControllerInstance()
     {
         $this->object->instanceRoute('ANY', '/users/*', new MyController('ok'));
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
+        $result = $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals(array('alganet', 'get', array('ok')), $result);
     }
 
@@ -268,7 +268,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $this->object->instanceRoute('ANY', '/users/*',
             new MyController('ok', 'foo', 'bar'));
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
+        $result = $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals(array('alganet', 'get', array('ok', 'foo', 'bar')),
             $result);
     }
@@ -283,10 +283,10 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testBindControllerMultiMethods()
     {
         $this->object->instanceRoute('ANY', '/users/*', new MyController);
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
+        $result = $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals(array('alganet', 'get', array()), $result);
 
-        $result = $this->object->dispatch('post', '/users/alganet')->run();
+        $result = $this->object->dispatch('post', '/users/alganet')->response();
         $this->assertEquals(array('alganet', 'post', array()), $result);
     }
 
@@ -300,7 +300,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             function() {
                 
             })->by($proxy);
-        $this->object->dispatch('get', '/users/alganet')->run();
+        $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals('ok', $result);
     }
 
@@ -315,7 +315,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             function() {
                 
             });
-        $this->object->dispatch('get', '/users/alganet')->run();
+        $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals('ok', $result);
     }
 
@@ -330,7 +330,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
                 
             });
         $this->object->always('by', $proxy);
-        $this->object->dispatch('get', '/users/alganet')->run();
+        $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals('ok', $result);
     }
 
@@ -344,7 +344,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             function() {
                 
             })->through($proxy);
-        $this->object->dispatch('get', '/users/alganet')->run();
+        $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals('ok', $result);
     }
 
@@ -359,7 +359,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             function() {
                 return 'ok';
             })->through($proxy);
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
+        $result = $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals('okok', $result);
     }
 
@@ -378,8 +378,8 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->object->get('/users/*/*/*',
             function($foo, $bar, $baz) use(&$result) {
                 $result[] = 'main';
-            })->by($proxy1)->through($proxy2, $proxy3);
-        $this->object->dispatch('get', '/users/abc/def/ghi')->run();
+            })->by($proxy1)->through($proxy2)->through($proxy3);
+        $this->object->dispatch('get', '/users/abc/def/ghi')->response();
         $this->assertSame(
             array('abc', 'main', 'def', 'ghi'), $result
         );
@@ -396,7 +396,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
                 $resultCallback = func_get_args();
             };
         $this->object->get('/users/*/*', $callback)->by($proxy1);
-        $this->object->dispatch('get', '/users/abc/def')->run();
+        $this->object->dispatch('get', '/users/abc/def')->response();
         $this->assertEquals(array('def', null), $resultProxy);
         $this->assertEquals(array('abc', 'def'), $resultCallback);
     }
@@ -417,8 +417,8 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->object->get('/users/*/*/*',
             function($foo, $bar, $baz) use(&$result) {
                 $result[] = 'main';
-            })->by($proxy1)->through($proxy2, $proxy3);
-        $this->object->dispatch('get', '/users/abc/def/ghi')->run();
+            })->by($proxy1)->through($proxy2)->through($proxy3);
+        $this->object->dispatch('get', '/users/abc/def/ghi')->response();
         $this->assertSame(
             array('abc'), $result
         );
@@ -451,10 +451,10 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             }
         );
         $this->assertEquals(
-            10, $this->object->dispatch('get', '/posts/2010/20')->run()
+            10, $this->object->dispatch('get', '/posts/2010/20')->response()
         );
         $this->assertEquals(
-            5, $this->object->dispatch('get', '/anything')->run()
+            5, $this->object->dispatch('get', '/anything')->response()
         );
     }
 
@@ -471,10 +471,10 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             }
         );
         $this->assertEquals(
-            5, $this->object->dispatch('get', '/users/alganet')->run()
+            5, $this->object->dispatch('get', '/users/alganet')->response()
         );
         $this->assertEquals(
-            10, $this->object->dispatch('get', '/users/2010/20')->run()
+            10, $this->object->dispatch('get', '/users/2010/20')->response()
         );
     }
 
@@ -491,10 +491,10 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             }
         );
         $this->assertEquals(
-            5, $this->object->dispatch('get', '/users/lists/alganet')->run()
+            5, $this->object->dispatch('get', '/users/lists/alganet')->response()
         );
         $this->assertEquals(
-            10, $this->object->dispatch('get', '/users/foobar/alganet')->run()
+            10, $this->object->dispatch('get', '/users/foobar/alganet')->response()
         );
     }
 
@@ -526,19 +526,19 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             }
         );
         $this->assertEquals(
-            2, $this->object->dispatch('get', '/')->run()
+            2, $this->object->dispatch('get', '/')->response()
         );
         $this->assertEquals(
-            3, $this->object->dispatch('get', '/foo')->run()
+            3, $this->object->dispatch('get', '/foo')->response()
         );
         $this->assertEquals(
-            4, $this->object->dispatch('get', '/foo/versions')->run()
+            4, $this->object->dispatch('get', '/foo/versions')->response()
         );
         $this->assertEquals(
-            5, $this->object->dispatch('get', '/foo/versions/1.0')->run()
+            5, $this->object->dispatch('get', '/foo/versions/1.0')->response()
         );
         $this->assertEquals(
-            6, $this->object->dispatch('get', '/foo/bar')->run()
+            6, $this->object->dispatch('get', '/foo/bar')->response()
         );
     }
 
@@ -554,7 +554,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $commandArgs = explode(' ', $commandLine);
         $output = $router->dispatch(
                 array_shift($commandArgs), '/' . implode('/', $commandArgs)
-            )->run();
+            )->response();
         $this->assertEquals('Installed apache, php, mysql', $output);
     }
 

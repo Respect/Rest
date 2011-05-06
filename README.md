@@ -137,7 +137,7 @@ Route Conditions
   2. The `$documentId` param must have the same name in the action and the 
      condition (but does not need to appear in the same order)
   3. You can specify more than one parameter per condition callback.
-  4. You can specify more than one callback: `when($cb1, $cb2, $etc)`
+  4. You can specify more than one callback: `when($cb1)->when($cb2)->when($etc)`
   5. Conditions will also sync with parameters on binded classes and instances
      methods
 
@@ -153,7 +153,7 @@ Route Proxies (Before)
   1. This will execute the callback defined on *by* before the route action.
   2. Parameters are also synced by name, not order, like `when`.
   3. You can specify more than one parameter per proxy callback.
-  4. You can specify more than one proxy: `by($cb1, $cb2, $etc)`
+  4. You can specify more than one proxy: `by($cb1)->by($cb2)->by($etc)`
   5. A `return false` on a proxy will stop the execution of following proxies
      and the route action.
   6. Proxies will also sync with parameters on binded classes and instances

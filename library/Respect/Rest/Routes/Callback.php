@@ -24,7 +24,7 @@ class Callback extends AbstractRoute
         $this->callback = $callback;
     }
 
-    protected function getReflection($method)
+    public function getReflection($method)
     {
         if (empty($this->reflection))
             $this->reflection = $this->getCallbackReflection();
@@ -32,7 +32,7 @@ class Callback extends AbstractRoute
         return $this->reflection;
     }
 
-    protected function runTarget($method, &$params)
+    public function runTarget($method, &$params)
     {
         return call_user_func_array($this->callback, $params);
     }

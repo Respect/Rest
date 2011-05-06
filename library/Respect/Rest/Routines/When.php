@@ -2,9 +2,16 @@
 
 namespace Respect\Rest\Routines;
 
-class When extends AbstractRoutine
+use Respect\Rest\Request;
+
+class When extends AbstractSyncedRoutine implements ProxyableWhen
 {
-    
+
+    public function when(Request $request, $params)
+    {
+        return call_user_func_array($this->callback, $params);
+    }
+
 }
 
 /**

@@ -7,40 +7,16 @@ use ReflectionFunction;
 use ReflectionMethod;
 use Respect\Rest\Routes\AbstractRoute;
 
-abstract class AbstractRoutine
+abstract class AbstractRoutine implements ParamSynced
 {
 
     protected $callback;
-    protected $reflection;
 
     public function __construct($callback)
     {
         if (!is_callable($callback))
             throw new InvalidArgumentException('Routine callback must be... guess what... callable!');
         $this->callback = $callback;
-    }
-
-    public function call(AbstractRoute $route, $params)
-    {
-        return call_user_func_array($this->callback, $params);
-    }
-
-    public function getCallback()
-    {
-        return $this->callback;
-    }
-
-    public function getParameters()
-    {
-        return $this->getReflection()->getParameters();
-    }
-
-    public function getReflection()
-    {
-        if (is_array($this->callback))
-            return new ReflectionMethod($this->callback[0], $this->callback[1]);
-        else
-            return new ReflectionFunction($this->callback);
     }
 
 }

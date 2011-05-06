@@ -2,14 +2,50 @@
 
 namespace Respect\Rest\Routines;
 
+use SplObjectStorage;
 use Respect\Rest\Request;
 
-class By extends AbstractSyncedRoutine implements ProxyableBy
+class Accept extends AbstractRoutine implements ProxyableWhen, ProxyableThrough
 {
 
-    public function by(Request $request, $params)
+    protected $mimeTypes = array();
+    protected $negotiated = null;
+
+    public function __construct($mimeType1, $mimeType2=null, $etc=null)
     {
-        return call_user_func_array($this->callback, $params);
+        $this->negotiated = new SplObjectStorage;
+        $this->mimeTypes = func_get_args();
+    }
+
+    protected function negotiate(Request $request)
+    {
+        $acceptHeader = $_SERVER['HTTP_ACCEPT'];
+        $acceptParts = explode(',', $acceptHeader);
+        $acceptMimes = array();
+        foreach ($acceptParts as &$acceptPart) {
+            list($mime, $quality) = explode(';q=', trim($acceptPart));
+            $acceptMimes[$mime] = $quality;
+        }
+        arsort($acceptMimes);
+        foreach ($this->mimeTypes as $mime)
+            foreach ($acceptMimes as $accepted)
+                if ($mime == $accepted)
+                    return $this->negotiated[$request] = $mime;
+
+        return false;
+    }
+
+    public function when(Request $request, $params)
+    {
+        return false !== $this->negotiate($request);
+    }
+
+    public function through(Request $request, $params)
+    {
+        if (!$this->negotiated[$request])
+            return;
+        
+        //TODO
     }
 
 }
@@ -46,3 +82,4 @@ class By extends AbstractSyncedRoutine implements ProxyableBy
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
+

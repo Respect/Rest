@@ -4,14 +4,10 @@ namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
 
-class By extends AbstractSyncedRoutine implements ProxyableBy
+interface ProxyableBy
 {
 
-    public function by(Request $request, $params)
-    {
-        return call_user_func_array($this->callback, $params);
-    }
-
+    public function by(Request $request, $params);
 }
 
 /**
