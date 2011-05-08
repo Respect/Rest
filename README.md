@@ -3,15 +3,19 @@ Respect\Rest
 
 Thin controller for RESTful applications
 
-**This is a work in progress and has not been tested on production environments**
+**This is a work in progress and has not been tested on production environments.**
 
 Highlights:
 
- * Thin. Does not try to change how PHP works (`$_POST`, `$_GET`, etc remains untouched by default);
+ * Thin. Does not try to change how PHP works;
  * Lightweight. Few, small classes.
  * Maintainable. You can migrate from the microframework style to the class-controller style.
  * RESTful. The right way to create web apps.
 
+Roadmap:
+
+ * Pass the [litmus test](http://www.innoq.com/blog/st/2010/07/rest_litmus_test_for_web_frame.html)
+ * Built-in hypermedia goodies
 
 Feature Guide
 =============

@@ -12,7 +12,7 @@ use Respect\Rest\Routines\ProxyableThrough;
 use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\ParamSynced;
 
-class Request implements ArrayAccess
+class Request
 {
 
     protected $route;
@@ -53,36 +53,18 @@ class Request implements ArrayAccess
         return $this->uri;
     }
 
-    public function getVar($type, $name)
+    public function &getVar($type, $name)
     {
         $this->loadVar($type);
-        if (!isset($this->vars[$type][$name]))
+        if (!$this->hasVar($type, $name))
             return false;
         return $this->vars[$type][$name];
     }
 
-    public function offsetExists($offset)
+    public function hasVar($type, $name)
     {
-
-        throw new \Exception(''); //TODO
-    }
-
-    public function &offsetGet($varType)
-    {
-        $this->loadVar($varType);
-        return $this->vars[$varType];
-    }
-
-    public function offsetSet($offset, $value)
-    {
-
-        throw new \Exception(''); //TODO
-    }
-
-    public function offsetUnset($offset)
-    {
-
-        throw new \Exception(''); //TODO
+        $this->loadVar($type);
+        return isset($this->vars[$type][$name]);
     }
 
     public function response()
@@ -153,8 +135,7 @@ class Request implements ArrayAccess
             $this->vars[$type] = $$globalVar;
     }
 
-    protected function extractParam(ReflectionFunctionAbstract $callbackR,
-        ReflectionParameter $cbParam, &$params)
+    protected function extractParam(ReflectionFunctionAbstract $callbackR, ReflectionParameter $cbParam, &$params)
     {
         foreach ($callbackR->getParameters() as $callbackParam)
             if ($callbackParam->getName() === $cbParam->getName()

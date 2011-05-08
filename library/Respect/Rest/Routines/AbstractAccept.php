@@ -16,15 +16,16 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableWhen, 
         if (!array_filter($acceptMap, 'is_callable'))
             throw new \Exception(''); //TODO
 
-        $this->negotiated = new SplObjectStorage;
+            $this->negotiated = new SplObjectStorage;
         $this->acceptMap = $acceptMap;
     }
 
     protected function negotiate(Request $request)
     {
-        if (!isset($request['SERVER'][static::ACCEPT_HEADER]))
-            return;
-        $acceptHeader = $request['SERVER'][static::ACCEPT_HEADER];
+        if (!$request->hasVar('SERVER', static::ACCEPT_HEADER))
+            return false;
+
+        $acceptHeader = $request->getVar('SERVER', static::ACCEPT_HEADER);
         $acceptParts = explode(',', $acceptHeader);
         $acceptList = array();
         foreach ($acceptParts as $k => &$acceptPart) {
@@ -44,8 +45,10 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableWhen, 
 
     public function through(Request $request, $params)
     {
-        if (!isset($this->negotiated[$request]) || !$this->negotiate($request))
+        if (!isset($this->negotiated[$request])
+            || false === $this->negotiated[$request])
             return;
+        
         return $this->negotiated[$request];
     }
 
@@ -93,4 +96,3 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableWhen, 
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-

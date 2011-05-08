@@ -2,27 +2,50 @@
 
 namespace Respect\Rest\Routines;
 
-class AcceptLanguage extends AbstractAccept
+use SplObjectStorage;
+use Respect\Rest\Request;
+
+class ContentType implements ProxyableWhen
 {
-    const ACCEPT_HEADER = 'HTTP_ACCEPT_LANGUAGE';
 
-    protected function compareItens($requested, $provided)
+    protected $contentMap = array();
+    protected $negotiated = null;
+
+    public function __construct(array $contentMap = array())
     {
-        $requested = preg_replace('/^x\-/', '', $requested);
-        $provided = preg_replace('/^x\-/', '', $provided);
+        if (!array_filter($contentMap, 'is_callable'))
+            throw new \Exception(''); //TODO
 
-        if ($requested == $provided)
-            return true;
+            $this->negotiated = new SplObjectStorage;
+        $this->contentMap = $contentMap;
+    }
 
-        if (stripos($requested, '-') || !stripos($provided, '-'))
+    protected function negotiate(Request $request)
+    {
+        if (!$request->hasVar('SERVER', 'CONTENT_TYPE'))
             return false;
 
-        list($providedA, ) = explode('-', $provided);
+        $requested = $request->getVar('SERVER', 'CONTENT_TYPE');
 
-        if ($requested === $providedA)
-            return true;
+        foreach ($this->contentMap as $provided => $callback)
+            if ($requested == $provided)
+                return $this->negotiated[$request] = $callback;
 
         return false;
+    }
+
+    public function by(Request $request, $params)
+    {
+        if (!isset($this->negotiated[$request])
+            || false === $this->negotiated[$request])
+            return;
+
+        return $this->negotiated[$request];
+    }
+
+    public function when(Request $request, $params)
+    {
+        return false !== $this->negotiate($request);
     }
 
 }
@@ -59,4 +82,3 @@ class AcceptLanguage extends AbstractAccept
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-
