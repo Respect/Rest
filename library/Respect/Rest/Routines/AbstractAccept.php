@@ -22,10 +22,10 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableWhen, 
 
     protected function negotiate(Request $request)
     {
-        if (!$request->hasVar('SERVER', static::ACCEPT_HEADER))
+        if (!isset($_SERVER[static::ACCEPT_HEADER]))
             return false;
 
-        $acceptHeader = $request->getVar('SERVER', static::ACCEPT_HEADER);
+        $acceptHeader = $_SERVER[static::ACCEPT_HEADER];
         $acceptParts = explode(',', $acceptHeader);
         $acceptList = array();
         foreach ($acceptParts as $k => &$acceptPart) {

@@ -5,7 +5,7 @@ namespace Respect\Rest\Routines;
 use SplObjectStorage;
 use Respect\Rest\Request;
 
-class ContentType implements ProxyableWhen
+class ContentType extends AbstractRoutine implements ProxyableWhen, ProxyableBy
 {
 
     protected $contentMap = array();
@@ -16,17 +16,16 @@ class ContentType implements ProxyableWhen
         if (!array_filter($contentMap, 'is_callable'))
             throw new \Exception(''); //TODO
 
-            $this->negotiated = new SplObjectStorage;
+        $this->negotiated = new SplObjectStorage;
         $this->contentMap = $contentMap;
     }
 
     protected function negotiate(Request $request)
     {
-        if (!$request->hasVar('SERVER', 'CONTENT_TYPE'))
+        if (!isset($_SERVER['CONTENT_TYPE']))
             return false;
 
-        $requested = $request->getVar('SERVER', 'CONTENT_TYPE');
-
+        $requested = $_SERVER['CONTENT_TYPE'];
         foreach ($this->contentMap as $provided => $callback)
             if ($requested == $provided)
                 return $this->negotiated[$request] = $callback;
@@ -40,7 +39,7 @@ class ContentType implements ProxyableWhen
             || false === $this->negotiated[$request])
             return;
 
-        return $this->negotiated[$request];
+        return call_user_func($this->negotiated[$request]);
     }
 
     public function when(Request $request, $params)

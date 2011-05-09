@@ -53,38 +53,24 @@ class Request
         return $this->uri;
     }
 
-    public function &getVar($type, $name)
-    {
-        $this->loadVar($type);
-        if (!$this->hasVar($type, $name))
-            return false;
-        return $this->vars[$type][$name];
-    }
-
-    public function hasVar($type, $name)
-    {
-        $this->loadVar($type);
-        return isset($this->vars[$type][$name]);
-    }
-
     public function response()
     {
         if (!$this->route)
             return null;
 
-        foreach ($this->route->getRoutines() as $r)
-            if ($r instanceof ProxyableBy
-                && false === $this->syncCall('by', $this->method, $r,
+        foreach ($this->route->getRoutines() as $by)
+            if ($by instanceof ProxyableBy
+                && false === $this->routineCall('by', $this->method, $by,
                     $this->params))
                 return false;
 
         $response = $this->route->runTarget($this->method, $this->params);
         $proxyResult = false;
 
-        foreach ($this->route->getRoutines() as $r)
-            if ($r instanceof ProxyableThrough)
-                $proxyResult = $this->syncCall('through', $this->method, $r,
-                        $this->params);
+        foreach ($this->route->getRoutines() as $through)
+            if ($through instanceof ProxyableThrough)
+                $proxyResult = $this->routineCall('through', $this->method,
+                        $through, $this->params);
 
         if (is_callable($proxyResult))
             $response = $proxyResult($response);
@@ -105,13 +91,7 @@ class Request
         $this->route = $route;
     }
 
-    public function setVar($type, $name, $value)
-    {
-        $this->loadVar($type);
-        $this->vars[$type][$name] = $value;
-    }
-
-    public function syncCall($op, $method, AbstractRoutine $routine, &$params)
+    public function routineCall($op, $method, AbstractRoutine $routine, &$params)
     {
         $reflection = $this->route->getReflection($method);
 
@@ -125,17 +105,8 @@ class Request
         return $routine->{$op}($this, $cbParams);
     }
 
-    protected function loadVar($type)
-    {
-        $globalVar = "_$type";
-
-        global $$globalVar;
-
-        if (!isset($this->vars[$type]))
-            $this->vars[$type] = $$globalVar;
-    }
-
-    protected function extractParam(ReflectionFunctionAbstract $callbackR, ReflectionParameter $cbParam, &$params)
+    protected function extractParam(ReflectionFunctionAbstract $callbackR,
+        ReflectionParameter $cbParam, &$params)
     {
         foreach ($callbackR->getParameters() as $callbackParam)
             if ($callbackParam->getName() === $cbParam->getName()

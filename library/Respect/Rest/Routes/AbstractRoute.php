@@ -91,7 +91,7 @@ abstract class AbstractRoute
 
         foreach ($this->routines as $routine)
             if ($routine instanceof ProxyableWhen
-                && !$request->syncCall('when', $request->getMethod(), $routine,
+                && !$request->routineCall('when', $request->getMethod(), $routine,
                     $params))
                 return false;
 

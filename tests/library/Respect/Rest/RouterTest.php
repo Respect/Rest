@@ -563,7 +563,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testAccept()
     {
         $request = new Request('get', '/users/alganet');
-        $request->setVar('SERVER', 'HTTP_ACCEPT', 'application/json');
+        $_SERVER['HTTP_ACCEPT'] = 'application/json';
         $this->object->get('/users/*',
             function() {
                 return range(0, 10);
@@ -575,7 +575,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testAcceptGeneric()
     {
         $request = new Request('get', '/users/alganet');
-        $request->setVar('SERVER', 'HTTP_ACCEPT', 'application/*');
+        $_SERVER['HTTP_ACCEPT'] = 'application/*';
         $this->object->get('/users/*',
             function() {
                 return range(0, 10);
@@ -587,7 +587,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testAcceptGeneric2()
     {
         $request = new Request('get', '/users/alganet');
-        $request->setVar('SERVER', 'HTTP_ACCEPT', '*/*');
+        $_SERVER['HTTP_ACCEPT'] = '*/*';
         $this->object->get('/users/*',
             function() {
                 return range(0, 10);
@@ -599,7 +599,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testAcceptGeneric3()
     {
         $request = new Request('get', '/users/alganet');
-        $request->setVar('SERVER', 'HTTP_ACCEPT', 'text/*');
+        $_SERVER['HTTP_ACCEPT'] = 'text/*';
         $this->object->get('/users/*',
             function() {
                 return range(0, 10);
@@ -610,10 +610,8 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testAcceptLanguage()
     {
-        $requestEn = new Request('get', '/users/alganet');
-        $requestEn->setVar('SERVER', 'HTTP_ACCEPT_LANGUAGE', 'en');
-        $requestPt = new Request('get', '/users/alganet');
-        $requestPt->setVar('SERVER', 'HTTP_ACCEPT_LANGUAGE', 'pt');
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'en';
+        $request = new Request('get', '/users/alganet');
         $this->object->get('/users/*',
             function() {
                 
@@ -624,16 +622,32 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             'pt-BR' => function() {
                 return 'Olá!';
             }));
-        $r = $this->object->dispatchRequest($requestEn)->response();
+        $r = $this->object->dispatchRequest($request)->response();
         $this->assertEquals('Hi there', $r);
-        $r = $this->object->dispatchRequest($requestPt)->response();
+    }
+
+    public function testAcceptLanguage2()
+    {
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'pt';
+        $request = new Request('get', '/users/alganet');
+        $this->object->get('/users/*',
+            function() {
+                
+            })->acceptLanguage(array(
+            'en-US' => function() {
+                return 'Hi there';
+            },
+            'pt-BR' => function() {
+                return 'Olá!';
+            }));
+        $r = $this->object->dispatchRequest($request)->response();
         $this->assertEquals('Olá!', $r);
     }
 
     public function testAcceptOrder()
     {
         $requestBoth = new Request('get', '/users/alganet');
-        $requestBoth->setVar('SERVER', 'HTTP_ACCEPT_LANGUAGE', 'pt,en');
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'pt,en';
         $this->object->get('/users/*',
             function() {
                 
@@ -651,7 +665,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testAcceptOrderX()
     {
         $requestBoth = new Request('get', '/users/alganet');
-        $requestBoth->setVar('SERVER', 'HTTP_ACCEPT_LANGUAGE', 'x-klingon,en');
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'x-klingon,en';
         $this->object->get('/users/*',
             function() {
                 
@@ -668,8 +682,8 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testAcceptOrderQuality()
     {
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'pt;q=0.7,en';
         $requestBoth = new Request('get', '/users/alganet');
-        $requestBoth->setVar('SERVER', 'HTTP_ACCEPT_LANGUAGE', 'pt;q=0.7,en');
         $this->object->get('/users/*',
             function() {
                 
@@ -682,6 +696,25 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             }));
         $r = $this->object->dispatchRequest($requestBoth)->response();
         $this->assertEquals('Hi there', $r);
+    }
+
+    public function testContenType()
+    {
+        $_SERVER['CONTENT_TYPE'] = 'text/xml';
+        $requestBoth = new Request('get', '/users/alganet');
+        $result = null;
+        $this->object->get('/users/*',
+            function() {
+                
+            })->contentType(array(
+            'text/json' => function() {
+                
+            },
+            'text/xml' => function() use (&$result) {
+                $result = 'ok';
+            }));
+        $r = $this->object->dispatchRequest($requestBoth)->response();
+        $this->assertEquals('ok', $result);
     }
 
 }
