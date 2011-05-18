@@ -15,11 +15,6 @@ spl_autoload_register(
         if (false !== strpos(end($fileParts), '_'))
             array_splice($fileParts, -1, 1, explode('_', current($fileParts)));
 
-        $file = implode(DIRECTORY_SEPARATOR, $fileParts) . '.php';
-
-        foreach (explode(PATH_SEPARATOR, get_include_path()) as $path) {
-            if (file_exists($path = $path . DIRECTORY_SEPARATOR . $file))
-                return require $path;
-        }
+        require implode(DIRECTORY_SEPARATOR, $fileParts) . '.php';
     }
 );

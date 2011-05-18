@@ -15,6 +15,11 @@ class ClassName extends AbstractRoute
     protected $instance = null;
     protected $reflection = null;
 
+    public function getClass()
+    {
+        return $this->class;
+    }
+
     public function setArguments()
     {
         $this->constructorParams = func_get_args();
