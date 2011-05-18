@@ -5,23 +5,37 @@ namespace Respect\Rest\Routines;
 use SplObjectStorage;
 use Respect\Rest\Request;
 
-abstract class AbstractAccept extends AbstractRoutine implements ProxyableWhen, ProxyableThrough
+abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, ProxyableWhen, ProxyableThrough
 {
 
-    protected $acceptMap = array();
+    protected $headerAcceptMap = array();
+    protected $urlAcceptMap = array();
     protected $negotiated = null;
 
     public function __construct(array $acceptMap = array())
     {
+        $this->negotiated = new SplObjectStorage;
+        $this->parseAcceptMap($acceptMap);
+    }
+
+    protected function parseAcceptMap($acceptMap)
+    {
         if (!array_filter($acceptMap, 'is_callable'))
             throw new \Exception(''); //TODO
 
-            $this->negotiated = new SplObjectStorage;
-        $this->acceptMap = $acceptMap;
+        foreach ($acceptMap as $acceptSpec => $callback)
+            if ('.' === $acceptSpec[0])
+                $this->urlAcceptMap[$acceptSpec] = $callback;
+            else
+                $this->headerAcceptMap[$acceptSpec] = $callback;
     }
 
     protected function negotiate(Request $request)
     {
+        foreach ($this->urlAcceptMap as $provided => $callback)
+            if (false !== stripos($request->getUri(), $provided))
+                return $this->negotiated[$request] = $callback;
+
         if (!isset($_SERVER[static::ACCEPT_HEADER]))
             return false;
 
@@ -36,11 +50,25 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableWhen, 
         }
         arsort($acceptList);
         foreach ($acceptList as $requested => $quality)
-            foreach ($this->acceptMap as $provided => $callback)
+            foreach ($this->headerAcceptMap as $provided => $callback)
                 if ($this->compareItens($requested, $provided))
                     return $this->negotiated[$request] = $callback;
 
         return false;
+    }
+
+    public function by(Request $request, $params)
+    {
+        $unsyncedParams = $request->getParams();
+        $extensions = array_keys($this->urlAcceptMap);
+
+        if (empty($extensions) || empty($unsyncedParams))
+            return;
+
+        $unsyncedParams[] = str_replace(
+            $extensions, '', array_pop($unsyncedParams)
+        );
+        $request->setParams($unsyncedParams);
     }
 
     public function through(Request $request, $params)
@@ -48,7 +76,7 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableWhen, 
         if (!isset($this->negotiated[$request])
             || false === $this->negotiated[$request])
             return;
-        
+
         return $this->negotiated[$request];
     }
 
