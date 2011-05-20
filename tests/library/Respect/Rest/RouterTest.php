@@ -577,7 +577,6 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $request = new Request('get', '/users/alganet.json');
         $this->object->get('/users/*',
             function($screenName) {
-                echo $screenName;
                 return range(0, 10);
             })->accept(array('.json' => 'json_encode'));
         $r = $this->object->dispatchRequest($request)->response();
@@ -727,6 +726,23 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             }));
         $r = $this->object->dispatchRequest($requestBoth)->response();
         $this->assertEquals('ok', $result);
+    }
+
+    /**
+     * @expectedException PHPUnit_Framework_Error
+     */
+    public function testDestructor()
+    {
+        $r = new Router;
+        $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+        $r->any('/',
+            function() {
+                throw new \Exception("message");
+            });
+        $r->setAutoDispatched(true);
+        unset($r);
     }
 
 }

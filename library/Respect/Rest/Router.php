@@ -2,6 +2,7 @@
 
 namespace Respect\Rest;
 
+use Exception;
 use ReflectionClass;
 use ReflectionMethod;
 use InvalidArgumentException;
@@ -47,9 +48,13 @@ class Router
         if (!$this->autoDispatched || !isset($_SERVER['SERVER_PROTOCOL']))
             return;
 
-        $response = $this->dispatch();
-        if ($response)
-            echo $response->response();
+        try {
+            $response = $this->dispatch();
+            if ($response)
+                echo $response->response();
+        } catch (Exception $e) {
+            trigger_error($e->getTraceAsString(), E_USER_ERROR);
+        }
     }
 
     public function always($routine, $routineParam)
