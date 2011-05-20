@@ -96,7 +96,9 @@ Matching any HTTP Method
 Bind Controller Classes
 -----------------------
 
-    class MyArticle {
+    use Respect\Rest\Routable;
+
+    class MyArticle implements Routable {
         public function get($id) { }
         public function delete($id) { }
         public function put($id) { }
@@ -111,6 +113,7 @@ Bind Controller Classes
   3. Controllers are lazy loaded and persistent. The *MyArticle* class will
      be instantiated only when a route matches one of his methods, and this
      instance will be reused on other requests (redirects, etc).
+  4. Classes must implement the interface Respect\Rest\Routable;
 
 Controller Classes Constructors
 -------------------------------
