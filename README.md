@@ -17,6 +17,24 @@ Roadmap:
  * Pass the [litmus test](http://www.innoq.com/blog/st/2010/07/rest_litmus_test_for_web_frame.html)
  * Built-in hypermedia goodies
 
+Installing
+==========
+
+### Method 1: Using PEAR
+
+Type the following commands in your terminal:
+
+  * `pear channel-discover respect.github.com/pear`
+  * `pear install respect/Rest-alpha`
+
+Make sure that PEAR is in your include_path.
+
+### Method 2: Downloading
+
+  * Download the latest release from http://respect.github.com/pear/
+  * Extract the files in a folder of your preference
+  * Add the extract *library* folder to your include_path
+
 Feature Guide
 =============
 
@@ -171,14 +189,14 @@ Route Proxies (After)
 
     $r3->get('/artists/*/albums/*', function($artistName, $albumName) {
         //do something
-    })->then(function() {
+    })->through(function() {
         //do something nice
     });
 
-  1. `by` proxies will be executed before the route action, `then proxies` will
-     be executed after.
+  1. `by` proxies will be executed before the route action, `through proxies`
+     will be executed after.
   2. You don't need to use them both at the same time.
-  3. `then` can also receive parameters by name
+  3. `through` can also receive parameters by name
 
 License Information
 ===================

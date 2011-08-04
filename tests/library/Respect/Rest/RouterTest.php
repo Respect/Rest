@@ -728,6 +728,19 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('ok', $result);
     }
 
+    public function testVirtualHost()
+    {
+        $router = new Router('/myvh/');
+        $ok = false;
+        $router->get('/alganet',
+            function() use (&$ok) {
+                $ok = true;
+            }
+        );
+        $router->dispatch('get', '/myvh/alganet')->response();
+        $this->assertTrue($ok);
+    }
+
     /**
      * @expectedException PHPUnit_Framework_Error
      */

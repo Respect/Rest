@@ -91,6 +91,11 @@ class Request
         $this->route = $route;
     }
 
+    public function setUri($uri)
+    {
+        $this->uri = $uri;
+    }
+
     public function routineCall($op, $method, AbstractRoutine $routine, &$params)
     {
         $reflection = $this->route->getReflection($method);
@@ -105,8 +110,7 @@ class Request
         return $routine->{$op}($this, $cbParams);
     }
 
-    protected function extractParam(ReflectionFunctionAbstract $callbackR,
-        ReflectionParameter $cbParam, &$params)
+    protected function extractParam(ReflectionFunctionAbstract $callbackR, ReflectionParameter $cbParam, &$params)
     {
         foreach ($callbackR->getParameters() as $callbackParam)
             if ($callbackParam->getName() === $cbParam->getName()

@@ -15,6 +15,7 @@ class Router
     protected $autoDispatched = true;
     protected $globalRoutines = array();
     protected $routes = array();
+    protected $virtualHost = null;
 
     public static function cleanUpParams($params)
     {
@@ -41,6 +42,11 @@ class Router
             array_unshift($arguments, $method);
             return call_user_func_array(array($this, 'classRoute'), $arguments);
         }
+    }
+
+    public function __construct($virtualHost='/')
+    {
+        $this->virtualHost = $virtualHost;
     }
 
     public function __destruct()
@@ -122,6 +128,11 @@ class Router
         if (!$request)
             $request = new Request;
 
+        $virtualHostMatch = preg_quote($this->virtualHost);
+        $request->setUri(
+            preg_replace("#^$virtualHostMatch#", '/', $request->getUri())
+        );
+
         foreach ($this->routes as $route)
             if ($this->matchRoute($request, $route, $params))
                 return $this->configureRequest($request, $route,
@@ -144,16 +155,14 @@ class Router
         $this->autoDispatched = $autoDispatched;
     }
 
-    protected function configureRequest(Request $request, AbstractRoute $route,
-        array $params)
+    protected function configureRequest(Request $request, AbstractRoute $route, array $params)
     {
         $request->setRoute($route);
         $request->setParams($params);
         return $request;
     }
 
-    protected function matchRoute(Request $request, AbstractRoute $route,
-        &$params=array())
+    protected function matchRoute(Request $request, AbstractRoute $route, &$params=array())
     {
         $request->setRoute($route);
         return $route->match($request, $params);
