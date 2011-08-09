@@ -730,7 +730,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testVirtualHost()
     {
-        $router = new Router('/myvh/');
+        $router = new Router('/myvh');
         $ok = false;
         $router->get('/alganet',
             function() use (&$ok) {
@@ -738,6 +738,30 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             }
         );
         $router->dispatch('get', '/myvh/alganet')->response();
+        $this->assertTrue($ok);
+    }
+    public function testVirtualHostEmpty()
+    {
+        $router = new Router('/myvh');
+        $ok = false;
+        $router->get('/',
+            function() use (&$ok) {
+                $ok = true;
+            }
+        );
+        $router->dispatch('get', '/myvh')->response();
+        $this->assertTrue($ok);
+    }
+    public function testVirtualHostIndex()
+    {
+        $router = new Router('/myvh/index.php');
+        $ok = false;
+        $router->get('/',
+            function() use (&$ok) {
+                $ok = true;
+            }
+        );
+        $router->dispatch('get', '/myvh/index.php')->response();
         $this->assertTrue($ok);
     }
 

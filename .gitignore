@@ -2,6 +2,7 @@ library/Zend/
 library/Symfony/
 .buildpath
 .project
+.DS_Store
 .settings/
 nbproject
 *.7z

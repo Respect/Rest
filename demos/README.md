@@ -1,11 +1,12 @@
 How to run the demos
---------------------
+====================
 
 Make sure you've installed Respect\Rest and Respect\Loader correctly.
 See the main README for both projects for instructions.
 
 Copy the demo folder you want to run into your webserver root. For example, if
-you want to run the "blog" demo, you've got to run in at the http://localhost/blog/
+you want to run the "blog" demo, you've got to point your browser to the 
+following URL: http://localhost/blog/index.php
 
 Have fun!
 

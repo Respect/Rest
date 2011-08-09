@@ -198,6 +198,18 @@ Route Proxies (After)
   2. You don't need to use them both at the same time.
   3. `through` can also receive parameters by name
 
+Running inside a folder
+-----------------------
+
+To run Respect\Rest inside some folder (eg. http://localhost/my/folder), pass
+that folder to the Router constructor:
+
+    $r3 = new Router('/my/folder'); 
+
+You can also use it without .htaccess/rewrite support:
+
+    $r3 = new Router('/my/folder/index.php'); 
+
 License Information
 ===================
 

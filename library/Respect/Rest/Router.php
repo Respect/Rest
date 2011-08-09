@@ -44,7 +44,7 @@ class Router
         }
     }
 
-    public function __construct($virtualHost='/')
+    public function __construct($virtualHost=null)
     {
         $this->virtualHost = $virtualHost;
     }
@@ -128,10 +128,11 @@ class Router
         if (!$request)
             $request = new Request;
 
-        $virtualHostMatch = preg_quote($this->virtualHost);
-        $request->setUri(
-            preg_replace("#^$virtualHostMatch#", '/', $request->getUri())
-        );
+        if ($this->virtualHost)
+            $request->setUri(
+                preg_replace('#^'.preg_quote($this->virtualHost).'#', 
+                    '', $request->getUri())
+            );
 
         foreach ($this->routes as $route)
             if ($this->matchRoute($request, $route, $params))
