@@ -781,6 +781,16 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $r->setAutoDispatched(true);
         unset($r);
     }
+    
+    public function testCreateUri() 
+    {
+        $r = new Router;
+        $ro = $r->any('/users/*/test/*', function(){});
+        $this->assertEquals(
+            '/users/alganet/test/php', 
+            $ro->createUri("alganet", "php")
+        );
+    }
 
 }
 
