@@ -23,7 +23,7 @@ class Request
 
     public function __construct($method=null, $uri=null)
     {
-        $uri = $uri ? : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        $uri = $uri ? : $_SERVER['REQUEST_URI'];
         $this->uri = rtrim($uri, ' /');
         $this->method = strtoupper($method ? : $_SERVER['REQUEST_METHOD']);
     }
