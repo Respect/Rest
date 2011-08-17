@@ -70,7 +70,7 @@ abstract class AbstractRoute
 
     public function getMatchPattern()
     {
-        return $this->matchPath;
+        return $this->matchPattern;
     }
 
     public function getMethod()
@@ -95,12 +95,9 @@ abstract class AbstractRoute
                     $params))
                 return false;
 
-        $uri = $request->getUri();
-        $uriPath = parse_url($uri, PHP_URL_PATH);
-            
-        if (!preg_match($this->matchPattern, $uriPath, $params))
+        if (!preg_match($this->matchPattern, $request->getUri(), $params))
             return false;
-        
+
         if (count($params) > 1 && false !== stripos(end($params), '/')) {
             $lastParam = array_pop($params);
             $params = array_merge($params, explode('/', $lastParam));
@@ -111,7 +108,6 @@ abstract class AbstractRoute
 
     protected function createRegexPatterns($path)
     {
-        $path = parse_url($path, PHP_URL_PATH);
         $path = rtrim($path, ' /');
         $extra = $this->extractCatchAllPattern($path);
         $matchPattern = str_replace(
