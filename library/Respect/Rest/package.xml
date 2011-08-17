@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package packagerversion="1.9.4" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0
+    http://pear.php.net/dtd/tasks-1.0.xsd
+    http://pear.php.net/dtd/package-2.0
+    http://pear.php.net/dtd/package-2.0.xsd">
+ <name>Rest</name>
+ <channel>respect.github.com/pear</channel>
+ <summary>Thin controller for RESTful applications</summary>
+ <description>
+Thin controller for RESTful applications</description>
+ <lead>
+  <name>Alexandre Gomes Gaigalas</name>
+  <user>alganet</user>
+  <email>alexandre@gaigalas.net</email>
+  <active>yes</active>
+ </lead>
+ <date>2011-08-17</date>
+ <time>17:34:13</time>
+ <version>
+  <release>0.1.2</release>
+  <api>0.1.2</api>
+ </version>
+ <stability>
+  <release>alpha</release>
+  <api>alpha</api>
+ </stability>
+ <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+ <notes>
+Thin controller for RESTful applications
+ </notes>
+ <contents>
+  <dir baseinstalldir="Respect/Rest" name="/">
+   <file baseinstalldir="Respect/Rest" md5sum="4018e431a053f1fc59aa8db0a98598d5" name="Routes/AbstractRoute.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="9406dd2ef0228c5cfa613a2c527edd58" name="Routes/Callback.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="84cddd74de1999ada6546635840b55d8" name="Routes/ClassName.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="eac1861a0f5c3139400c0e868dee9566" name="Routes/Instance.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="f603f7844d6c80672dfc5e7affa45f2b" name="Routines/AbstractAccept.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="145bae3955fab74ce4363e824cda285c" name="Routines/AbstractRoutine.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="f690482a7024b51da4e6c2f289b62850" name="Routines/AbstractSyncedRoutine.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="a231a3d07fc0510967cf9d067df561e5" name="Routines/Accept.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="c7c7ba533cd0f0ba704542111f515fac" name="Routines/AcceptCharset.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="616c23fed2196a05679e38c2001befee" name="Routines/AcceptEncoding.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="d027051e036742583ff64988bc70d9c1" name="Routines/AcceptLanguage.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="7ebd16240858ee8b2433530f9ac716ae" name="Routines/By.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="6d683c150db72b2aa6726b678fbcc07a" name="Routines/ContentType.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="4c6b38e603e644eb5c913aa65b21420b" name="Routines/LastModified.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="2c97e2a4c8d964827f0d9ad86ed7d8d9" name="Routines/ParamSynced.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="5914b0f2395ed49c6a44c2a99b17fcef" name="Routines/ProxyableBy.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="afa5a13e8b1412c470b467b1ca4166e4" name="Routines/ProxyableThrough.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="753b3121c4b2faf4690f10050a009224" name="Routines/ProxyableWhen.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="d5c428cf6491e9dfd76afb10bac9cb7c" name="Routines/Through.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="4933d237c4679e25985fc41890924145" name="Routines/When.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="e0bff8db9eef5c7b1dad7fc41ff0c6b2" name="Request.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="24aeb2991b98ea0a4c5daa0786e90c13" name="Routable.php" role="php" />
+   <file baseinstalldir="Respect/Rest" md5sum="38a3ea85f710543a49690d50f355fdd3" name="Router.php" role="php" />
+  </dir>
+ </contents>
+ <dependencies>
+  <required>
+   <php>
+    <min>5.3</min>
+   </php>
+   <pearinstaller>
+    <min>1.4.0</min>
+   </pearinstaller>
+  </required>
+ </dependencies>
+ <phprelease />
+ <changelog>
+  <release>
+   <version>
+    <release>0.1.2</release>
+    <api>0.1.2</api>
+   </version>
+   <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+   </stability>
+   <date>2011-08-17</date>
+   <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+   <notes>
+Thin controller for RESTful applications
+   </notes>
+  </release>
+ </changelog>
+</package>
