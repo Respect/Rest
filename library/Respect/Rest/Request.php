@@ -35,9 +35,7 @@ class Request
         return $this->response();
     }
 
-    /**
-     * Generates and returns the response from the current route
-     */
+    /** Generates and returns the response from the current route */
     public function response()
     {
         if (!$this->route)
@@ -65,9 +63,7 @@ class Request
         return $response;
     }
 
-    /**
-     * Calls a routine on the current route and returns its result
-     */
+    /** Calls a routine on the current route and returns its result */
     public function routineCall($type, $method, AbstractRoutine $routine, &$routeParamsValues)
     {
         $reflection = $this->route->getReflection($method);
@@ -84,9 +80,7 @@ class Request
         return $routine->{$type}($this, $callbackParameters);
     }
 
-    /**
-     * Extracts a parameter value from the current route
-     */
+    /** Extracts a parameter value from the current route */
     protected function extractRouteParam(ReflectionFunctionAbstract $callback, ReflectionParameter $routeParam, &$routeParamsValues)
     {
         foreach ($callback->getParameters() as $callbackParamReflection)
