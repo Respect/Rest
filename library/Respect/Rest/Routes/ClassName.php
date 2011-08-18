@@ -11,24 +11,15 @@ use Respect\Rest\Routable;
 class ClassName extends AbstractRoute
 {
 
-    protected $class;
+    protected $class = '';
     protected $constructorParams = array();
     protected $instance = null;
-    protected $reflection = null;
 
-    public function getClass()
-    {
-        return $this->class;
-    }
-
-    public function setArguments()
-    {
-        $this->constructorParams = func_get_args();
-    }
-
-    public function setClass($class)
+    public function __construct($method, $pattern, $class, $constructorParams)
     {
         $this->class = $class;
+        $this->constructorParams = $constructorParams;
+        parent::__construct($method, $pattern);
     }
 
     protected function createInstance()
@@ -39,7 +30,7 @@ class ClassName extends AbstractRoute
         if (!$reflection->implementsInterface('Respect\\Rest\\Routable'))
             throw new InvalidArgumentException(''); //TODO
 
-        if (empty($this->constructorParams) || !method_exists($this->class,
+            if (empty($this->constructorParams) || !method_exists($this->class,
                 '__construct'))
             return new $className;
 

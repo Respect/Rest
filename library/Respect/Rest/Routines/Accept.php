@@ -2,6 +2,7 @@
 
 namespace Respect\Rest\Routines;
 
+/** Handles mime type content negotiation */
 class Accept extends AbstractAccept
 {
     const ACCEPT_HEADER = 'HTTP_ACCEPT';
@@ -54,4 +55,3 @@ class Accept extends AbstractAccept
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  */
-

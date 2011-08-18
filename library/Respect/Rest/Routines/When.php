@@ -4,6 +4,7 @@ namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
 
+/** Generic routine executed before route matching */
 class When extends AbstractSyncedRoutine implements ProxyableWhen
 {
 

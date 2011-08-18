@@ -7,21 +7,18 @@ use ReflectionFunction;
 use ReflectionMethod;
 use Respect\Rest\Routes\AbstractRoute;
 
+/** Base class for routines that sync parameters */
 abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSynced
 {
 
     protected $reflection;
-
-    protected function getCallback()
-    {
-        return $this->callback;
-    }
 
     public function getParameters()
     {
         return $this->getReflection()->getParameters();
     }
 
+    /** Returns a concrete ReflectionFunctionAbstract for this routine callback */
     protected function getReflection()
     {
         if (is_array($this->callback))

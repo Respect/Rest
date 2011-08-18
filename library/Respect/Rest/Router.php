@@ -5,6 +5,7 @@ namespace Respect\Rest;
 use Exception;
 use ReflectionClass;
 use ReflectionMethod;
+use RuntimeException;
 use InvalidArgumentException;
 use Respect\Rest\Routes;
 use Respect\Rest\Routes\AbstractRoute;
@@ -12,11 +13,12 @@ use Respect\Rest\Routes\AbstractRoute;
 class Router
 {
 
-    protected $autoDispatched = true;
+    public $isAutoDispatched = true;
     protected $globalRoutines = array();
     protected $routes = array();
-    protected $virtualHost = null;
+    protected $virtualHost = '';
 
+    /** Cleans up an return an array of extracted parameters */
     public static function cleanUpParams($params)
     {
         return array_filter(
@@ -51,22 +53,23 @@ class Router
 
     public function __destruct()
     {
-        if (!$this->autoDispatched || !isset($_SERVER['SERVER_PROTOCOL']))
+        if (!$this->isAutoDispatched || !isset($_SERVER['SERVER_PROTOCOL']))
             return;
 
         try {
-            $response = $this->dispatch();
-            if ($response)
-                echo $response->response();
+            echo $this->dispatch()->response();
+        } catch (RuntimeException $e) {
+            return;
         } catch (Exception $e) {
             trigger_error($e->getTraceAsString(), E_USER_ERROR);
         }
     }
 
-    public function always($routine, $routineParam)
+    /** Applies a routine to every route */
+    public function always($routineName, $routineParameter)
     {
-        $routineClass = 'Respect\\Rest\\Routines\\' . $routine;
-        $routineInstance = new $routineClass($routineParam);
+        $routineClass = 'Respect\\Rest\\Routines\\' . $routineName;
+        $routineInstance = new $routineClass($routineParameter);
         $this->globalRoutines[] = $routineInstance;
 
         foreach ($this->routes as $route)
@@ -75,6 +78,7 @@ class Router
         return $this;
     }
 
+    /** Appends a pre-built route to the dispatcher */
     public function appendRoute(AbstractRoute $route)
     {
         $this->routes[] = $route;
@@ -83,35 +87,36 @@ class Router
             $route->appendRoutine($routine);
     }
 
+    /** Creates and returns a callback-based route */
     public function callbackRoute($method, $path, $callback)
     {
-        $route = new Routes\Callback($method, $path);
-        $route->setCallback($callback);
+        $route = new Routes\Callback($method, $path, $callback);
         $this->appendRoute($route);
         return $route;
     }
 
+    /** Creates and returns a class-based route */
     public function classRoute($method, $path, $class, $arg1=null, $etc=null)
     {
         $args = func_num_args() > 3 ? array_slice(func_get_args(), 3) : array();
-        $route = new Routes\ClassName($method, $path);
-        $route->setClass($class);
-        call_user_func_array(array($route, 'setArguments'), $args);
+        $route = new Routes\ClassName($method, $path, $class, $args);
         $this->appendRoute($route);
         return $route;
     }
 
+    /** Dispatch the current route with a standard Request */
     public function dispatch($method=null, $uri=null)
     {
         return $this->dispatchRequest(new Request($method, $uri));
     }
 
+    /** Dispatch the current route with a custom Request */
     public function dispatchRequest(Request $request=null)
     {
         usort($this->routes,
             function($a, $b) {
-                $a = $a->getPath();
-                $b = $b->getPath();
+                $a = $a->pattern;
+                $b = $b->pattern;
 
                 if (0 === stripos($a, $b) || $a == AbstractRoute::CATCHALL_IDENTIFIER)
                     return 1;
@@ -124,48 +129,45 @@ class Router
                 < substr_count($b, AbstractRoute::PARAM_IDENTIFIER) ? -1 : 1;
             }
         );
-        $this->autoDispatched = false;
+        $this->isAutoDispatched = false;
         if (!$request)
             $request = new Request;
 
         if ($this->virtualHost)
-            $request->setUri(
-                preg_replace('#^'.preg_quote($this->virtualHost).'#', 
-                    '', $request->getUri())
-            );
+            $request->uri =
+                preg_replace('#^' . preg_quote($this->virtualHost) . '#',
+                    '', $request->uri);
+
 
         foreach ($this->routes as $route)
             if ($this->matchRoute($request, $route, $params))
                 return $this->configureRequest($request, $route,
                     static::cleanUpParams($params));
 
-        $request->setRoute(null);
+        $request->route = null;
         return $request;
     }
 
+    /** Creates and returns an instance-based route */
     public function instanceRoute($method, $path, $instance)
     {
-        $route = new Routes\Instance($method, $path);
-        $route->setInstance($instance);
+        $route = new Routes\Instance($method, $path, $instance);
         $this->appendRoute($route);
         return $route;
     }
 
-    public function setAutoDispatched($autoDispatched)
-    {
-        $this->autoDispatched = $autoDispatched;
-    }
-
+    /** Configures a request for a specific route with specific parameters */
     protected function configureRequest(Request $request, AbstractRoute $route, array $params)
     {
-        $request->setRoute($route);
-        $request->setParams($params);
+        $request->route = $route;
+        $request->params = $params;
         return $request;
     }
 
+    /** Returns true if the passed route matches the passed request */
     protected function matchRoute(Request $request, AbstractRoute $route, &$params=array())
     {
-        $request->setRoute($route);
+        $request->route = $route;
         return $route->match($request, $params);
     }
 

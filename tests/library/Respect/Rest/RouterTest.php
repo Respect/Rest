@@ -127,11 +127,6 @@ class RouterTest extends \PHPUnit_Framework_TestCase
                 array(1, 2)
             ),
             array(
-                '/users/*/lists/*',
-                '/users/1/lists/2/65465',
-                null //cant match
-            ),
-            array(
                 '/users/*/lists/*/*',
                 '/users/1/lists/2/3',
                 array(1, 2, 3)
@@ -160,11 +155,6 @@ class RouterTest extends \PHPUnit_Framework_TestCase
                 '/posts/*/*/*',
                 '/posts/2010/////',
                 array(2010)
-            ),
-            array(
-                '/posts/*/*/*',
-                '/posts/2010//10///',
-                null
             ),
             array(
                 '/posts/*/*/*',
@@ -273,6 +263,9 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             $result);
     }
 
+    /**
+     * @expectedException RuntimeException
+     */
     public function testBindControllerSpecial()
     {
         $this->object->instanceRoute('ANY', '/users/*', new MyController);
@@ -607,6 +600,9 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(json_encode(range(0, 10)), $r);
     }
 
+    /**
+     * @expectedException RuntimeException
+     */
     public function testAcceptGeneric3()
     {
         $request = new Request('get', '/users/alganet');

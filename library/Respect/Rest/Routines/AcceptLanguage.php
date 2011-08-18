@@ -2,6 +2,7 @@
 
 namespace Respect\Rest\Routines;
 
+/** Handles Language content negotiation */
 class AcceptLanguage extends AbstractAccept
 {
     const ACCEPT_HEADER = 'HTTP_ACCEPT_LANGUAGE';

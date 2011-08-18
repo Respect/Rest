@@ -5,6 +5,7 @@ namespace Respect\Rest;
 use ArrayAccess;
 use ReflectionFunctionAbstract;
 use ReflectionParameter;
+use RuntimeException;
 use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routines\AbstractRoutine;
 use Respect\Rest\Routines\ProxyableBy;
@@ -12,14 +13,15 @@ use Respect\Rest\Routines\ProxyableThrough;
 use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\ParamSynced;
 
+/** A routed HTTP Request */
 class Request
 {
 
-    protected $route;
-    protected $method;
-    protected $uri;
-    protected $params = array();
-    protected $vars = array();
+    public $method = '';
+    public $params = array();
+    /** @var AbstractRoute */
+    public $route;
+    public $uri = '';
 
     public function __construct($method=null, $uri=null)
     {
@@ -33,44 +35,27 @@ class Request
         return $this->response();
     }
 
-    public function getMethod()
-    {
-        return $this->method;
-    }
-
-    public function getParams()
-    {
-        return $this->params;
-    }
-
-    public function getRoute()
-    {
-        return $this->route;
-    }
-
-    public function getUri()
-    {
-        return $this->uri;
-    }
-
+    /**
+     * Generates and returns the response from the current route
+     */
     public function response()
     {
         if (!$this->route)
-            return null;
+            throw new RuntimeException('No route set');
 
-        foreach ($this->route->getRoutines() as $by)
-            if ($by instanceof ProxyableBy
-                && false === $this->routineCall('by', $this->method, $by,
+        foreach ($this->route->routines as $routine)
+            if ($routine instanceof ProxyableBy
+                && false === $this->routineCall('by', $this->method, $routine,
                     $this->params))
                 return false;
 
         $response = $this->route->runTarget($this->method, $this->params);
         $proxyResult = false;
 
-        foreach ($this->route->getRoutines() as $through)
-            if ($through instanceof ProxyableThrough)
+        foreach ($this->route->routines as $routine)
+            if ($routine instanceof ProxyableThrough)
                 $proxyResult = $this->routineCall('through', $this->method,
-                        $through, $this->params);
+                        $routine, $this->params);
 
         if (is_callable($proxyResult))
             $response = $proxyResult($response);
@@ -81,44 +66,37 @@ class Request
         return $response;
     }
 
-    public function setParams(array $params)
-    {
-        $this->params = $params;
-    }
-
-    public function setRoute($route)
-    {
-        $this->route = $route;
-    }
-
-    public function setUri($uri)
-    {
-        $this->uri = $uri;
-    }
-
-    public function routineCall($op, $method, AbstractRoutine $routine, &$params)
+    /**
+     * Calls a routine on the current route and returns its result
+     */
+    public function routineCall($type, $method, AbstractRoutine $routine, &$routeParamsValues)
     {
         $reflection = $this->route->getReflection($method);
 
-        $cbParams = array();
+        $callbackParameters = array();
 
         if ($routine instanceof ParamSynced)
-            foreach ($routine->getParameters() as $p)
-                $cbParams[] = $this->extractParam($reflection, $p, $params); else
-            $cbParams = $params;
+            foreach ($routine->getParameters() as $parameter)
+                $callbackParameters[] = $this->extractRouteParam($reflection,
+                        $parameter, $routeParamsValues);
+        else
+            $callbackParameters = $routeParamsValues;
 
-        return $routine->{$op}($this, $cbParams);
+        return $routine->{$type}($this, $callbackParameters);
     }
 
-    protected function extractParam(ReflectionFunctionAbstract $callbackR, ReflectionParameter $cbParam, &$params)
+    /**
+     * Extracts a parameter value from the current route
+     */
+    protected function extractRouteParam(ReflectionFunctionAbstract $callback, ReflectionParameter $routeParam, &$routeParamsValues)
     {
-        foreach ($callbackR->getParameters() as $callbackParam)
-            if ($callbackParam->getName() === $cbParam->getName()
-                && isset($params[$callbackParam->getPosition()]))
-                return $params[$callbackParam->getPosition()];
+        foreach ($callback->getParameters() as $callbackParamReflection)
+            if ($callbackParamReflection->getName() === $routeParam->getName()
+                && isset($routeParamsValues[$callbackParamReflection->getPosition()]))
+                return $routeParamsValues[$callbackParamReflection->getPosition()];
 
-        if ($cbParam->isDefaultValueAvailable())
-            return $cbParam->getDefaultValue();
+        if ($routeParam->isDefaultValueAvailable())
+            return $routeParam->getDefaultValue();
 
         return null;
     }

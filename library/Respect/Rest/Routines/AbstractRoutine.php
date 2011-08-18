@@ -7,6 +7,7 @@ use ReflectionFunction;
 use ReflectionMethod;
 use Respect\Rest\Routes\AbstractRoute;
 
+/** Base class for callback routines */
 abstract class AbstractRoutine
 {
 

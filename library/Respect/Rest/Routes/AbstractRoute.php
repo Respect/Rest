@@ -7,6 +7,7 @@ use Respect\Rest\Request;
 use \Respect\Rest\Routines\AbstractRoutine;
 use \Respect\Rest\Routines\ProxyableWhen;
 
+/** Base class for all Routes */
 abstract class AbstractRoute
 {
     const CATCHALL_IDENTIFIER = '/**';
@@ -19,23 +20,24 @@ abstract class AbstractRoute
     const REGEX_TWO_OPTIONAL_ENDING_PARAMS = '/([^/]+)(?:/([^/]+))?';
     const REGEX_TWO_OPTIONAL_PARAMS = '(?:/([^/]+))?(?:/([^/]+))?';
 
-    protected $matchPattern;
-    protected $method;
-    protected $path;
-    protected $reflection;
-    protected $replacePattern;
-    protected $routines = array();
+    public $method = '';
+    public $pattern = '';
+    public $regexForMatch = '';
+    public $regexForReplace = '';
+    public $routines = array();
 
+    /** Returns the RelfectionFunctionAbstract object for the passed method */
     abstract public function getReflection($method);
 
+    /** Runs the target method/params into this route */
     abstract public function runTarget($method, &$params);
 
-    public function __construct($method, $path)
+    public function __construct($method, $pattern)
     {
-        $this->path = $path;
+        $this->pattern = $pattern;
         $this->method = strtoupper($method);
-        list($this->matchPattern, $this->replacePattern)
-            = $this->createRegexPatterns($path);
+        list($this->regexForMatch, $this->regexForReplace)
+            = $this->createRegexPatterns($pattern);
     }
 
     public function __call($method, $arguments)
@@ -49,53 +51,36 @@ abstract class AbstractRoute
         return $this;
     }
 
+    /** Appends a pre-built routine to this route */
     public function appendRoutine(AbstractRoutine $routine)
     {
         $this->routines[] = $routine;
     }
 
+    /** Creates an URI for this route with the passed parameters */
     public function createUri($param1=null, $etc=null)
     {
         $params = func_get_args();
-        array_unshift($params, $this->replacePattern);
+        array_unshift($params, $this->regexForReplace);
         return call_user_func_array(
             'sprintf', $params
         );
     }
 
-    public function getRoutines()
-    {
-        return $this->routines;
-    }
-
-    public function getMatchPattern()
-    {
-        return $this->matchPattern;
-    }
-
-    public function getMethod()
-    {
-        return $this->method;
-    }
-
-    public function getPath()
-    {
-        return $this->path;
-    }
-
+    /** Checks if this route matches a request */
     public function match(Request $request, &$params=array())
     {
-        if (($request->getMethod() !== $this->method && $this->method !== 'ANY')
-            || 0 === stripos($request->getMethod(), '__'))
+        if (($request->method !== $this->method && $this->method !== 'ANY')
+            || 0 === stripos($request->method, '__'))
             return false;
 
         foreach ($this->routines as $routine)
             if ($routine instanceof ProxyableWhen
-                && !$request->routineCall('when', $request->getMethod(), $routine,
+                && !$request->routineCall('when', $request->method, $routine,
                     $params))
                 return false;
 
-        if (!preg_match($this->matchPattern, $request->getUri(), $params))
+        if (!preg_match($this->regexForMatch, $request->uri, $params))
             return false;
 
         if (count($params) > 1 && false !== stripos(end($params), '/')) {
@@ -106,53 +91,55 @@ abstract class AbstractRoute
         return true;
     }
 
-    protected function createRegexPatterns($path)
+    /** Creates the regex from the route patterns */
+    protected function createRegexPatterns($pattern)
     {
-        $path = rtrim($path, ' /');
-        $extra = $this->extractCatchAllPattern($path);
+        $pattern = rtrim($pattern, ' /');
+        $extra = $this->extractCatchAllPattern($pattern);
         $matchPattern = str_replace(
-            static::QUOTED_PARAM_IDENTIFIER, static::REGEX_SINGLE_PARAM,
-            preg_quote($path), $paramCount
+                static::QUOTED_PARAM_IDENTIFIER, static::REGEX_SINGLE_PARAM,
+                preg_quote($pattern), $paramCount
         );
-        $replacePattern = str_replace(static::PARAM_IDENTIFIER, '/%s', $path);
+        $replacePattern = str_replace(static::PARAM_IDENTIFIER, '/%s', $pattern);
         $matchPattern = $this->fixOptionalParams($matchPattern);
         $matchRegex = "#^{$matchPattern}{$extra}$#";
         return array($matchRegex, $replacePattern);
     }
 
-    protected function extractCatchAllPattern(&$path)
+    /** Extracts the catch-all param from a pattern */
+    protected function extractCatchAllPattern(&$pattern)
     {
         $extra = static::REGEX_CATCHALL;
 
-        if ((strlen($path) - strlen(static::CATCHALL_IDENTIFIER))
-            === strripos($path, static::CATCHALL_IDENTIFIER))
-            $path = substr($path, 0, -3);
+        if ((strlen($pattern) - strlen(static::CATCHALL_IDENTIFIER))
+            === strripos($pattern, static::CATCHALL_IDENTIFIER))
+            $pattern = substr($pattern, 0, -3);
         else
             $extra = '';
 
-        $path = str_replace(
-            static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $path
+        $pattern = str_replace(
+                static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $pattern
         );
         return $extra;
     }
 
-    //turn sequenced parameters optional, so /*/*/* will match /1/2/3, /1/2 and /1
-    protected function fixOptionalParams($pathQuoted)
+    /** Turn sequenced parameters optional */
+    protected function fixOptionalParams($quotedPattern)
     {
-        if (strlen($pathQuoted) - strlen(static::REGEX_TWO_ENDING_PARAMS)
-            === strripos($pathQuoted, static::REGEX_TWO_ENDING_PARAMS))
-            $pathQuoted = str_replace(
-                array(
-                static::REGEX_TWO_ENDING_PARAMS,
-                static::REGEX_TWO_MIXED_PARAMS
-                ),
-                array(
-                static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
-                static::REGEX_TWO_OPTIONAL_PARAMS
-                ), $pathQuoted
+        if (strlen($quotedPattern) - strlen(static::REGEX_TWO_ENDING_PARAMS)
+            === strripos($quotedPattern, static::REGEX_TWO_ENDING_PARAMS))
+            $quotedPattern = str_replace(
+                    array(
+                        static::REGEX_TWO_ENDING_PARAMS,
+                        static::REGEX_TWO_MIXED_PARAMS
+                    ),
+                    array(
+                        static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
+                        static::REGEX_TWO_OPTIONAL_PARAMS
+                    ), $quotedPattern
             );
 
-        return $pathQuoted;
+        return $quotedPattern;
     }
 
 }
