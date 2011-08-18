@@ -50,18 +50,17 @@ class Request
                 return false;
 
         $response = $this->route->runTarget($this->method, $this->params);
-        $proxyResult = false;
+        $proxyResults = array();
 
         foreach ($this->route->routines as $routine)
             if ($routine instanceof ProxyableThrough)
-                $proxyResult = $this->routineCall('through', $this->method,
+                $proxyResults[] = $this->routineCall('through', $this->method,
                         $routine, $this->params);
 
-        if (is_callable($proxyResult))
-            $response = $proxyResult($response);
-
-        if (false === $proxyResult)
-            return $response;
+        if (!empty($proxyResults))
+            foreach ($proxyResults as $proxyCallback)
+                if (is_callable($proxyCallback))
+                    $response = $proxyCallback($response);
 
         return $response;
     }

@@ -657,7 +657,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'pt,en';
         $this->object->get('/users/*',
             function() {
-                
+
             })->acceptLanguage(array(
             'en' => function() {
                 return 'Hi there';
@@ -667,6 +667,27 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             }));
         $r = $this->object->dispatchRequest($requestBoth)->response();
         $this->assertEquals('Olá!', $r);
+    }
+
+    public function testAcceptMulti()
+    {
+        $requestBoth = new Request('get', '/users/alganet');
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'pt,en';
+        $_SERVER['HTTP_ACCEPT'] = 'application/json';
+        $this->object->get('/users/*',
+            function($data) {
+                return '034930984';
+            })->acceptLanguage(array(
+            'en' => function() {
+                return 'Hi there';
+            },
+            'pt' => function() {
+                return 'Olá!';
+            }))->accept(array(
+            'application/json' => 'json_encode'
+        ));
+        $r = $this->object->dispatchRequest($requestBoth)->response();
+        $this->assertEquals('"Ol\u00e1!"', $r);
     }
 
     public function testAcceptOrderX()
@@ -704,7 +725,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $r = $this->object->dispatchRequest($requestBoth)->response();
         $this->assertEquals('Hi there', $r);
     }
-    
+
     public function testLastModifiedSince()
     {
         global $headers;
@@ -724,13 +745,15 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             function() {
                 return 'hi!';
             })->lastModified(
-                function() {return new \DateTime('2011-11-11 11:11:12');    
+            function() {
+                return new \DateTime('2011-11-11 11:11:12');
             });
         $r = $this->object->dispatchRequest($requestBoth)->response();
         $this->assertEquals('hi!', $r);
         $this->assertContains('Last-Modified: Fri, 11 Nov 2011 11:11:12 +0000', $headers);
         $this->assertNotContains('HTTP/1.1 304 Not Modified', $headers);
     }
+
     public function testLastModifiedSince2()
     {
         global $headers;
@@ -741,13 +764,15 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             function() {
                 return 'hi!';
             })->lastModified(
-                function() {return new \DateTime('2011-11-11 11:11:10');    
+            function() {
+                return new \DateTime('2011-11-11 11:11:10');
             });
         $r = $this->object->dispatchRequest($requestBoth)->response();
         $this->assertEquals('', $r);
         $this->assertContains('Last-Modified: Fri, 11 Nov 2011 11:11:10 +0000', $headers);
         $this->assertContains('HTTP/1.1 304 Not Modified', $headers);
     }
+
     public function testLastModifiedSince3()
     {
         global $headers;
@@ -758,7 +783,8 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             function() {
                 return 'hi!';
             })->lastModified(
-                function() {return new \DateTime('2011-11-11 11:11:11');    
+            function() {
+                return new \DateTime('2011-11-11 11:11:11');
             });
         $r = $this->object->dispatchRequest($requestBoth)->response();
         $this->assertEquals('', $r);
@@ -797,6 +823,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $router->dispatch('get', '/myvh/alganet')->response();
         $this->assertTrue($ok);
     }
+
     public function testVirtualHostEmpty()
     {
         $router = new Router('/myvh');
@@ -809,6 +836,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $router->dispatch('get', '/myvh')->response();
         $this->assertTrue($ok);
     }
+
     public function testVirtualHostIndex()
     {
         $router = new Router('/myvh/index.php');
@@ -838,13 +866,15 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $r->setAutoDispatched(true);
         unset($r);
     }
-    
-    public function testCreateUri() 
+
+    public function testCreateUri()
     {
         $r = new Router;
-        $ro = $r->any('/users/*/test/*', function(){});
+        $ro = $r->any('/users/*/test/*', function() {
+
+                });
         $this->assertEquals(
-            '/users/alganet/test/php', 
+            '/users/alganet/test/php',
             $ro->createUri("alganet", "php")
         );
     }

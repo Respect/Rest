@@ -57,7 +57,7 @@ Simple Routing
  1. *get* is the equivalent of the HTTP GET method. You can use post, put, delete
     or any other. You can even use custom methods if you want.
  2. *return* sends the output string to the dispatcher
- 3. The route is automatically dispatched. You can `$r3->setAutoDispatched(false)`
+ 3. The route is automatically dispatched. You can set `$r3->autoDispatched = false`
     if you want.
 
 Parameters
@@ -108,7 +108,7 @@ Matching any HTTP Method
         //do anything
     });
 
- 1. Any HTTP method will match this same route. 
+ 1. Any HTTP method will match this same route.
  2. You can figure out the method using the standard PHP `$_SERVER['REQUEST_METHOD']`
 
 Bind Controller Classes
@@ -159,7 +159,7 @@ Route Conditions
     });
 
   1. This will match the route only if the callback on *when* is matched.
-  2. The `$documentId` param must have the same name in the action and the 
+  2. The `$documentId` param must have the same name in the action and the
      condition (but does not need to appear in the same order)
   3. You can specify more than one parameter per condition callback.
   4. You can specify more than one callback: `when($cb1)->when($cb2)->when($etc)`
@@ -204,11 +204,34 @@ Running inside a folder
 To run Respect\Rest inside some folder (eg. http://localhost/my/folder), pass
 that folder to the Router constructor:
 
-    $r3 = new Router('/my/folder'); 
+    $r3 = new Router('/my/folder');
 
 You can also use it without .htaccess/rewrite support:
 
-    $r3 = new Router('/my/folder/index.php'); 
+    $r3 = new Router('/my/folder/index.php');
+
+Content Negotiation
+-------------------
+
+Respect currently supports the four distinct types of conneg: Mimetype,
+Encoding, Language and Charset. Usage sample:
+
+    $r3->get('/about', function() {
+        return array('v' => 2.0);
+    })->acceptLanguage(array(
+        'en' => function($data) { return array("Version" => $data['v']); },
+        'pt' => function($data) { return array("Versão"  => $data['v']); }
+    ))->accept(array(
+        'text/html' => function($data) { 
+            list($k,$v)=each($data);
+            return "<strong>$k</strong>: $v";
+        },
+        'application/json' => 'json_encode'
+    ));
+
+As in every routine, conneg routines are executed in the same order that
+you appended them to the route.
+
 
 License Information
 ===================
