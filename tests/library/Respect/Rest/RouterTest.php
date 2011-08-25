@@ -199,10 +199,8 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             ),
             array(
                 '/users' . str_repeat('/*', 2500), //2500 very large parameters
-                '/users' . str_repeat('/abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz',
-                    2500),
-                str_split(str_repeat('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz',
-                        2500), 26 * 3)
+                '/users' . str_repeat('/abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 2500),
+                str_split(str_repeat('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz', 2500), 26 * 3)
             ),
         );
     }
@@ -256,11 +254,9 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerParams2()
     {
-        $this->object->instanceRoute('ANY', '/users/*',
-            new MyController('ok', 'foo', 'bar'));
+        $this->object->instanceRoute('ANY', '/users/*', new MyController('ok', 'foo', 'bar'));
         $result = $this->object->dispatch('get', '/users/alganet')->response();
-        $this->assertEquals(array('alganet', 'get', array('ok', 'foo', 'bar')),
-            $result);
+        $this->assertEquals(array('alganet', 'get', array('ok', 'foo', 'bar')), $result);
     }
 
     /**
@@ -289,8 +285,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $proxy = function() use (&$result) {
                 $result = 'ok';
             };
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 
             })->by($proxy);
         $this->object->dispatch('get', '/users/alganet')->response();
@@ -304,8 +299,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
                 $result = 'ok';
             };
         $this->object->always('by', $proxy);
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 
             });
         $this->object->dispatch('get', '/users/alganet')->response();
@@ -318,8 +312,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $proxy = function() use (&$result) {
                 $result = 'ok';
             };
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 
             });
         $this->object->always('by', $proxy);
@@ -333,8 +326,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $proxy = function() use (&$result) {
                 $result = 'ok';
             };
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 
             })->through($proxy);
         $this->object->dispatch('get', '/users/alganet')->response();
@@ -345,11 +337,10 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $proxy = function() {
                 return function($output) {
-                    return $output . 'ok';
-                };
+                        return $output . 'ok';
+                    };
             };
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 return 'ok';
             })->through($proxy);
         $result = $this->object->dispatch('get', '/users/alganet')->response();
@@ -368,8 +359,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $proxy3 = function($baz) use (&$result) {
                 $result[] = $baz;
             };
-        $this->object->get('/users/*/*/*',
-            function($foo, $bar, $baz) use(&$result) {
+        $this->object->get('/users/*/*/*', function($foo, $bar, $baz) use(&$result) {
                 $result[] = 'main';
             })->by($proxy1)->through($proxy2)->through($proxy3);
         $this->object->dispatch('get', '/users/abc/def/ghi')->response();
@@ -407,8 +397,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $proxy3 = function($baz) use (&$result) {
                 $result[] = $baz;
             };
-        $this->object->get('/users/*/*/*',
-            function($foo, $bar, $baz) use(&$result) {
+        $this->object->get('/users/*/*/*', function($foo, $bar, $baz) use(&$result) {
                 $result[] = 'main';
             })->by($proxy1)->through($proxy2)->through($proxy3);
         $this->object->dispatch('get', '/users/abc/def/ghi')->response();
@@ -423,8 +412,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $condition = function() {
                 return false;
             };
-        $this->object->get('/users/*',
-            function() use (&$result) {
+        $this->object->get('/users/*', function() use (&$result) {
                 $result = null;
             })->when($condition);
         $this->object->dispatch('get', '/users/alganet');
@@ -433,13 +421,11 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testWildcardOrdering()
     {
-        $this->object->any('/posts/*/*',
-            function($year, $month) {
+        $this->object->any('/posts/*/*', function($year, $month) {
                 return 10;
             }
         );
-        $this->object->any('/**',
-            function($userName) {
+        $this->object->any('/**', function($userName) {
                 return 5;
             }
         );
@@ -453,13 +439,11 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testOrdering()
     {
-        $this->object->any('/users/*',
-            function($userName) {
+        $this->object->any('/users/*', function($userName) {
                 return 5;
             }
         );
-        $this->object->any('/users/*/*',
-            function($year, $month) {
+        $this->object->any('/users/*/*', function($year, $month) {
                 return 10;
             }
         );
@@ -473,50 +457,41 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testOrderingSpecific()
     {
-        $this->object->any('/users/*/*',
-            function($year, $month) {
+        $this->object->any('/users/*/*', function($year, $month) {
                 return 10;
             }
         );
-        $this->object->any('/users/lists/*',
-            function($userName) {
+        $this->object->any('/users/lists/*', function($userName) {
                 return 5;
             }
         );
         $this->assertEquals(
-            5,
-            $this->object->dispatch('get', '/users/lists/alganet')->response()
+            5, $this->object->dispatch('get', '/users/lists/alganet')->response()
         );
         $this->assertEquals(
-            10,
-            $this->object->dispatch('get', '/users/foobar/alganet')->response()
+            10, $this->object->dispatch('get', '/users/foobar/alganet')->response()
         );
     }
 
     public function testOrderingSpecific2()
     {
-        $this->object->any('/',
-            function() {
+        $this->object->any('/', function() {
                 return 2;
             }
         );
-        $this->object->any('/*',
-            function() {
+        $this->object->any('/*', function() {
                 return 3;
             }
         );
-        $this->object->any('/*/versions',
-            function() {
+        $this->object->any('/*/versions', function() {
                 return 4;
             }
         );
-        $this->object->any('/*/versions/*',
-            function() {
+        $this->object->any('/*/versions/*', function() {
                 return 5;
             }
         );
-        $this->object->any('/*/*',
-            function() {
+        $this->object->any('/*/*', function() {
                 return 6;
             }
         );
@@ -540,8 +515,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testExperimentalShell()
     {
         $router = new Router;
-        $router->install('/**',
-            function() {
+        $router->install('/**', function() {
                 return 'Installed ' . implode(', ', func_get_args());
             }
         );
@@ -557,8 +531,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $request = new Request('get', '/users/alganet');
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 return range(0, 10);
             })->accept(array('application/json' => 'json_encode'));
         $r = $this->object->dispatchRequest($request)->response();
@@ -568,8 +541,16 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testAcceptUrl()
     {
         $request = new Request('get', '/users/alganet.json');
-        $this->object->get('/users/*',
-            function($screenName) {
+        $this->object->get('/users/*', function($screenName) {
+                return range(0, 10);
+            })->accept(array('.json' => 'json_encode'));
+        $r = $this->object->dispatchRequest($request)->response();
+        $this->assertEquals(json_encode(range(0, 10)), $r);
+    }
+    public function testAcceptUrlNoParameters()
+    {
+        $request = new Request('get', '/users.json');
+        $this->object->get('/users', function() {
                 return range(0, 10);
             })->accept(array('.json' => 'json_encode'));
         $r = $this->object->dispatchRequest($request)->response();
@@ -580,8 +561,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $request = new Request('get', '/users/alganet');
         $_SERVER['HTTP_ACCEPT'] = 'application/*';
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 return range(0, 10);
             })->accept(array('application/json' => 'json_encode'));
         $r = $this->object->dispatchRequest($request)->response();
@@ -592,8 +572,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $request = new Request('get', '/users/alganet');
         $_SERVER['HTTP_ACCEPT'] = '*/*';
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 return range(0, 10);
             })->accept(array('application/json' => 'json_encode'));
         $r = $this->object->dispatchRequest($request)->response();
@@ -607,8 +586,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $request = new Request('get', '/users/alganet');
         $_SERVER['HTTP_ACCEPT'] = 'text/*';
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 return range(0, 10);
             })->accept(array('application/json' => 'json_encode'));
         $r = $this->object->dispatchRequest($request)->response();
@@ -619,8 +597,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'en';
         $request = new Request('get', '/users/alganet');
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 
             })->acceptLanguage(array(
             'en-US' => function() {
@@ -637,8 +614,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'pt';
         $request = new Request('get', '/users/alganet');
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 
             })->acceptLanguage(array(
             'en-US' => function() {
@@ -655,9 +631,8 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $requestBoth = new Request('get', '/users/alganet');
         $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'pt,en';
-        $this->object->get('/users/*',
-            function() {
-
+        $this->object->get('/users/*', function() {
+                
             })->acceptLanguage(array(
             'en' => function() {
                 return 'Hi there';
@@ -674,8 +649,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $requestBoth = new Request('get', '/users/alganet');
         $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'pt,en';
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
-        $this->object->get('/users/*',
-            function($data) {
+        $this->object->get('/users/*', function($data) {
                 return '034930984';
             })->acceptLanguage(array(
             'en' => function() {
@@ -694,8 +668,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $requestBoth = new Request('get', '/users/alganet');
         $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'x-klingon,en';
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 
             })->acceptLanguage(array(
             'en' => function() {
@@ -712,8 +685,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'pt;q=0.7,en';
         $requestBoth = new Request('get', '/users/alganet');
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 
             })->acceptLanguage(array(
             'en-US' => function() {
@@ -741,8 +713,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         ');
         $_SERVER['IF_MODIFIED_SINCE'] = '2011-11-11 11:11:11';
         $requestBoth = new Request('get', '/users/alganet');
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 return 'hi!';
             })->lastModified(
             function() {
@@ -760,8 +731,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $headers = array();
         $_SERVER['IF_MODIFIED_SINCE'] = '2011-11-11 11:11:11';
         $requestBoth = new Request('get', '/users/alganet');
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 return 'hi!';
             })->lastModified(
             function() {
@@ -779,8 +749,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $headers = array();
         $_SERVER['IF_MODIFIED_SINCE'] = '2011-11-11 11:11:11';
         $requestBoth = new Request('get', '/users/alganet');
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 return 'hi!';
             })->lastModified(
             function() {
@@ -797,8 +766,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $_SERVER['CONTENT_TYPE'] = 'text/xml';
         $requestBoth = new Request('get', '/users/alganet');
         $result = null;
-        $this->object->get('/users/*',
-            function() {
+        $this->object->get('/users/*', function() {
                 
             })->contentType(array(
             'text/json' => function() {
@@ -815,8 +783,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $router = new Router('/myvh');
         $ok = false;
-        $router->get('/alganet',
-            function() use (&$ok) {
+        $router->get('/alganet', function() use (&$ok) {
                 $ok = true;
             }
         );
@@ -828,8 +795,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $router = new Router('/myvh');
         $ok = false;
-        $router->get('/',
-            function() use (&$ok) {
+        $router->get('/', function() use (&$ok) {
                 $ok = true;
             }
         );
@@ -841,8 +807,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     {
         $router = new Router('/myvh/index.php');
         $ok = false;
-        $router->get('/',
-            function() use (&$ok) {
+        $router->get('/', function() use (&$ok) {
                 $ok = true;
             }
         );
@@ -850,33 +815,16 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->assertTrue($ok);
     }
 
-    /**
-     * @expectedException PHPUnit_Framework_Error
-     */
-    public function testDestructor()
-    {
-        $r = new Router;
-        $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/';
-        $r->any('/',
-            function() {
-                throw new \Exception("message");
-            });
-        $r->setAutoDispatched(true);
-        unset($r);
-    }
-
     public function testCreateUri()
     {
         $r = new Router;
         $ro = $r->any('/users/*/test/*', function() {
-
-                });
+                
+            });
         $this->assertEquals(
-            '/users/alganet/test/php',
-            $ro->createUri("alganet", "php")
+            '/users/alganet/test/php', $ro->createUri("alganet", "php")
         );
+        $r->isAutoDispatched = false;
     }
 
 }

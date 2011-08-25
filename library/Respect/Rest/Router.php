@@ -22,10 +22,9 @@ class Router
     public static function cleanUpParams($params)
     {
         return array_filter(
-            array_slice($params, 1),
-            function($param) {
-                return $param !== '';
-            }
+                array_slice($params, 1), function($param) {
+                    return $param !== '';
+                }
         );
     }
 
@@ -56,13 +55,7 @@ class Router
         if (!$this->isAutoDispatched || !isset($_SERVER['SERVER_PROTOCOL']))
             return;
 
-        try {
-            echo $this->dispatch()->response();
-        } catch (RuntimeException $e) {
-            return;
-        } catch (Exception $e) {
-            trigger_error($e->getTraceAsString(), E_USER_ERROR);
-        }
+        echo $this->run();
     }
 
     /** Applies a routine to every route */
@@ -113,8 +106,7 @@ class Router
     /** Dispatch the current route with a custom Request */
     public function dispatchRequest(Request $request=null)
     {
-        usort($this->routes,
-            function($a, $b) {
+        usort($this->routes, function($a, $b) {
                 $a = $a->pattern;
                 $b = $b->pattern;
 
@@ -126,7 +118,7 @@ class Router
                     return 1;
 
                 return substr_count($a, AbstractRoute::PARAM_IDENTIFIER)
-                < substr_count($b, AbstractRoute::PARAM_IDENTIFIER) ? -1 : 1;
+                    < substr_count($b, AbstractRoute::PARAM_IDENTIFIER) ? -1 : 1;
             }
         );
         $this->isAutoDispatched = false;
@@ -135,17 +127,21 @@ class Router
 
         if ($this->virtualHost)
             $request->uri =
-                preg_replace('#^' . preg_quote($this->virtualHost) . '#',
-                    '', $request->uri);
-
+                preg_replace('#^' . preg_quote($this->virtualHost) . '#', '', $request->uri);
 
         foreach ($this->routes as $route)
             if ($this->matchRoute($request, $route, $params))
-                return $this->configureRequest($request, $route,
-                    static::cleanUpParams($params));
+                return $this->configureRequest($request, $route, static::cleanUpParams($params));
 
         $request->route = null;
         return $request;
+    }
+
+    /** Dispatches and get response with default request parameters */
+    public function run()
+    {
+        $route = $this->dispatch();
+        return $route ? $route->response() : null;
     }
 
     /** Creates and returns an instance-based route */

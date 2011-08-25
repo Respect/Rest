@@ -62,7 +62,7 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, Pr
 
     public function by(Request $request, $params)
     {
-        $unsyncedParams = $request->params;
+        $unsyncedParams = $request->params;        
         $extensions = array_keys($this->callbacksPerExtension);
 
         if (empty($extensions) || empty($unsyncedParams))

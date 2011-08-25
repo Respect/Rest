@@ -63,7 +63,7 @@ abstract class AbstractRoute
         $params = func_get_args();
         array_unshift($params, $this->regexForReplace);
         return call_user_func_array(
-            'sprintf', $params
+                'sprintf', $params
         );
     }
 
@@ -76,11 +76,12 @@ abstract class AbstractRoute
 
         foreach ($this->routines as $routine)
             if ($routine instanceof ProxyableWhen
-                && !$request->routineCall('when', $request->method, $routine,
-                    $params))
+                && !$request->routineCall('when', $request->method, $routine, $params))
                 return false;
 
-        if (!preg_match($this->regexForMatch, $request->uri, $params))
+        $matchUri = preg_replace('#(\.\w+)*$#', '', $request->uri);
+
+        if (!preg_match($this->regexForMatch, $matchUri, $params))
             return false;
 
         if (count($params) > 1 && false !== stripos(end($params), '/')) {
@@ -97,8 +98,7 @@ abstract class AbstractRoute
         $pattern = rtrim($pattern, ' /');
         $extra = $this->extractCatchAllPattern($pattern);
         $matchPattern = str_replace(
-                static::QUOTED_PARAM_IDENTIFIER, static::REGEX_SINGLE_PARAM,
-                preg_quote($pattern), $paramCount
+            static::QUOTED_PARAM_IDENTIFIER, static::REGEX_SINGLE_PARAM, preg_quote($pattern), $paramCount
         );
         $replacePattern = str_replace(static::PARAM_IDENTIFIER, '/%s', $pattern);
         $matchPattern = $this->fixOptionalParams($matchPattern);
@@ -118,7 +118,7 @@ abstract class AbstractRoute
             $extra = '';
 
         $pattern = str_replace(
-                static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $pattern
+            static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $pattern
         );
         return $extra;
     }
@@ -129,14 +129,13 @@ abstract class AbstractRoute
         if (strlen($quotedPattern) - strlen(static::REGEX_TWO_ENDING_PARAMS)
             === strripos($quotedPattern, static::REGEX_TWO_ENDING_PARAMS))
             $quotedPattern = str_replace(
-                    array(
-                        static::REGEX_TWO_ENDING_PARAMS,
-                        static::REGEX_TWO_MIXED_PARAMS
-                    ),
-                    array(
-                        static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
-                        static::REGEX_TWO_OPTIONAL_PARAMS
-                    ), $quotedPattern
+                array(
+                static::REGEX_TWO_ENDING_PARAMS,
+                static::REGEX_TWO_MIXED_PARAMS
+                ), array(
+                static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
+                static::REGEX_TWO_OPTIONAL_PARAMS
+                ), $quotedPattern
             );
 
         return $quotedPattern;
