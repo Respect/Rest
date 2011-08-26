@@ -28,21 +28,24 @@ class Router
         );
     }
 
-    public function __call($method, $arguments)
+    public function __call($method, $args)
     {
-        if (count($arguments) < 2)
+        if (count($args) < 2)
             throw new InvalidArgumentException('Any route binding must at least 2 arguments');
 
-        list ($path, $routeTarget) = $arguments;
+        list ($path, $routeTarget) = $args;
 
         if (is_callable($routeTarget))
             return $this->callbackRoute($method, $path, $routeTarget);
         elseif (is_object($routeTarget))
             return $this->instanceRoute($method, $path, $routeTarget);
-        elseif (is_string($routeTarget)) {
-            array_unshift($arguments, $method);
-            return call_user_func_array(array($this, 'classRoute'), $arguments);
-        }
+        elseif (is_string($routeTarget))
+            if (!isset($args[2]))
+                return $this->classRoute($method, $path, $routeTarget);
+            elseif (is_callable($args[2]))
+                return $this->factoryRoute($method, $path, $routeTarget, $args[2]);
+            elseif (is_array($args[2]))
+                return $this->classRoute($method, $path, $routeTarget, $args[2]);
     }
 
     public function __construct($virtualHost=null)
@@ -89,10 +92,9 @@ class Router
     }
 
     /** Creates and returns a class-based route */
-    public function classRoute($method, $path, $class, $arg1=null, $etc=null)
+    public function classRoute($method, $path, $class, array $arguments=array())
     {
-        $args = func_num_args() > 3 ? array_slice(func_get_args(), 3) : array();
-        $route = new Routes\ClassName($method, $path, $class, $args);
+        $route = new Routes\ClassName($method, $path, $class, $arguments);
         $this->appendRoute($route);
         return $route;
     }
@@ -142,6 +144,14 @@ class Router
     {
         $route = $this->dispatch();
         return $route ? $route->response() : null;
+    }
+
+    /** Creates and returns an factory-based route */
+    public function factoryRoute($method, $path, $className, $factory)
+    {
+        $route = new Routes\Factory($method, $path, $className, $factory);
+        $this->appendRoute($route);
+        return $route;
     }
 
     /** Creates and returns an instance-based route */

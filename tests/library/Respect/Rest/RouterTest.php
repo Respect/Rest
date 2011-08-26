@@ -240,7 +240,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testBindControllerParams()
     {
-        $this->object->any('/users/*', 'Respect\\Rest\\MyController', 'ok');
+        $this->object->any('/users/*', 'Respect\\Rest\\MyController', array('ok'));
         $result = $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals(array('alganet', 'get', array('ok')), $result);
     }
@@ -248,6 +248,14 @@ class RouterTest extends \PHPUnit_Framework_TestCase
     public function testBindControllerInstance()
     {
         $this->object->instanceRoute('ANY', '/users/*', new MyController('ok'));
+        $result = $this->object->dispatch('get', '/users/alganet')->response();
+        $this->assertEquals(array('alganet', 'get', array('ok')), $result);
+    }
+    public function testBindControllerFactory()
+    {
+        $this->object->any('/users/*', 'Respect\\Rest\\MyController', function() {
+            return  new MyController('ok');
+        });
         $result = $this->object->dispatch('get', '/users/alganet')->response();
         $this->assertEquals(array('alganet', 'get', array('ok')), $result);
     }

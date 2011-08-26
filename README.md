@@ -136,7 +136,7 @@ Bind Controller Classes
 Controller Classes Constructors
 -------------------------------
 
-    $r3->any('/images/*', 'ImageController', $myImageHandler, $myDb);
+    $r3->any('/images/*', 'ImageController', array($myImageHandler, $myDb));
 
   1. This will pass `$myImageHandler` and `$myDb` as parameters for the
      *ImageController* class.
@@ -147,6 +147,14 @@ Direct Instances
     $r3->any('/downloads/*', $myDownloadManager);
 
   1. Sample above will assign the existent `$myDownloadManager` as a controller.
+  2. This instance is also reused by Respect\Rest
+
+Bind Controller Factories
+----------------
+
+    $r3->any('/downloads/*', 'MyControllerClass', array('Factory', 'getController'));
+
+  1. Sample above will use the MyController class returned by Factory::getController
   2. This instance is also reused by Respect\Rest
 
 Route Conditions
