@@ -14,11 +14,13 @@ class ClassName extends AbstractRoute
     protected $class = '';
     protected $constructorParams = array();
     protected $instance = null;
+	protected $postFunction = null;
 
-    public function __construct($method, $pattern, $class, $constructorParams)
+    public function __construct($method, $pattern, $class, $constructorParams, $posFunction)
     {
         $this->class = $class;
         $this->constructorParams = $constructorParams;
+		$this->posFunction = $posFunction;
         parent::__construct($method, $pattern);
     }
 
@@ -30,12 +32,20 @@ class ClassName extends AbstractRoute
         if (!$reflection->implementsInterface('Respect\\Rest\\Routable'))
             throw new InvalidArgumentException(''); //TODO
 
-            if (empty($this->constructorParams) || !method_exists($this->class,
-                '__construct'))
-            return new $className;
-
-        $reflection = new ReflectionClass($this->class);
-        return $reflection->newInstanceArgs($this->constructorParams);
+		$instance = null;
+		
+        if (empty($this->constructorParams) || !method_exists($this->class, '__construct')) {
+			$instance = new $className;
+		} else {
+	        $reflection = new ReflectionClass($this->class);
+	        $instance = $reflection->newInstanceArgs($this->constructorParams);			
+		}
+        
+		$c = $this->posFunction;
+		if (is_callable($c))
+			$c($instance);
+			
+		return $instance;
     }
 
     public function getReflection($method)

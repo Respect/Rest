@@ -89,10 +89,10 @@ class Router
     }
 
     /** Creates and returns a class-based route */
-    public function classRoute($method, $path, $class, $arg1=null, $etc=null)
+    public function classRoute($method, $path, $class, array $arg1=null, \Closure $c=null)
     {
-        $args = func_num_args() > 3 ? array_slice(func_get_args(), 3) : array();
-        $route = new Routes\ClassName($method, $path, $class, $args);
+        $args = is_null($arg1) ? array() : $arg1;
+        $route = new Routes\ClassName($method, $path, $class, $args, $c);
         $this->appendRoute($route);
         return $route;
     }
