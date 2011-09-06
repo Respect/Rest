@@ -10,7 +10,7 @@ Destaques:
  * Magro. Não tenta mudar como o PHP trabalha;
  * Leve. Poucas, pequenas classes.
  * Sustentável. Você pode migrar do estilo microframework para o estilo classe-controlador.
- * RESTful. O jeito certode criar web apps.
+ * RESTful. O jeito certo de criar web apps.
 
 Roteiro:
 
@@ -22,7 +22,7 @@ Instalando
 
 ### Método 1: Usando PEAR
 
-Escreva os seguintes comandos no seu terminal:
+Digite os seguintes comandos no seu terminal:
 
   * `pear channel-discover respect.github.com/pear`
   * `pear install respect/Rest-alpha`
@@ -55,7 +55,7 @@ Roteamento Simples
     });
 
  1. *get* é o equivalente HTTP do método GET. Você pode usar post, put, delete
-    ou qualquer outro método. Você também pode usar métodos personalizados se precisar.
+    ou qualquer outro método. Você também pode usar métodos personalizados se quiser.
  2. *return* envia a string de saída para o expedidor.
  3. A rota é automaticamente despachada. Você pode definir `$r3->autoDispatched = false`
     se você quiser.
