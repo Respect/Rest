@@ -3,7 +3,7 @@ Respect\Rest
 
 Controlador Magro para aplicações RESTful
 
-**Este é um trabalho em progresso e não foi testado em ambientes de produção.**
+**Este é um trabalho em andamento e não foi testado em ambientes de produção.**
 
 Destaques:
 
@@ -12,7 +12,7 @@ Destaques:
  * Sustentável. Você pode migrar do estilo microframework para o estilo classe-controlador.
  * RESTful. O jeito certo de criar web apps.
 
-Roteiro:
+Roadmap:
 
  * Passar no [litmus test](http://www.innoq.com/blog/st/2010/07/rest_litmus_test_for_web_frame.html)
  * Extras de hypermedia embutidos
@@ -31,7 +31,7 @@ Tenha certeza que o PEAR está no seu caminho de inclusão (include_path).
 
 ### Método 2: Download
 
-  * Baixe o último lançamento de http://respect.github.com/pear/
+  * Baixe a última versão de http://respect.github.com/pear/
   * Extraía o arquivo em uma pasta de sua preferência.
   * Adicione a pasta *library* criada ao seu caminho de inclusão (include_patch)
 
@@ -236,7 +236,7 @@ Encoding, Language and Charset. Exemplo de uso:
     ));
 
 Como em qualquer rotina, Rotinas de negociação de conteúdo são executadas na mesma
-ordem que você anexar-las a rota.
+ordem que você anexa-las a rota.
 
 
 Informações sobre a licença
