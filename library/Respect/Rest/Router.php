@@ -17,6 +17,7 @@ class Router
     protected $globalRoutines = array();
     protected $routes = array();
     protected $virtualHost = '';
+    protected $containers = array();
 
     /** Cleans up an return an array of extracted parameters */
     public static function cleanUpParams($params)
@@ -61,6 +62,14 @@ class Router
         echo $this->run();
     }
 
+    public function addDependencyInjectionContainer($container)
+    {
+        if (!is_object($container))
+            throw new InvalidArgumentException('Argument must be an object');
+            
+        $this->containers[] = $container;
+    }
+    
     /** Applies a routine to every route */
     public function always($routineName, $routineParameter)
     {
@@ -165,6 +174,7 @@ class Router
     /** Configures a request for a specific route with specific parameters */
     protected function configureRequest(Request $request, AbstractRoute $route, array $params)
     {
+        $route->setContainers($this->containers);
         $request->route = $route;
         $request->params = $params;
         return $request;

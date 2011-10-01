@@ -34,6 +34,8 @@ class Instance extends AbstractRoute
         if (!$this->instance instanceof Routable)
             throw new InvalidArgumentException(''); //TODO
 
+            $this->injectDependencies($this->instance);
+            
             return call_user_func_array(
             array($this->instance, $method), $params
         );

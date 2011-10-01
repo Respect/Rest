@@ -276,6 +276,56 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $result = $this->object->dispatch('__construct', '/users/alganet')->response();
         $this->assertEquals(null, $result);
     }
+    
+	/**
+     * @expectedException RuntimeException
+     */
+    public function testBindDependentExceptionController()
+    {
+        $container = new Container();
+        
+        $this->object->addDependencyInjectionContainer($container);
+        $this->object->instanceRoute('ANY', '/', new MyDependentController);
+        $result = $this->object->dispatch('__construct', '/')->response();
+        $this->assertEquals(null, $result);
+    }
+    
+    public function testBindDependentController()
+    {
+        $user = new User();
+        $user->name = 'Thiago';
+        $container = new Container();
+        $container->user = $user;
+        
+        $this->object->addDependencyInjectionContainer($container);
+        $this->object->instanceRoute('ANY', '/', new MyDependentController);
+        $result = $this->object->dispatch('get', '/')->response();
+        $this->assertEquals('Thiago', $result);
+    }
+    
+    public function testBindDependentControllerMultipleContainers()
+    {
+        $user = new User();
+        $user->name = 'Thiago';
+        
+        $user1 = new User();
+        $user1->name = 'Gaigalas';
+        
+        $container = new Container();
+        
+        $container1 = new Container();
+        $container1->user = $user;
+        
+        $container2 = new Container();
+        $container2->user = $user1;
+        
+        $this->object->addDependencyInjectionContainer($container);
+        $this->object->addDependencyInjectionContainer($container1);
+        $this->object->addDependencyInjectionContainer($container2);
+        $this->object->instanceRoute('ANY', '/', new MyDependentController);
+        $result = $this->object->dispatch('get', '/')->response();
+        $this->assertEquals('Thiago', $result);
+    }
 
     public function testBindControllerMultiMethods()
     {
@@ -841,6 +891,8 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 class MyController implements Routable
 {
 
+    protected $session;
+    
     protected $params = array();
 
     public function __construct()
@@ -860,3 +912,34 @@ class MyController implements Routable
     }
 
 }
+
+class MyDependentController implements Routable
+{
+
+    /**
+     * @Dependency(user)
+     */
+    protected $user;
+    
+    public function get()
+    {
+        return $this->user->name;
+    }
+
+    public function post()
+    {
+        return array();
+    }
+
+}
+
+class User {}
+
+class Container
+{
+    public function __isset($prop)
+    {
+        return isset($this->$prop);
+    }
+}
+

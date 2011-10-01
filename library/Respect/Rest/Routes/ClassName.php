@@ -52,6 +52,8 @@ class ClassName extends AbstractRoute
         if (is_null($this->instance))
             $this->instance = $this->createInstance();
 
+        $this->injectDependencies($this->instance);
+            
         return call_user_func_array(
             array($this->instance, $method), $params
         );
