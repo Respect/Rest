@@ -67,6 +67,9 @@ class Router
         if (!is_object($container))
             throw new InvalidArgumentException('Argument must be an object');
             
+        if (!method_exists($container, '__isset'))
+            throw new InvalidArgumentException('Container must implement method __isset');
+            
         $this->containers[] = $container;
     }
     

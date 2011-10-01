@@ -280,9 +280,22 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 	/**
      * @expectedException RuntimeException
      */
-    public function testBindDependentExceptionController()
+    public function testBindDependentControllerException()
     {
         $container = new Container();
+        
+        $this->object->addDependencyInjectionContainer($container);
+        $this->object->instanceRoute('ANY', '/', new MyDependentController);
+        $result = $this->object->dispatch('__construct', '/')->response();
+        $this->assertEquals(null, $result);
+    }
+    
+	/**
+     * @expectedException InvalidArgumentException
+     */
+    public function testBindDependentControllerExceptionIsset()
+    {
+        $container = new \stdclass();
         
         $this->object->addDependencyInjectionContainer($container);
         $this->object->instanceRoute('ANY', '/', new MyDependentController);
