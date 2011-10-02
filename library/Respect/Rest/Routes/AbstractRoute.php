@@ -2,6 +2,8 @@
 
 namespace Respect\Rest\Routes;
 
+use Respect\Rest\AnnotationParser;
+
 use ReflectionClass;
 use Respect\Rest\Request;
 use \Respect\Rest\Routines\AbstractRoutine;
@@ -25,6 +27,8 @@ abstract class AbstractRoute
     public $regexForMatch = '';
     public $regexForReplace = '';
     public $routines = array();
+    protected $dependencies;
+    protected $containers;
 
     /** Returns the RelfectionFunctionAbstract object for the passed method */
     abstract public function getReflection($method);
@@ -40,6 +44,54 @@ abstract class AbstractRoute
             = $this->createRegexPatterns($pattern);
     }
 
+    protected function hasDependencies($class)
+    {
+        $aParser = new AnnotationParser(new ReflectionClass($class));
+        $this->dependencies = $aParser->parseDependencies();
+
+        if (count($this->dependencies) > 0)
+            return true;
+            
+        return false;
+    }
+    
+    protected function injectDependencies($class)
+    {
+        if (! $this->hasDependencies($class))
+            return;
+        
+        $found = false;
+        foreach ($this->dependencies as $dependency) {
+            foreach ($this->containers as $container) {
+                if (isset($container->$dependency['dependency'])) {
+                    $this->setProperty($class, $dependency['property'], $container->$dependency['dependency']);
+                    $found = true;
+                    break;
+                }
+            }
+            
+            if (!$found)
+                throw new \RuntimeException("Dependency {$dependency['dependency']} could not be found in none of the containers");
+                
+            $found = false;
+        }
+    }
+    
+    protected function setProperty($class, $property, $value)
+    {
+        $rProp = new \ReflectionProperty($class, $property);
+        
+        if (!$rProp->isPublic())
+            $rProp->setAccessible(true);
+            
+        $rProp->setValue($class, $value);
+    }
+    
+    public function setContainers(array $containers)
+    {
+        $this->containers = $containers;
+    }
+    
     public function __call($method, $arguments)
     {
         $routineReflection = new ReflectionClass(
