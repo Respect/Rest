@@ -4,8 +4,9 @@ namespace Respect\Rest\Routes;
 
 use ReflectionClass;
 use Respect\Rest\Request;
-use \Respect\Rest\Routines\AbstractRoutine;
-use \Respect\Rest\Routines\ProxyableWhen;
+use Respect\Rest\Routines\AbstractRoutine;
+use Respect\Rest\Routines\ProxyableWhen;
+use Respect\Rest\Routines\Unique;
 
 /** Base class for all Routes */
 abstract class AbstractRoute
@@ -54,7 +55,8 @@ abstract class AbstractRoute
     /** Appends a pre-built routine to this route */
     public function appendRoutine(AbstractRoutine $routine)
     {
-        $this->routines[] = $routine;
+        $key = $routine instanceof Unique ? get_class($routine) : spl_object_hash($routine);
+        $this->routines[$key] = $routine;
     }
 
     /** Creates an URI for this route with the passed parameters */

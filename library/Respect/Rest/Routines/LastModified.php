@@ -6,7 +6,7 @@ use DateTime;
 use SplObjectStorage;
 use Respect\Rest\Request;
 
-class LastModified extends AbstractRoutine implements ProxyableBy, ProxyableThrough
+class LastModified extends AbstractRoutine implements ProxyableBy, ProxyableThrough, Unique
 {
 
     public function by(Request $request, $params)

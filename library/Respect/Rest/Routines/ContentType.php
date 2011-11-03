@@ -6,7 +6,7 @@ use SplObjectStorage;
 use Respect\Rest\Request;
 
 /** Handles content type content negotiation */
-class ContentType extends AbstractRoutine implements ProxyableWhen, ProxyableBy
+class ContentType extends AbstractRoutine implements ProxyableWhen, ProxyableBy, Unique
 {
 
     protected $contentMap = array();

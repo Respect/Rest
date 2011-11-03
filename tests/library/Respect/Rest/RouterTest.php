@@ -651,6 +651,29 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $r = $this->object->dispatchRequest($requestBoth)->response();
         $this->assertEquals('Olá!', $r);
     }
+    public function testUniqueRoutine()
+    {
+        $requestBoth = new Request('get', '/users/alganet');
+        $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'pt,en';
+        $neverRun = false;
+        $this->object->get('/users/*', function() {
+                
+            })->acceptLanguage(array(
+            'en' => function() use (&$neverRun){
+                $neverRun = true;
+            },
+            'pt' => function() use (&$neverRun){
+                $neverRun = true;
+            }))->acceptLanguage(array(
+            'en' => function() {
+                return 'dsfdfsdfsdf';
+            },
+            'pt' => function() {
+                return 'sdfsdfsdfdf!';
+            }));
+        $r = $this->object->dispatchRequest($requestBoth)->response();
+        $this->assertFalse($neverRun);
+    }
 
     public function testAcceptMulti()
     {
