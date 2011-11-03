@@ -857,6 +857,18 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         );
         $r->isAutoDispatched = false;
     }
+    public function testForward()
+    {
+        $r = new Router;
+        $ro1 = $r->any('/users/*', function($user) {
+            return $user;
+        });
+        $ro2 = $r->any('/*', function($user) use ($ro1) {
+            return $ro1;    
+        });
+        $response = $r->dispatch('get', '/alganet')->response();
+        $this->assertEquals('alganet', $response);
+    }
 
 }
 

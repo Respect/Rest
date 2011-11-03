@@ -48,6 +48,10 @@ class Request
                 return false;
 
         $response = $this->route->runTarget($this->method, $this->params);
+        
+        if ($response instanceof AbstractRoute)
+            return $this->forward($response);
+        
         $proxyResults = array();
 
         foreach ($this->route->routines as $routine)
@@ -92,6 +96,12 @@ class Request
             return $routeParam->getDefaultValue();
 
         return null;
+    }
+    
+    protected function forward(AbstractRoute $route) 
+    {
+        $this->route = $route;
+        return $this->response();
     }
 
 }
