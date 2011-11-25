@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <package packagerversion="1.9.1" version="2.0" xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0     http://pear.php.net/dtd/tasks-1.0.xsd     http://pear.php.net/dtd/package-2.0     http://pear.php.net/dtd/package-2.0.xsd">
  <name>Rest</name>
- <channel>respect.github.com/pear</channel>
+    <channel>respect.li/pear</channel>
  <summary>Thin controller for RESTful applications</summary>
  <description>Thin controller for RESTful applications</description>
  <lead>
@@ -25,7 +25,7 @@
 Thin controller for RESTful applications
  </notes>
  <contents>
-  <dir baseinstalldir="Respect/Rest" name="/">
+        <dir name="library/Respect/Rest" baseinstalldir="Respect/Rest">
    <file baseinstalldir="Respect/Rest" md5sum="a52d9bf9321fa763c854e77645998e32" name="Routes/AbstractRoute.php" role="php" />
    <file baseinstalldir="Respect/Rest" md5sum="83b7397867bd61aa92b3a29da22f2896" name="Routes/Callback.php" role="php" />
    <file baseinstalldir="Respect/Rest" md5sum="e2dfc9b4ecf49033a6aa537f7d569efa" name="Routes/ClassName.php" role="php" />
