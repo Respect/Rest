@@ -18,23 +18,10 @@ Roadmap:
  * Pass the [litmus test](http://www.innoq.com/blog/st/2010/07/rest_litmus_test_for_web_frame.html)
  * Built-in hypermedia goodies
 
-Installing
-==========
+Installation
+------------
 
-### Method 1: Using PEAR
-
-Type the following commands in your terminal:
-
-  * `pear channel-discover respect.github.com/pear`
-  * `pear install respect/Rest-alpha`
-
-Make sure that PEAR is in your include_path.
-
-### Method 2: Downloading
-
-  * Download the latest release from http://respect.github.com/pear/
-  * Extract the files in a folder of your preference
-  * Add the extract *library* folder to your include_path
+Please use PEAR. More instructions on the [Respect PEAR channel](http://respect.li/pear)
 
 Feature Guide
 =============
