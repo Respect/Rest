@@ -11,6 +11,7 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function setUp()
     {
+//        $this->markTestSkipped();
         $this->object = new Router;
         $this->result = null;
         $result = &$this->result;
@@ -267,9 +268,6 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(array('alganet', 'get', array('ok', 'foo', 'bar')), $result);
     }
 
-    /**
-     * @expectedException RuntimeException
-     */
     public function testBindControllerSpecial()
     {
         $this->object->instanceRoute('ANY', '/users/*', new MyController);
@@ -545,6 +543,30 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $r = $this->object->dispatchRequest($request)->response();
         $this->assertEquals(json_encode(range(0, 10)), $r);
     }
+    
+
+    public function testAcceptCharset()
+    {
+        $request = new Request('get', '/users/alganet');
+        $_SERVER['HTTP_ACCEPT_CHARSET'] = 'utf-8';
+        $this->object->get('/users/*', function() {
+                return 'açaí';
+            })->acceptCharset(array('utf-8' => 'utf8_decode'));
+        $r = $this->object->dispatchRequest($request)->response();
+        $this->assertEquals(utf8_decode('açaí'), $r);
+    }
+    
+
+    public function testAcceptEncoding()
+    {
+        $request = new Request('get', '/users/alganet');
+        $_SERVER['HTTP_ACCEPT_ENCODING'] = 'myenc';
+        $this->object->get('/users/*', function() {
+                return 'foobar';
+            })->acceptEncoding(array('myenc' => 'strrev'));
+        $r = $this->object->dispatchRequest($request)->response();
+        $this->assertEquals(strrev('foobar'), $r);
+    }
 
     public function testAcceptUrl()
     {
@@ -587,9 +609,6 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(json_encode(range(0, 10)), $r);
     }
 
-    /**
-     * @expectedException RuntimeException
-     */
     public function testAcceptGeneric3()
     {
         $request = new Request('get', '/users/alganet');
