@@ -3,20 +3,12 @@ Respect\Rest [![Build Status](https://secure.travis-ci.org/Respect/Rest.png)](ht
 
 Thin controller for RESTful applications
 
-**This is a work in progress and has not been tested on production environments.**
-**This project is known to work only on PHP 5.3.5 or more recent.**
-
 Highlights:
 
- * Thin. Does not try to change how PHP works;
+ * Thin. Does not try to change how PHP works.
  * Lightweight. Few, small classes.
  * Maintainable. You can migrate from the microframework style to the class-controller style.
  * RESTful. The right way to create web apps.
-
-Roadmap:
-
- * Pass the [litmus test](http://www.innoq.com/blog/st/2010/07/rest_litmus_test_for_web_frame.html)
- * Built-in hypermedia goodies
 
 Installation
 ------------
