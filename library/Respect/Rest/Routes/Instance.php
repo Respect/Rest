@@ -23,7 +23,7 @@ class Instance extends AbstractRoute
     {
         if (empty($this->reflection))
             $this->reflection = new ReflectionMethod(
-                    array(get_class($this->instance), $method)
+                    $this->instance, $method
             );
 
         return $this->reflection;

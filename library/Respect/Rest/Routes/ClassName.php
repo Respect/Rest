@@ -15,7 +15,7 @@ class ClassName extends AbstractRoute
     protected $constructorParams = array();
     protected $instance = null;
 
-    public function __construct($method, $pattern, $class, $constructorParams)
+    public function __construct($method, $pattern, $class, array $constructorParams=array())
     {
         $this->class = $class;
         $this->constructorParams = $constructorParams;
@@ -40,11 +40,7 @@ class ClassName extends AbstractRoute
 
     public function getReflection($method)
     {
-        try {
-            return new ReflectionMethod($this->class, $method);
-        } catch (ReflectionException $e) {
-            return false;
-        }
+        return new ReflectionMethod($this->class, $method);
     }
 
     public function runTarget($method, &$params)

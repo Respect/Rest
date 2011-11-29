@@ -4,6 +4,7 @@ library/Symfony/
 .project
 .DS_Store
 .settings/
+.foundation-tmp
 tests/reports
 pirum
 nbproject

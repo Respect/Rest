@@ -39,7 +39,7 @@ class Request
     public function response()
     {
         if (!$this->route)
-            throw new RuntimeException('No route set');
+            return null;
 
         foreach ($this->route->routines as $routine)
             if ($routine instanceof ProxyableBy

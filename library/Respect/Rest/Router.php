@@ -21,11 +21,13 @@ class Router
     /** Cleans up an return an array of extracted parameters */
     public static function cleanUpParams($params)
     {
-        return array_filter(
-                array_slice($params, 1), function($param) {
-                    return $param !== '';
-                }
-        );
+        return array_values(
+                        array_filter(
+                                array_slice($params, 1), function($param) {
+                                    return $param !== '';
+                                }
+                        )
+                );
     }
 
     public function __call($method, $args)
@@ -35,16 +37,18 @@ class Router
 
         list ($path, $routeTarget) = $args;
 
-        if (is_callable($routeTarget))
+        if (is_callable($routeTarget)) //closures, func names, callbacks
             return $this->callbackRoute($method, $path, $routeTarget);
-        elseif (is_object($routeTarget))
+        elseif ($routeTarget instanceof Routable) //direct instances
             return $this->instanceRoute($method, $path, $routeTarget);
-        elseif (is_string($routeTarget))
-            if (!isset($args[2]))
+        elseif (!is_string($routeTarget)) //static returns the argument itself
+            return $this->staticRoute($method, $path, $routeTarget);
+        else
+            if (!isset($args[2])) //raw classnames
                 return $this->classRoute($method, $path, $routeTarget);
-            elseif (is_callable($args[2]))
+            elseif (is_callable($args[2])) //classnames as factories
                 return $this->factoryRoute($method, $path, $routeTarget, $args[2]);
-            elseif (is_array($args[2]))
+            else //classnames with constructor arguments
                 return $this->classRoute($method, $path, $routeTarget, $args[2]);
     }
 
@@ -158,6 +162,14 @@ class Router
     public function instanceRoute($method, $path, $instance)
     {
         $route = new Routes\Instance($method, $path, $instance);
+        $this->appendRoute($route);
+        return $route;
+    }
+    
+    /** Creates and returns a static route */
+    public function staticRoute($method, $path, $instance)
+    {
+        $route = new Routes\StaticValue($method, $path, $instance);
         $this->appendRoute($route);
         return $route;
     }

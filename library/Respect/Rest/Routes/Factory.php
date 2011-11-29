@@ -26,7 +26,7 @@ class Factory extends AbstractRoute
     {
         if (empty($this->reflection))
             $this->reflection = new ReflectionMethod(
-                    array($this->className, $method)
+                $this->className, $method
             );
 
         return $this->reflection;
