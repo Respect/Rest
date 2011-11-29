@@ -10,11 +10,11 @@
     <email>alexandre@gaigalas.net</email>
     <active>yes</active>
   </lead>
-  <date>2011-11-25</date>
-  <time>20:28:34</time>
+  <date>2011-11-29</date>
+  <time>19:05:00</time>
   <version>
-    <release>0.2.0</release>
-    <api>0.2.0</api>
+    <release>0.3.1</release>
+    <api>0.3.1</api>
   </version>
   <stability>
     <release>alpha</release>
@@ -34,6 +34,7 @@ Thin controller for RESTful applications
       <file role="php" baseinstalldir="Respect/Rest" install-as="/Routes/ClassName.php" name="library/Respect/Rest/Routes/ClassName.php"/>
       <file role="php" baseinstalldir="Respect/Rest" install-as="/Routes/Factory.php" name="library/Respect/Rest/Routes/Factory.php"/>
       <file role="php" baseinstalldir="Respect/Rest" install-as="/Routes/Instance.php" name="library/Respect/Rest/Routes/Instance.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routes/StaticValue.php" name="library/Respect/Rest/Routes/StaticValue.php"/>
       <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/AbstractAccept.php" name="library/Respect/Rest/Routines/AbstractAccept.php"/>
       <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/AbstractRoutine.php" name="library/Respect/Rest/Routines/AbstractRoutine.php"/>
       <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/AbstractSyncedRoutine.php" name="library/Respect/Rest/Routines/AbstractSyncedRoutine.php"/>
@@ -99,6 +100,28 @@ Thin controller for RESTful applications
       <version>
         <release>0.2.0</release>
         <api>0.2.0</api>
+      </version>
+      <stability>
+        <release>alpha</release>
+        <api>alpha</api>
+      </stability>
+      <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+    </release>
+    <release>
+      <version>
+        <release>0.3.0</release>
+        <api>0.3.0</api>
+      </version>
+      <stability>
+        <release>alpha</release>
+        <api>alpha</api>
+      </stability>
+      <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+    </release>
+    <release>
+      <version>
+        <release>0.3.1</release>
+        <api>0.3.1</api>
       </version>
       <stability>
         <release>alpha</release>

@@ -19,6 +19,7 @@ class StaticValueTest extends \PHPUnit_Framework_TestCase
     function test_runTarget_returns_value()
     {
         $route = new StaticValue('any', '/', array('foo'));
-        $this->assertEquals(array('foo'), $route->runTarget('get', $p=array('')));
+        $p=array('');
+        $this->assertEquals(array('foo'), $route->runTarget('get', $p));
     }
 }

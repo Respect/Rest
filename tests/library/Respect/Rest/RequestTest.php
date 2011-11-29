@@ -29,7 +29,8 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $request->route->appendRoutine($routine = new Routines\By(function($foo, $bar, $baz) use (&$args){
             $args = func_get_args();
         }));
-        $request->routineCall('by', 'GET', $routine, $dummy=array('bar'));
+        $dummy=array('bar');
+        $request->routineCall('by', 'GET', $routine, $dummy);
         $this->assertEquals(array(null,'bar',null), $args);
     }
 }
