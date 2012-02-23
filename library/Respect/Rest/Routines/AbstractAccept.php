@@ -6,7 +6,7 @@ use SplObjectStorage;
 use Respect\Rest\Request;
 
 /** Base class for content-negotiation */
-abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, ProxyableWhen, ProxyableThrough, Unique   
+abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, ProxyableWhen, ProxyableThrough, Unique , IgnorableFileExtension  
 {
 
     protected $callbacksPerMimeType = array();

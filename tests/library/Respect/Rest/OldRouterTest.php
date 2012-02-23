@@ -586,6 +586,16 @@ class RouterTest extends \PHPUnit_Framework_TestCase
         $r = $this->object->dispatchRequest($request)->response();
         $this->assertEquals(json_encode(range(0, 10)), $r);
     }
+    public function testFileExtension()
+    {
+        $request = new Request('get', '/users.json/10.20');
+        $this->object->get('/users.json/*', function($param) {
+                list($min, $max) = explode('.', $param);
+                return range($min, $max);
+            });
+        $r = $this->object->dispatchRequest($request)->response();
+        $this->assertEquals((range(10, 20)), $r);
+    }
 
     public function testAcceptGeneric()
     {

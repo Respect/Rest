@@ -6,6 +6,7 @@ use ReflectionClass;
 use Respect\Rest\Request;
 use Respect\Rest\Routines\AbstractRoutine;
 use Respect\Rest\Routines\ProxyableWhen;
+use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Unique;
 
 /** Base class for all Routes */
@@ -75,13 +76,16 @@ abstract class AbstractRoute
         if (($request->method !== $this->method && $this->method !== 'ANY')
             || 0 === stripos($request->method, '__'))
             return false;
+            
+        $matchUri = $request->uri;
 
-        foreach ($this->routines as $routine)
+        foreach ($this->routines as $routine) {
             if ($routine instanceof ProxyableWhen
                 && !$request->routineCall('when', $request->method, $routine, $params))
                 return false;
-
-        $matchUri = preg_replace('#(\.\w+)*$#', '', $request->uri);
+            if ($routine instanceof IgnorableFileExtension)
+                $matchUri = preg_replace('#(\.\w+)*$#', '', $request->uri);
+        }
 
         if (!preg_match($this->regexForMatch, $matchUri, $params))
             return false;
