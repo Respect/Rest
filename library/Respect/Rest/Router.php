@@ -149,9 +149,9 @@ class Router
     }
 
     /** Dispatches and get response with default request parameters */
-    public function run()
+    public function run(Request $request=null)
     {
-        $route = $this->dispatch();
+        $route = $this->dispatch($request);
         return $route ? $route->response() : null;
     }
 
