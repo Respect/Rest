@@ -8,7 +8,7 @@ use Respect\Rest\Routable;
 
 class Instance extends AbstractRoute
 {
-
+    public $class = '';
     protected $instance = null;
     /** @var ReflectionMethod */
     protected $reflection;
@@ -16,6 +16,7 @@ class Instance extends AbstractRoute
     public function __construct($method, $pattern, $instance)
     {
         $this->instance = $instance;
+        $this->class = get_class($instance);
         parent::__construct($method, $pattern);
     }
 

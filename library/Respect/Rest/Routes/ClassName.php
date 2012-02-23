@@ -11,7 +11,7 @@ use Respect\Rest\Routable;
 class ClassName extends AbstractRoute
 {
 
-    protected $class = '';
+    public $class = '';
     protected $constructorParams = array();
     protected $instance = null;
 
@@ -28,7 +28,7 @@ class ClassName extends AbstractRoute
 
         $reflection = new ReflectionClass($className);
         if (!$reflection->implementsInterface('Respect\\Rest\\Routable'))
-            throw new InvalidArgumentException(''); //TODO
+            throw new InvalidArgumentException('Routed classes must implement the Respect\\Rest\\Routable interface'); 
 
             if (empty($this->constructorParams) || !method_exists($this->class,
                 '__construct'))

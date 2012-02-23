@@ -9,16 +9,17 @@ use Respect\Rest\Routable;
 class Factory extends AbstractRoute
 {
 
+    public $class = '';
     protected $instance = null;
     protected $factory = null;
 
     /** @var ReflectionMethod */
     protected $reflection;
 
-    public function __construct($method, $pattern, $className, $factory)
+    public function __construct($method, $pattern, $class, $factory)
     {
         $this->factory = $factory;
-        $this->className = $className;
+        $this->class = $class;
         parent::__construct($method, $pattern);
     }
 
@@ -26,7 +27,7 @@ class Factory extends AbstractRoute
     {
         if (empty($this->reflection))
             $this->reflection = new ReflectionMethod(
-                $this->className, $method
+                $this->class, $method
             );
 
         return $this->reflection;
@@ -38,7 +39,7 @@ class Factory extends AbstractRoute
             $this->instance = call_user_func($this->factory);
 
         if (!$this->instance instanceof Routable)
-            throw new InvalidArgumentException(''); //TODO
+            throw new InvalidArgumentException('Routed classes must implement the Respect\\Rest\\Routable interface'); 
 
         return call_user_func_array(
                 array($this->instance, $method), $params
