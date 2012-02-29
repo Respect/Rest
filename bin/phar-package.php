@@ -15,7 +15,7 @@ $phar_name = "$project_name.phar";
 $phar = new Phar("../$phar_name", 0, $phar_name);
 
 foreach ($package_data->contents->dir->file as $file)
-    $phar->addFile(realpath("../{$file['name']}"));
+    $phar->addFile(realpath("../{$file['name']}"), $file['baseinstalldir'] . $file['install-as']);
 
 $phar->addFromString("autoload.php", <<<'LOADER'
 <?php
