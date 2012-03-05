@@ -224,7 +224,7 @@ you appended them to the route.
 License Information
 ===================
 
-Copyright (c) 2009-2011, Alexandre Gomes Gaigalas.
+Copyright (c) 2009-2012, Alexandre Gomes Gaigalas.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,
