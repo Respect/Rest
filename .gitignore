@@ -27,3 +27,5 @@ nbproject
 *.deb
 *.rpm
 *.tgz
+composer.lock
+vendor/
