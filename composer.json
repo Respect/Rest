@@ -5,13 +5,6 @@
     "description": "Thin controller for RESTful application.",
     "keywords": ["respect", "RESTful"],
     "homepage": "https://github.com/Respect/Rest",
-    "repositories": {
-        "Respect/Rest": {
-            "vcs": {
-                "url" : "git://github.com/Respect/Rest.git"
-            }
-        }
-    },
     "license" : "New BSD",
     "authors" : [
         {
@@ -28,7 +21,7 @@
     },
     "autoload": {
         "psr-0": {
-            "Respect\\Rest": "library"
+            "Respect\\Rest": "library/"
         }
     }
 }
