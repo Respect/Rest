@@ -8,21 +8,8 @@ set_include_path('../library'
         . PATH_SEPARATOR . get_include_path());
 
 /**
- * Autoloader that implements the PSR-0 spec for interoperability between
- * PHP software.
+ * PSR-0 compliant autoloader created by Composer.
+ * If this file does not exist, run `composer.phar install` from
+ * the project root directory to generate it.
  */
-spl_autoload_register(
-    function($className) {
-        $fileParts = explode('\\', ltrim($className, '\\'));
-
-        if (false !== strpos(end($fileParts), '_'))
-            array_splice($fileParts, -1, 1, explode('_', current($fileParts)));
-
-        $file = implode(DIRECTORY_SEPARATOR, $fileParts) . '.php';
-
-        foreach (explode(PATH_SEPARATOR, get_include_path()) as $path) {
-            if (file_exists($path = $path . DIRECTORY_SEPARATOR . $file))
-                return require $path;
-        }
-    }
-);
+require '../vendor/.composer/autoload.php';
