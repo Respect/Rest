@@ -12,4 +12,4 @@ set_include_path('../library'
  * If this file does not exist, run `composer.phar install` from
  * the project root directory to generate it.
  */
-require '../vendor/.composer/autoload.php';
+require realpath(dirname(__FILE__) . '/../vendor/.composer/autoload.php');
