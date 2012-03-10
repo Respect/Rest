@@ -5,8 +5,8 @@ Thin controller for RESTful applications
 
 Highlights:
 
- * Thin. Does not try to change how PHP works.
- * Lightweight. Few, small classes.
+ * Thin. It doesn't try to change how PHP works.
+ * Lightweight. It uses few, small classes.
  * Maintainable. You can migrate from the microframework style to the class-controller style.
  * RESTful. The right way to create web apps.
 
