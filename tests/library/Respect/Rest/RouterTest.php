@@ -2,584 +2,97 @@
 
 namespace Respect\Rest;
 
-class RouterTest extends \PHPUnit_Framework_TestCase
+class DummyRoute extends \DateTime implements Routable {}
+
+class NewRouterTest extends \PHPUnit_Framework_TestCase
 {
-
-    protected $object;
-    protected $result;
-    protected $callback;
-
-    public function setUp()
+    function setUp() 
     {
-        $this->object = new Router;
-        $this->result = null;
-        $result = &$this->result;
-        $this->callback = function() use(&$result) {
-                $result = func_get_args();
-            };
+        $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
+        $_SERVER['REQUEST_URI'] = '/';
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $this->router = new Router;
+        $this->router->isAutoDispatched = false;
     }
-
-    /**
-     * @expectedException InvalidArgumentException
-     */
-    public function testInsufficientParams()
+    function test_cleaning_up_params_should_remove_first_param_always()
     {
-        $this->object->invalid();
+        $params = array('/', 'foo', '', 'bar');
+        $this->assertNotContains('/', Router::cleanUpParams($params));
     }
-
-    /**
-     * @expectedException InvalidArgumentException
-     */
-    public function testNotRoutableController()
+    function test_cleaning_up_params_should_remove_empty_string_params()
     {
-        $this->object->instanceRoute('ANY', '/', new \stdClass);
-        $this->object->dispatch('get', '/')->run();
+        $params = array('/', 'foo', '', 'bar');
+        $expected = array('foo', 'bar');
+        $this->assertEquals($expected, Router::cleanUpParams($params));
     }
-
-    /**
-     * @expectedException InvalidArgumentException
-     */
-    public function testNotRoutableControllerByName()
+    function test_magic_call_should_throw_exception_with_just_one_arg()
     {
-        $this->object->classRoute('ANY', '/', '\stdClass');
-        $this->object->dispatch('get', '/')->run();
+        $this->setExpectedException('InvalidArgumentException');
+        $this->router->thisIsAnInvalidMagicCallWithOnlyOneArg('foo');
     }
-
-    /**
-     * @dataProvider providerForSingleRoutes
-     */
-    public function testSingleRoutes($route, $path, $expectedParams)
+    function test_magic_call_should_throw_exception_with_zero_args()
     {
-        $this->object->callbackRoute('get', $route, $this->callback);
-        $r = $this->object->dispatch('get', $path);
-        if ($r)
-            $r->run();
-        $this->assertEquals($expectedParams, $this->result);
+        $this->setExpectedException('InvalidArgumentException');
+        $this->router->thisIsAnInvalidMagicCallWithOnlyOneArg();
     }
-
-    /**
-     * @dataProvider providerForLargeParams
-     */
-    public function testLargeParams($route, $path, $expectedParams)
+    function test_magic_call_with_closure_should_create_callback_route()
     {
-
-        $this->object->callbackRoute('get', $route, $this->callback);
-        $r = $this->object->dispatch('get', $path);
-        if ($r)
-            $r->run();
-        $this->assertEquals($expectedParams, $this->result);
+        $route = $this->router->thisIsAMagicCall('/some/path', function() {});
+        $this->assertInstanceOf('Respect\Rest\Routes\Callback', $route); 
     }
-
-    /**
-     * @dataProvider providerForSpecialChars
-     */
-    public function testSpecialChars($route, $path, $expectedParams)
+    function test_magic_call_with_func_name_should_create_callback_route()
     {
-
-        $this->object->callbackRoute('get', $route, $this->callback);
-        $r = $this->object->dispatch('get', $path);
-        if ($r)
-            $r->run();
-        $this->assertEquals($expectedParams, $this->result);
+        $route = $this->router->thisIsAMagicCall('/some/path', 'strlen');
+        $this->assertInstanceOf('Respect\Rest\Routes\Callback', $route); 
     }
-
-    public function providerForSingleRoutes()
-    {
-        return array(
-            array(
-                '/',
-                '/',
-                array()
-            ),
-            array(
-                '/users',
-                '/users',
-                array()
-            ),
-            array(
-                '/users/',
-                '/users',
-                array()
-            ),
-            array(
-                '/users',
-                '/users/',
-                array()
-            ),
-            array(
-                '/users/*',
-                '/users/1',
-                array(1)
-            ),
-            array(
-                '/users/*/*',
-                '/users/1/2',
-                array(1, 2)
-            ),
-            array(
-                '/users/*/lists',
-                '/users/1/lists',
-                array(1)
-            ),
-            array(
-                '/users/*/lists/*',
-                '/users/1/lists/2',
-                array(1, 2)
-            ),
-            array(
-                '/users/*/lists/*',
-                '/users/1/lists/2/65465',
-                null //cant match
-            ),
-            array(
-                '/users/*/lists/*/*',
-                '/users/1/lists/2/3',
-                array(1, 2, 3)
-            ),
-            array(
-                '/posts/*/*/*',
-                '/posts/2010/10/10',
-                array(2010, 10, 10)
-            ),
-            array(
-                '/posts/*/*/*',
-                '/posts/2010/10',
-                array(2010, 10)
-            ),
-            array(
-                '/posts/*/*/*',
-                '/posts/2010',
-                array(2010)
-            ),
-            array(
-                '/posts/*/*/*',
-                '/posts/2010/10///',
-                array(2010, 10)
-            ),
-            array(
-                '/posts/*/*/*',
-                '/posts/2010/////',
-                array(2010)
-            ),
-            array(
-                '/posts/*/*/*',
-                '/posts/2010//10///',
-                null
-            ),
-            array(
-                '/posts/*/*/*',
-                '/posts/2010/0/',
-                array(2010, 0)
-            ),
-            array(
-                '/users/*/*/lists/*/*',
-                '/users/1/1B/lists/2/3',
-                array(1, '1B', 2, 3)
-            ),
-            array(
-                '/users/*/mounted-folder/**',
-                '/users/alganet/mounted-folder/home/alganet/Projects/RespectRest/',
-                array('alganet', 'home', 'alganet', 'Projects', 'RespectRest')
-            ),
+    function test_magic_call_with_object_instance_should_create_instance_route()
+    { 
+        $route = $this->router->thisIsAMagicCall(
+            '/some/path', new DummyRoute
         );
+        $this->assertInstanceOf('Respect\Rest\Routes\Instance', $route); 
     }
-
-    public function providerForLargeParams()
+    function test_magic_call_with_class_name_should_return_classname_route()
+    { 
+        $route = $this->router->thisIsAMagicCall(
+            '/some/path', 'DateTime'
+        );
+        $this->assertInstanceOf('Respect\Rest\Routes\ClassName', $route); 
+    }
+    function test_magic_call_with_class_callback_should_return_factory_route()
+    { 
+        $route = $this->router->thisIsAMagicCall(
+            '/some/path', 'DateTime', array(new \Datetime, 'format')
+        );
+        $this->assertInstanceOf('Respect\Rest\Routes\Factory', $route); 
+    }
+    function test_magic_call_with_class_with_constructor_should_return_class_route()
+    { 
+        $route = $this->router->thisIsAMagicCall(
+            '/some/path', 'DateTime', array('2989374983')
+        );
+        $this->assertInstanceOf('Respect\Rest\Routes\ClassName', $route); 
+    }
+    function test_magic_call_with_some_static_value()
+    { 
+        $route = $this->router->thisIsAMagicCall(
+            '/some/path', array('foo')
+        );
+        $this->assertInstanceOf('Respect\Rest\Routes\StaticValue', $route); 
+    }
+    function test_destructor_runs_router_automatically_when_protocol_is_present()
     {
-        return array(
-            array(
-                '/users/*/*/*/*/*/*/*',
-                '/users/1',
-                array(1)
-            ),
-            array(
-                '/users/*/*/*/*/*/*/*',
-                '/users/a/a/a/a/a/a/a',
-                array('a', 'a', 'a', 'a', 'a', 'a', 'a')
-            ),
-            array(
-                '/users' . str_repeat('/*', 2500), //2500 short parameters
-                '/users' . str_repeat('/xy', 2500),
-                str_split(str_repeat('xy', 2500), 2)
-            ),
-            array(
-                '/users' . str_repeat('/*', 2500), //2500 large parameters
-                '/users' . str_repeat('/abcdefghijklmnopqrstuvwxyz', 2500),
-                str_split(str_repeat('abcdefghijklmnopqrstuvwxyz', 2500), 26)
-            ),
-            array(
-                '/users' . str_repeat('/*', 2500), //2500 very large parameters
-                '/users' . str_repeat('/abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz',
-                    2500),
-                str_split(str_repeat('abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz',
-                        2500), 26 * 3)
-            ),
-        );
+        $this->router->get('/**', function(){ return 'ok'; });
+        $this->router->isAutoDispatched = true;
+        ob_start();
+        unset($this->router);
+        $response = ob_get_clean();
+        $this->assertEquals('ok', $response);
     }
-
-    public function providerForSpecialChars()
+    function test_converting_router_to_string_should_dispatch_and_run_it()
     {
-        return array(
-            array(
-                '/My Documents/*',
-                '/My Documents/1',
-                array(1)
-            ),
-            array(
-                '/My%20Documents/*', //trival
-                '/My%20Documents/1',
-                array(1)
-            ),
-            array(
-                '/(.*)/*/[a-z]/*', //preg_quote ftw, but you're a SOB if you
-                '/(.*)/1/[a-z]/2', //create a route with those special chars
-                array(1, 2)
-            ),
-            array(
-                '/shinny*/*',
-                '/shinny*/2',
-                array(2)
-            ),
-        );
+        $this->router->get('/**', function(){ return 'ok'; });
+        $response = (string) $this->router;
+        $this->assertEquals('ok', $response);
     }
-
-    public function testBindControllerNoParams()
-    {
-        $this->object->any('/users/*', new MyController);
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
-        $this->assertEquals(array('alganet', 'get', array()), $result);
-    }
-
-    public function testBindControllerParams()
-    {
-        $this->object->any('/users/*', 'Respect\\Rest\\MyController', 'ok');
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
-        $this->assertEquals(array('alganet', 'get', array('ok')), $result);
-    }
-
-    public function testBindControllerInstance()
-    {
-        $this->object->instanceRoute('ANY', '/users/*', new MyController('ok'));
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
-        $this->assertEquals(array('alganet', 'get', array('ok')), $result);
-    }
-
-    public function testBindControllerParams2()
-    {
-        $this->object->instanceRoute('ANY', '/users/*',
-            new MyController('ok', 'foo', 'bar'));
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
-        $this->assertEquals(array('alganet', 'get', array('ok', 'foo', 'bar')),
-            $result);
-    }
-
-    public function testBindControllerSpecial()
-    {
-        $this->object->instanceRoute('ANY', '/users/*', new MyController);
-        $result = $this->object->dispatch('__construct', '/users/alganet');
-        $this->assertEquals(null, $result);
-    }
-
-    public function testBindControllerMultiMethods()
-    {
-        $this->object->instanceRoute('ANY', '/users/*', new MyController);
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
-        $this->assertEquals(array('alganet', 'get', array()), $result);
-
-        $result = $this->object->dispatch('post', '/users/alganet')->run();
-        $this->assertEquals(array('alganet', 'post', array()), $result);
-    }
-
-    public function testProxyBy()
-    {
-        $result = null;
-        $proxy = function() use (&$result) {
-                $result = 'ok';
-            };
-        $this->object->get('/users/*',
-            function() {
-                
-            })->by($proxy);
-        $this->object->dispatch('get', '/users/alganet')->run();
-        $this->assertEquals('ok', $result);
-    }
-
-    public function testSimpleAlways()
-    {
-        $result = null;
-        $proxy = function() use (&$result) {
-                $result = 'ok';
-            };
-        $this->object->always('by', $proxy);
-        $this->object->get('/users/*',
-            function() {
-                
-            });
-        $this->object->dispatch('get', '/users/alganet')->run();
-        $this->assertEquals('ok', $result);
-    }
-
-    public function testSimpleAlwaysAfter()
-    {
-        $result = null;
-        $proxy = function() use (&$result) {
-                $result = 'ok';
-            };
-        $this->object->get('/users/*',
-            function() {
-                
-            });
-        $this->object->always('by', $proxy);
-        $this->object->dispatch('get', '/users/alganet')->run();
-        $this->assertEquals('ok', $result);
-    }
-
-    public function testProxyThrough()
-    {
-        $result = null;
-        $proxy = function() use (&$result) {
-                $result = 'ok';
-            };
-        $this->object->get('/users/*',
-            function() {
-                
-            })->through($proxy);
-        $this->object->dispatch('get', '/users/alganet')->run();
-        $this->assertEquals('ok', $result);
-    }
-
-    public function testProxyThroughOutput()
-    {
-        $proxy = function() {
-                return function($output) {
-                    return $output . 'ok';
-                };
-            };
-        $this->object->get('/users/*',
-            function() {
-                return 'ok';
-            })->through($proxy);
-        $result = $this->object->dispatch('get', '/users/alganet')->run();
-        $this->assertEquals('okok', $result);
-    }
-
-    public function testMultipleProxies()
-    {
-        $result = array();
-        $proxy1 = function($foo) use (&$result) {
-                $result[] = $foo;
-            };
-        $proxy2 = function($bar) use (&$result) {
-                $result[] = $bar;
-            };
-        $proxy3 = function($baz) use (&$result) {
-                $result[] = $baz;
-            };
-        $this->object->get('/users/*/*/*',
-            function($foo, $bar, $baz) use(&$result) {
-                $result[] = 'main';
-            })->by($proxy1)->through($proxy2, $proxy3);
-        $this->object->dispatch('get', '/users/abc/def/ghi')->run();
-        $this->assertSame(
-            array('abc', 'main', 'def', 'ghi'), $result
-        );
-    }
-
-    public function testProxyParamsByReference()
-    {
-        $resultProxy = null;
-        $resultCallback = null;
-        $proxy1 = function($foo=null, $abc=null) use (&$resultProxy) {
-                $resultProxy = func_get_args();
-            };
-        $callback = function($bar, $foo=null) use(&$resultCallback) {
-                $resultCallback = func_get_args();
-            };
-        $this->object->get('/users/*/*', $callback)->by($proxy1);
-        $this->object->dispatch('get', '/users/abc/def')->run();
-        $this->assertEquals(array('def', null), $resultProxy);
-        $this->assertEquals(array('abc', 'def'), $resultCallback);
-    }
-
-    public function testProxyReturnFalse()
-    {
-        $result = array();
-        $proxy1 = function($foo) use (&$result) {
-                $result[] = $foo;
-                return false;
-            };
-        $proxy2 = function($bar) use (&$result) {
-                $result[] = $bar;
-            };
-        $proxy3 = function($baz) use (&$result) {
-                $result[] = $baz;
-            };
-        $this->object->get('/users/*/*/*',
-            function($foo, $bar, $baz) use(&$result) {
-                $result[] = 'main';
-            })->by($proxy1)->through($proxy2, $proxy3);
-        $this->object->dispatch('get', '/users/abc/def/ghi')->run();
-        $this->assertSame(
-            array('abc'), $result
-        );
-    }
-
-    public function testConditions()
-    {
-        $result = 'ok';
-        $condition = function() {
-                return false;
-            };
-        $this->object->get('/users/*',
-            function() use (&$result) {
-                $result = null;
-            })->when($condition);
-        $this->object->dispatch('get', '/users/alganet');
-        $this->assertEquals('ok', $result);
-    }
-
-    public function testWildcardOrdering()
-    {
-        $this->object->any('/posts/*/*',
-            function($year, $month) {
-                return 10;
-            }
-        );
-        $this->object->any('/**',
-            function($userName) {
-                return 5;
-            }
-        );
-        $this->assertEquals(
-            10, $this->object->dispatch('get', '/posts/2010/20')->run()
-        );
-        $this->assertEquals(
-            5, $this->object->dispatch('get', '/anything')->run()
-        );
-    }
-
-    public function testOrdering()
-    {
-        $this->object->any('/users/*',
-            function($userName) {
-                return 5;
-            }
-        );
-        $this->object->any('/users/*/*',
-            function($year, $month) {
-                return 10;
-            }
-        );
-        $this->assertEquals(
-            5, $this->object->dispatch('get', '/users/alganet')->run()
-        );
-        $this->assertEquals(
-            10, $this->object->dispatch('get', '/users/2010/20')->run()
-        );
-    }
-
-    public function testOrderingSpecific()
-    {
-        $this->object->any('/users/*/*',
-            function($year, $month) {
-                return 10;
-            }
-        );
-        $this->object->any('/users/lists/*',
-            function($userName) {
-                return 5;
-            }
-        );
-        $this->assertEquals(
-            5, $this->object->dispatch('get', '/users/lists/alganet')->run()
-        );
-        $this->assertEquals(
-            10, $this->object->dispatch('get', '/users/foobar/alganet')->run()
-        );
-    }
-
-    public function testOrderingSpecific2()
-    {
-        $this->object->any('/',
-            function() {
-                return 2;
-            }
-        );
-        $this->object->any('/*',
-            function() {
-                return 3;
-            }
-        );
-        $this->object->any('/*/versions',
-            function() {
-                return 4;
-            }
-        );
-        $this->object->any('/*/versions/*',
-            function() {
-                return 5;
-            }
-        );
-        $this->object->any('/*/*',
-            function() {
-                return 6;
-            }
-        );
-        $this->assertEquals(
-            2, $this->object->dispatch('get', '/')->run()
-        );
-        $this->assertEquals(
-            3, $this->object->dispatch('get', '/foo')->run()
-        );
-        $this->assertEquals(
-            4, $this->object->dispatch('get', '/foo/versions')->run()
-        );
-        $this->assertEquals(
-            5, $this->object->dispatch('get', '/foo/versions/1.0')->run()
-        );
-        $this->assertEquals(
-            6, $this->object->dispatch('get', '/foo/bar')->run()
-        );
-    }
-
-    public function testExperimentalShell()
-    {
-        $router = new Router;
-        $router->install('/**',
-            function() {
-                return 'Installed ' . implode(', ', func_get_args());
-            }
-        );
-        $commandLine = 'install apache php mysql';
-        $commandArgs = explode(' ', $commandLine);
-        $output = $router->dispatch(
-                array_shift($commandArgs), '/' . implode('/', $commandArgs)
-            )->run();
-        $this->assertEquals('Installed apache, php, mysql', $output);
-    }
-
-}
-
-//couldn't mock this 'cause its read by reflection =/
-class MyController implements Routable
-{
-
-    protected $params = array();
-
-    public function __construct()
-    {
-        $this->params = func_get_args();
-        return 'whoops';
-    }
-
-    public function get($user)
-    {
-        return array($user, 'get', $this->params);
-    }
-
-    public function post($user)
-    {
-        return array($user, 'post', $this->params);
-    }
-
 }

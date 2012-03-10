@@ -1,17 +1,19 @@
-Respect\Rest
+Respect\Rest [![Build Status](https://secure.travis-ci.org/Respect/Rest.png)](http://travis-ci.org/Respect/Rest)
 ============
 
 Thin controller for RESTful applications
 
-**This is a work in progress and has not been tested on production environments**
-
 Highlights:
 
- * Thin. Does not try to change how PHP works (`$_POST`, `$_GET`, etc remains untouched by default);
- * Lightweight. Few, small classes.
+ * Thin. Does not try to change how PHP works.
+ * Lightweight. It uses few, small classes.
  * Maintainable. You can migrate from the microframework style to the class-controller style.
  * RESTful. The right way to create web apps.
 
+Installation
+------------
+
+Please use PEAR. More instructions on the [Respect PEAR channel](http://respect.li/pear)
 
 Feature Guide
 =============
@@ -35,7 +37,7 @@ Simple Routing
  1. *get* is the equivalent of the HTTP GET method. You can use post, put, delete
     or any other. You can even use custom methods if you want.
  2. *return* sends the output string to the dispatcher
- 3. The route is automatically dispatched. You can `$r3->setAutoDispatched(false)`
+ 3. The route is automatically dispatched. You can set `$r3->autoDispatched = false`
     if you want.
 
 Parameters
@@ -86,13 +88,15 @@ Matching any HTTP Method
         //do anything
     });
 
- 1. Any HTTP method will match this same route. 
+ 1. Any HTTP method will match this same route.
  2. You can figure out the method using the standard PHP `$_SERVER['REQUEST_METHOD']`
 
 Bind Controller Classes
 -----------------------
 
-    class MyArticle {
+    use Respect\Rest\Routable;
+
+    class MyArticle implements Routable {
         public function get($id) { }
         public function delete($id) { }
         public function put($id) { }
@@ -107,11 +111,12 @@ Bind Controller Classes
   3. Controllers are lazy loaded and persistent. The *MyArticle* class will
      be instantiated only when a route matches one of his methods, and this
      instance will be reused on other requests (redirects, etc).
+  4. Classes must implement the interface Respect\Rest\Routable;
 
 Controller Classes Constructors
 -------------------------------
 
-    $r3->any('/images/*', 'ImageController', $myImageHandler, $myDb);
+    $r3->any('/images/*', 'ImageController', array($myImageHandler, $myDb));
 
   1. This will pass `$myImageHandler` and `$myDb` as parameters for the
      *ImageController* class.
@@ -124,6 +129,14 @@ Direct Instances
   1. Sample above will assign the existent `$myDownloadManager` as a controller.
   2. This instance is also reused by Respect\Rest
 
+Bind Controller Factories
+----------------
+
+    $r3->any('/downloads/*', 'MyControllerClass', array('Factory', 'getController'));
+
+  1. Sample above will use the MyController class returned by Factory::getController
+  2. This instance is also reused by Respect\Rest
+
 Route Conditions
 ----------------
 
@@ -134,10 +147,10 @@ Route Conditions
     });
 
   1. This will match the route only if the callback on *when* is matched.
-  2. The `$documentId` param must have the same name in the action and the 
+  2. The `$documentId` param must have the same name in the action and the
      condition (but does not need to appear in the same order)
   3. You can specify more than one parameter per condition callback.
-  4. You can specify more than one callback: `when($cb1, $cb2, $etc)`
+  4. You can specify more than one callback: `when($cb1)->when($cb2)->when($etc)`
   5. Conditions will also sync with parameters on binded classes and instances
      methods
 
@@ -153,7 +166,7 @@ Route Proxies (Before)
   1. This will execute the callback defined on *by* before the route action.
   2. Parameters are also synced by name, not order, like `when`.
   3. You can specify more than one parameter per proxy callback.
-  4. You can specify more than one proxy: `by($cb1, $cb2, $etc)`
+  4. You can specify more than one proxy: `by($cb1)->by($cb2)->by($etc)`
   5. A `return false` on a proxy will stop the execution of following proxies
      and the route action.
   6. Proxies will also sync with parameters on binded classes and instances
@@ -164,19 +177,54 @@ Route Proxies (After)
 
     $r3->get('/artists/*/albums/*', function($artistName, $albumName) {
         //do something
-    })->then(function() {
+    })->through(function() {
         //do something nice
     });
 
-  1. `by` proxies will be executed before the route action, `then proxies` will
-     be executed after.
+  1. `by` proxies will be executed before the route action, `through proxies`
+     will be executed after.
   2. You don't need to use them both at the same time.
-  3. `then` can also receive parameters by name
+  3. `through` can also receive parameters by name
+
+Running inside a folder
+-----------------------
+
+To run Respect\Rest inside some folder (eg. http://localhost/my/folder), pass
+that folder to the Router constructor:
+
+    $r3 = new Router('/my/folder');
+
+You can also use it without .htaccess/rewrite support:
+
+    $r3 = new Router('/my/folder/index.php');
+
+Content Negotiation
+-------------------
+
+Respect currently supports the four distinct types of conneg: Mimetype,
+Encoding, Language and Charset. Usage sample:
+
+    $r3->get('/about', function() {
+        return array('v' => 2.0);
+    })->acceptLanguage(array(
+        'en' => function($data) { return array("Version" => $data['v']); },
+        'pt' => function($data) { return array("Versão"  => $data['v']); }
+    ))->accept(array(
+        'text/html' => function($data) { 
+            list($k,$v)=each($data);
+            return "<strong>$k</strong>: $v";
+        },
+        'application/json' => 'json_encode'
+    ));
+
+As in every routine, conneg routines are executed in the same order that
+you appended them to the route.
+
 
 License Information
 ===================
 
-Copyright (c) 2009-2011, Alexandre Gomes Gaigalas.
+Copyright (c) 2009-2012, Alexandre Gomes Gaigalas.
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification,

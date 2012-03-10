@@ -6,17 +6,20 @@ use ReflectionMethod;
 use InvalidArgumentException;
 use Respect\Rest\Routable;
 
-class Instance extends AbstractRoute
+class Factory extends AbstractRoute
 {
+
     public $class = '';
     protected $instance = null;
+    protected $factory = null;
+
     /** @var ReflectionMethod */
     protected $reflection;
 
-    public function __construct($method, $pattern, $instance)
+    public function __construct($method, $pattern, $class, $factory)
     {
-        $this->instance = $instance;
-        $this->class = get_class($instance);
+        $this->factory = $factory;
+        $this->class = $class;
         parent::__construct($method, $pattern);
     }
 
@@ -24,7 +27,7 @@ class Instance extends AbstractRoute
     {
         if (empty($this->reflection))
             $this->reflection = new ReflectionMethod(
-                    $this->instance, $method
+                $this->class, $method
             );
 
         return $this->reflection;
@@ -32,11 +35,14 @@ class Instance extends AbstractRoute
 
     public function runTarget($method, &$params)
     {
-        if (!$this->instance instanceof Routable)
-            throw new InvalidArgumentException(''); //TODO
+        if (is_null($this->instance))
+            $this->instance = call_user_func($this->factory);
 
-            return call_user_func_array(
-            array($this->instance, $method), $params
+        if (!$this->instance instanceof Routable)
+            throw new InvalidArgumentException('Routed classes must implement the Respect\\Rest\\Routable interface'); 
+
+        return call_user_func_array(
+                array($this->instance, $method), $params
         );
     }
 

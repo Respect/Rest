@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" packagerversion="1.9.1" version="2.0" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0     http://pear.php.net/dtd/tasks-1.0.xsd     http://pear.php.net/dtd/package-2.0     http://pear.php.net/dtd/package-2.0.xsd">
+  <name>Rest</name>
+  <channel>respect.li/pear</channel>
+  <summary>Thin controller for RESTful applications</summary>
+  <description>Thin controller for RESTful applications</description>
+  <lead>
+    <name>Alexandre Gomes Gaigalas</name>
+    <user>alganet</user>
+    <email>alexandre@gaigalas.net</email>
+    <active>yes</active>
+  </lead>
+  <date>2011-11-29</date>
+  <time>19:05:00</time>
+  <version>
+    <release>0.3.1</release>
+    <api>0.3.1</api>
+  </version>
+  <stability>
+    <release>alpha</release>
+    <api>alpha</api>
+  </stability>
+  <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+  <notes>
+Thin controller for RESTful applications
+ </notes>
+  <contents>
+    <dir name="library/Respect/Rest" baseinstalldir="Respect/Rest">
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Request.php" name="library/Respect/Rest/Request.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routable.php" name="library/Respect/Rest/Routable.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Router.php" name="library/Respect/Rest/Router.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routes/AbstractRoute.php" name="library/Respect/Rest/Routes/AbstractRoute.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routes/Callback.php" name="library/Respect/Rest/Routes/Callback.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routes/ClassName.php" name="library/Respect/Rest/Routes/ClassName.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routes/Factory.php" name="library/Respect/Rest/Routes/Factory.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routes/Instance.php" name="library/Respect/Rest/Routes/Instance.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routes/StaticValue.php" name="library/Respect/Rest/Routes/StaticValue.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/AbstractAccept.php" name="library/Respect/Rest/Routines/AbstractAccept.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/AbstractRoutine.php" name="library/Respect/Rest/Routines/AbstractRoutine.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/AbstractSyncedRoutine.php" name="library/Respect/Rest/Routines/AbstractSyncedRoutine.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/Accept.php" name="library/Respect/Rest/Routines/Accept.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/AcceptCharset.php" name="library/Respect/Rest/Routines/AcceptCharset.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/AcceptEncoding.php" name="library/Respect/Rest/Routines/AcceptEncoding.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/AcceptLanguage.php" name="library/Respect/Rest/Routines/AcceptLanguage.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/By.php" name="library/Respect/Rest/Routines/By.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/ContentType.php" name="library/Respect/Rest/Routines/ContentType.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/LastModified.php" name="library/Respect/Rest/Routines/LastModified.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/ParamSynced.php" name="library/Respect/Rest/Routines/ParamSynced.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/ProxyableBy.php" name="library/Respect/Rest/Routines/ProxyableBy.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/ProxyableThrough.php" name="library/Respect/Rest/Routines/ProxyableThrough.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/ProxyableWhen.php" name="library/Respect/Rest/Routines/ProxyableWhen.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/Through.php" name="library/Respect/Rest/Routines/Through.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/Unique.php" name="library/Respect/Rest/Routines/Unique.php"/>
+      <file role="php" baseinstalldir="Respect/Rest" install-as="/Routines/When.php" name="library/Respect/Rest/Routines/When.php"/>
+    </dir>
+  </contents>
+  <dependencies>
+    <required>
+      <php>
+        <min>5.3</min>
+      </php>
+      <pearinstaller>
+        <min>1.4.0</min>
+      </pearinstaller>
+    </required>
+  </dependencies>
+  <phprelease/>
+  <changelog>
+    <release>
+      <version>
+        <release>0.1.2</release>
+        <api>0.1.2</api>
+      </version>
+      <stability>
+        <release>alpha</release>
+        <api>alpha</api>
+      </stability>
+      <date>2011-08-18</date>
+      <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+      <notes>
+Thin controller for RESTful applications
+   </notes>
+    </release>
+    <release>
+      <version>
+        <release>0.1.3</release>
+        <api>0.1.3</api>
+      </version>
+      <stability>
+        <release>alpha</release>
+        <api>alpha</api>
+      </stability>
+      <date>2011-08-18</date>
+      <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+      <notes>
+Thin controller for RESTful applications
+   </notes>
+    </release>
+    <release>
+      <version>
+        <release>0.2.0</release>
+        <api>0.2.0</api>
+      </version>
+      <stability>
+        <release>alpha</release>
+        <api>alpha</api>
+      </stability>
+      <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+    </release>
+    <release>
+      <version>
+        <release>0.3.0</release>
+        <api>0.3.0</api>
+      </version>
+      <stability>
+        <release>alpha</release>
+        <api>alpha</api>
+      </stability>
+      <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+    </release>
+    <release>
+      <version>
+        <release>0.3.1</release>
+        <api>0.3.1</api>
+      </version>
+      <stability>
+        <release>alpha</release>
+        <api>alpha</api>
+      </stability>
+      <license uri="http://www.opensource.org/licenses/bsd-license.php">BSD Style</license>
+    </release>
+  </changelog>
+</package>
