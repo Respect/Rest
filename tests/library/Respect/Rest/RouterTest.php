@@ -125,10 +125,23 @@ class NewRouterTest extends \PHPUnit_Framework_TestCase
         $this->assertContains('HTTP/1.1 405', $header);
         $this->assertContains('Allow: GET', $header);
     }
+    function test_http_method_head()
+    {
+        global $header;
+        $expectedHeader = 'X-Burger: With Cheese!';
+        $this->router->get('/', function() use ($expectedHeader) { 
+            header($expectedHeader);
+            return 'ok'; 
+        });
+        $headResponse = $this->router->dispatch('HEAD', '/');
+        $getResponse  = $this->router->dispatch('GET', '/');
+        $this->assertEquals('ok', (string) $getResponse);
+        $this->assertContains($expectedHeader, $header);
+    }
 }
 $header=array();
 /**
- * [header description]
+ * header() stub to tests ...
  * @return void
  */
 function header($string, $replace=true, $http_response_code=200)

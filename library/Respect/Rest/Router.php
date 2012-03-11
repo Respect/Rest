@@ -155,8 +155,8 @@ class Router
 
         foreach ($matchedByPath as $route) 
             if (0 !== stripos($request->method, '__')
-                && ($route->method === $request->method || $route->method === 'ANY')
-                && $route->matchRoutines($request, $params)) 
+                && ($route->method === $request->method || $route->method === 'ANY' || ($route->method === 'GET' && $request->method === 'HEAD'))
+                && $route->matchRoutines($request, $params) ) 
                 return $this->configureRequest($request, $route, static::cleanUpParams($params));
 
         header('HTTP/1.1 405');
@@ -172,7 +172,10 @@ class Router
     public function run(Request $request=null)
     {
         $route = $this->dispatch($request);
-        return $route ? $route->response() : null;
+        if (!$route || (isset($request->method) && $request->method === 'HEAD'))
+            return null;
+
+        return $route->response();
     }
 
     /** Creates and returns an factory-based route */
