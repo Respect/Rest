@@ -110,11 +110,20 @@ class NewRouterTest extends \PHPUnit_Framework_TestCase
     function test_method_not_allowed_header()
     {
         global $header;
+        $this->router->get('/', function() { return 'ok'; });
+        $this->router->put('/', function() { return 'ok'; });
+        $this->router->dispatch('delete', '/');
+        $this->assertContains('HTTP/1.1 405', $header);
+        $this->assertContains('Allow: GET, PUT', $header);
+    }
+    function test_method_not_allowed_header_with_conneg()
+    {
+        global $header;
         $this->router->get('/', function() { return 'ok'; })
                      ->accept(array('text/html' => function($d) {return $d;}));
         $this->router->dispatch('delete', '/');
         $this->assertContains('HTTP/1.1 405', $header);
-        //$this->assertContains('Allow: ', $header);
+        $this->assertContains('Allow: GET', $header);
     }
 }
 $header=array();

@@ -141,16 +141,29 @@ class Router
             $request->uri =
                 preg_replace('#^' . preg_quote($this->virtualHost) . '#', '', $request->uri);
 
-        try {
-            foreach ($this->routes as $route)
-                if ($this->matchRoute($request, $route, $params))
-                    return $this->configureRequest($request, $route, static::cleanUpParams($params));
-        } catch (MethodNotAllowed $e) {
-            header('HTTP/1.1 405');
-            return;
-        }
+        $matchedByPath = array();
+        $allowedMethods = array();
 
-        header('HTTP/1.1 404');
+        foreach ($this->routes as $route) 
+            if ($this->matchRoute($request, $route, $params)) {
+                $matchedByPath[] = $route;
+                $allowedMethods[] = $route->method;
+            }
+
+        if (!$matchedByPath)
+            header('HTTP/1.1 404');
+
+        foreach ($matchedByPath as $route) 
+            if (0 !== stripos($request->method, '__')
+                && ($route->method === $request->method || $route->method === 'ANY')
+                && $route->matchRoutines($request, $params)) 
+                return $this->configureRequest($request, $route, static::cleanUpParams($params));
+
+        header('HTTP/1.1 405');
+
+        if ($allowedMethods)
+            header('Allow: '.implode(', ', $allowedMethods));
+
         $request->route = null;
         return $request;
     }

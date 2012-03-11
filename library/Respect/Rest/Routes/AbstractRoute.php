@@ -71,25 +71,24 @@ abstract class AbstractRoute
         );
     }
 
-    /** Checks if this route matches a request */
-    public function match(Request $request, &$params=array())
+    public function matchRoutines(Request $request, &$params=array())
     {
-        if (0 === stripos($request->method, '__'))
-            return false;
-
-        // Checks if the given HTTP method is not implemented
-        if (($request->method !== $this->method ) && $this->method !== 'ANY')
-                throw new MethodNotAllowed(sprintf('%s not allowed for %s', $request->method, $this->pattern));
-            
-        $matchUri = $request->uri;
-
-        foreach ($this->routines as $routine) {
+        foreach ($this->routines as $routine)
             if ($routine instanceof ProxyableWhen
                 && !$request->routineCall('when', $request->method, $routine, $params))
                 return false;
+            
+        return true;
+    }
+
+    /** Checks if this route matches a request */
+    public function match(Request $request, &$params=array())
+    {
+        $matchUri = $request->uri;
+
+        foreach ($this->routines as $routine) 
             if ($routine instanceof IgnorableFileExtension)
                 $matchUri = preg_replace('#(\.\w+)*$#', '', $request->uri);
-        }
 
         if (!preg_match($this->regexForMatch, $matchUri, $params))
             return false;
