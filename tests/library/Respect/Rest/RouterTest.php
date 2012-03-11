@@ -14,6 +14,11 @@ class NewRouterTest extends \PHPUnit_Framework_TestCase
         $this->router = new Router;
         $this->router->isAutoDispatched = false;
     }
+    public function tearDown()
+    {
+        global $header;
+        $header = array();
+    }
     function test_cleaning_up_params_should_remove_first_param_always()
     {
         $params = array('/', 'foo', '', 'bar');
@@ -101,6 +106,15 @@ class NewRouterTest extends \PHPUnit_Framework_TestCase
         $this->router->any('/', function() {});
         $this->router->dispatch('get', '/my/name/is/hall');
         $this->assertContains('HTTP/1.1 404', $header);
+    }
+    function test_method_not_allowed_header()
+    {
+        global $header;
+        $this->router->get('/', function() { return 'ok'; })
+                     ->accept(array('text/html' => function($d) {return $d;}));
+        $this->router->dispatch('delete', '/');
+        $this->assertContains('HTTP/1.1 405', $header);
+        //$this->assertContains('Allow: ', $header);
     }
 }
 $header=array();

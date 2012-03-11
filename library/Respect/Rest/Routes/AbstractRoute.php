@@ -8,6 +8,7 @@ use Respect\Rest\Routines\AbstractRoutine;
 use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Unique;
+use Respect\Rest\Exception\MethodNotAllowed;
 
 /** Base class for all Routes */
 abstract class AbstractRoute
@@ -73,9 +74,12 @@ abstract class AbstractRoute
     /** Checks if this route matches a request */
     public function match(Request $request, &$params=array())
     {
-        if (($request->method !== $this->method && $this->method !== 'ANY')
-            || 0 === stripos($request->method, '__'))
+        if (0 === stripos($request->method, '__'))
             return false;
+
+        // Checks if the given HTTP method is not implemented
+        if (($request->method !== $this->method ) && $this->method !== 'ANY')
+                throw new MethodNotAllowed(sprintf('%s not allowed for %s', $request->method, $this->pattern));
             
         $matchUri = $request->uri;
 

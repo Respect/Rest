@@ -9,6 +9,7 @@ use RuntimeException;
 use InvalidArgumentException;
 use Respect\Rest\Routes;
 use Respect\Rest\Routes\AbstractRoute;
+use Respect\Rest\Exception\MethodNotAllowed;
 
 class Router
 {
@@ -140,9 +141,14 @@ class Router
             $request->uri =
                 preg_replace('#^' . preg_quote($this->virtualHost) . '#', '', $request->uri);
 
-        foreach ($this->routes as $route)
-            if ($this->matchRoute($request, $route, $params))
-                return $this->configureRequest($request, $route, static::cleanUpParams($params));
+        try {
+            foreach ($this->routes as $route)
+                if ($this->matchRoute($request, $route, $params))
+                    return $this->configureRequest($request, $route, static::cleanUpParams($params));
+        } catch (MethodNotAllowed $e) {
+            header('HTTP/1.1 405');
+            return;
+        }
 
         header('HTTP/1.1 404');
         $request->route = null;
