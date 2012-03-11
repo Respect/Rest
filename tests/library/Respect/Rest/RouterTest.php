@@ -138,6 +138,29 @@ class NewRouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('ok', (string) $getResponse);
         $this->assertContains($expectedHeader, $header);
     }
+    function test_user_agent_content_negotiation()
+    {
+        $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
+        $this->router->get('/', function () {
+            return 'unknown';
+        })->userAgent(array(
+            'FIREFOX' => function() { return 'FIREFOX'; },
+            'IE' => function() { return 'IE'; },
+        ));
+        $response = $this->router->dispatch('GET', '/');
+        $this->assertEquals('FIREFOX', $response);
+    }
+    function test_user_agent_content_negotiation_fallback()
+    {
+        $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
+        $this->router->get('/', function () {
+            return 'unknown';
+        })->userAgent(array(
+            '*' => function() { return 'IE'; },
+        ));
+        $response = $this->router->dispatch('GET', '/');
+        $this->assertEquals('IE', $response);
+    }
 }
 $header=array();
 /**
