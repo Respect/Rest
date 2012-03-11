@@ -1,10 +1,6 @@
 language: php
 script: make test
 
-before_script:
-  - "wget http://getcomposer.org/composer.phar"
-  - "php composer.phar install"
-
 php:
   - 5.3
   - 5.4
