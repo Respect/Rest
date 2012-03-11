@@ -161,6 +161,27 @@ class NewRouterTest extends \PHPUnit_Framework_TestCase
         $response = $this->router->dispatch('GET', '/');
         $this->assertEquals('IE', $response);
     }
+    function test_stream_routine()
+    {
+        $done                            = false;
+        $self                            = $this;
+        $request                         = new Request('GET', '/input');
+        $_SERVER['HTTP_ACCEPT_ENCODING'] = 'deflate';
+        $this->router->get('/input', function() { return fopen('php://input', 'r+'); })
+                     ->acceptEncoding(array(
+                        'deflate' => function($stream) use ($self, &$done) {
+                            $done = true;
+                            $self->assertTrue(is_resource($stream));
+                            stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
+                            return $stream; //now deflated on demand 
+                        }
+                     ));
+        
+        $response = $this->router->run($request);
+        $this->assertTrue($done);
+        //var_dump((string)$response);
+        $this->assertEmpty((string) $response);
+    }
 }
 $header=array();
 /**

@@ -63,7 +63,7 @@ class Router
         if (!$this->isAutoDispatched || !isset($_SERVER['SERVER_PROTOCOL']))
             return;
 
-        echo $this->run();
+        echo $this;
     }
     
     public function __toString()
@@ -171,11 +171,17 @@ class Router
     /** Dispatches and get response with default request parameters */
     public function run(Request $request=null)
     {
-        $route = $this->dispatch($request);
+        $route = $this->dispatchRequest($request);
         if (!$route || (isset($request->method) && $request->method === 'HEAD'))
             return null;
 
-        return $route->response();
+        $response = $route->response();
+        if (is_resource($response)) {
+            fpassthru($response);
+            return '';
+        }
+        return (string) $response;
+
     }
 
     /** Creates and returns an factory-based route */
