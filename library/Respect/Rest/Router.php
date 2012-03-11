@@ -144,6 +144,7 @@ class Router
             if ($this->matchRoute($request, $route, $params))
                 return $this->configureRequest($request, $route, static::cleanUpParams($params));
 
+        header('HTTP/1.1 404');
         $request->route = null;
         return $request;
     }

@@ -95,4 +95,24 @@ class NewRouterTest extends \PHPUnit_Framework_TestCase
         $response = (string) $this->router;
         $this->assertEquals('ok', $response);
     }
+    function test_dispatch_non_existing_route()
+    {
+        global $header;
+        $this->router->any('/', function() {});
+        $this->router->dispatch('get', '/my/name/is/hall');
+        $this->assertContains('HTTP/1.1 404', $header);
+    }
+}
+$header=array();
+/**
+ * [header description]
+ * @return void
+ */
+function header($string, $replace=true, $http_response_code=200)
+{
+    global $header;
+    if (!$replace && isset($header))
+        return;
+
+    $header[$string] = $string;
 }
