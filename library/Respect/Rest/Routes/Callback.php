@@ -40,7 +40,7 @@ class Callback extends AbstractRoute
     {
         if(false !== strpos($this->pattern,self::CATCHALL_IDENTIFIER)){
             $argcount = substr_count($this->pattern,self::PARAM_IDENTIFIER);
-            $extraParam = array_splice($params,$argcount-1,count($params));
+            $extraParam = array_splice($params,$argcount-1);
             $params[] = $extraParam;
         }
         return call_user_func_array($this->callback, $params);
