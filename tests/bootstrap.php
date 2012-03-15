@@ -3,8 +3,8 @@
 date_default_timezone_set('UTC');
 
 $pear_path = trim(`pear config-get php_dir`);
-set_include_path('../library' 
-        . PATH_SEPARATOR . $pear_path 
+set_include_path(__DIR__.'./../library'
+        . PATH_SEPARATOR . $pear_path
         . PATH_SEPARATOR . get_include_path());
 
 /**
@@ -14,7 +14,7 @@ set_include_path('../library'
  */
 if (file_exists($c=dirname(__FILE__).'/../vendor/.composer/autoload.php'))
 	require realpath($c);
-else 
+else
 	spl_autoload_register(
 	    function($className) {
 	        $fileParts = explode('\\', ltrim($className, '\\'));
