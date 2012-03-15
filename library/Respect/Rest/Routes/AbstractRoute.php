@@ -77,7 +77,7 @@ abstract class AbstractRoute
             if ($routine instanceof ProxyableWhen
                 && !$request->routineCall('when', $request->method, $routine, $params))
                 return false;
-            
+
         return true;
     }
 
@@ -86,7 +86,7 @@ abstract class AbstractRoute
     {
         $matchUri = $request->uri;
 
-        foreach ($this->routines as $routine) 
+        foreach ($this->routines as $routine)
             if ($routine instanceof IgnorableFileExtension)
                 $matchUri = preg_replace('#(\.\w+)*$#', '', $request->uri);
 

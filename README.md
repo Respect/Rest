@@ -75,8 +75,9 @@ Catch-all Parameters
         return readfile(PATH_STORAGE.$documentPath);
     });
 
- 1. The above sample will match `/users/alganet/documents/foo/bar/baz/anything`,
-    and the entire string will be passed as a single parameter to the callback;
+ 1. The above sample will match `/users/alganet/documents/foo/bar/baz/anything`.
+    Callback $user parameter will receive alganet and $documentPath will
+    receive an array filled with [foo,bar,baz,anything].
  2. Catch-all parameters are defined by a double asterisk \*\*.
  3. Catch-all parameters must appear only on the end of the path. Double
     asterisks in any other position will be converted to single asterisks.
@@ -210,7 +211,7 @@ Encoding, Language and Charset. Usage sample:
         'en' => function($data) { return array("Version" => $data['v']); },
         'pt' => function($data) { return array("Versão"  => $data['v']); }
     ))->accept(array(
-        'text/html' => function($data) { 
+        'text/html' => function($data) {
             list($k,$v)=each($data);
             return "<strong>$k</strong>: $v";
         },
