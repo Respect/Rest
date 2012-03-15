@@ -77,7 +77,7 @@ Catch-all Parameters
 
  1. The above sample will match `/users/alganet/documents/foo/bar/baz/anything`.
     Callback $user parameter will receive alganet and $documentPath will
-    receive an array filled with [documents,foo,bar,baz,anything].
+    receive an array filled with [foo,bar,baz,anything].
  2. Catch-all parameters are defined by a double asterisk \*\*.
  3. Catch-all parameters must appear only on the end of the path. Double
     asterisks in any other position will be converted to single asterisks.
