@@ -29,3 +29,4 @@ nbproject
 *.tgz
 composer.lock
 vendor/
+Rest.kdev4
