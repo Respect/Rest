@@ -760,14 +760,14 @@ class RouterTest extends \PHPUnit_Framework_TestCase
 
     public function testLastModifiedSince()
     {
-        global $headers;
-        $headers = array();
+        global $header;
+        $header = array();
         eval('
         namespace Respect\Rest\Routines;
 
         function header($s) {
-            global $headers;
-            $headers[] = $s;
+            global $header;
+            $header[] = $s;
         }
 
         ');
@@ -781,14 +781,14 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             });
         $r = $this->object->dispatchRequest($requestBoth)->response();
         $this->assertEquals('hi!', $r);
-        $this->assertContains('Last-Modified: Fri, 11 Nov 2011 11:11:12 +0000', $headers);
-        $this->assertNotContains('HTTP/1.1 304 Not Modified', $headers);
+        $this->assertContains('Last-Modified: Fri, 11 Nov 2011 11:11:12 +0000', $header);
+        $this->assertNotContains('HTTP/1.1 304 Not Modified', $header);
     }
 
     public function testLastModifiedSince2()
     {
-        global $headers;
-        $headers = array();
+        global $header;
+        $header = array();
         $_SERVER['IF_MODIFIED_SINCE'] = '2011-11-11 11:11:11';
         $requestBoth = new Request('get', '/users/alganet');
         $this->object->get('/users/*', function() {
@@ -799,14 +799,14 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             });
         $r = $this->object->dispatchRequest($requestBoth)->response();
         $this->assertEquals('', $r);
-        $this->assertContains('Last-Modified: Fri, 11 Nov 2011 11:11:10 +0000', $headers);
-        $this->assertContains('HTTP/1.1 304 Not Modified', $headers);
+        $this->assertContains('Last-Modified: Fri, 11 Nov 2011 11:11:10 +0000', $header);
+        $this->assertContains('HTTP/1.1 304 Not Modified', $header);
     }
 
     public function testLastModifiedSince3()
     {
-        global $headers;
-        $headers = array();
+        global $header;
+        $header = array();
         $_SERVER['IF_MODIFIED_SINCE'] = '2011-11-11 11:11:11';
         $requestBoth = new Request('get', '/users/alganet');
         $this->object->get('/users/*', function() {
@@ -817,8 +817,8 @@ class RouterTest extends \PHPUnit_Framework_TestCase
             });
         $r = $this->object->dispatchRequest($requestBoth)->response();
         $this->assertEquals('', $r);
-        $this->assertContains('Last-Modified: Fri, 11 Nov 2011 11:11:11 +0000', $headers);
-        $this->assertContains('HTTP/1.1 304 Not Modified', $headers);
+        $this->assertContains('Last-Modified: Fri, 11 Nov 2011 11:11:11 +0000', $header);
+        $this->assertContains('HTTP/1.1 304 Not Modified', $header);
     }
 
     public function testContenType()
