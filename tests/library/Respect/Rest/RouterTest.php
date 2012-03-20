@@ -190,10 +190,8 @@ namespace Respect\Rest {
             $auth = function($username, $password) {
                             return true;
                 };
-            $this->router->get('/users/*', function($users){
-                return 'ok';
-            })->authBasic($auth);
-            $this->router->dispatch('get', '/users/alganet')->response();
+            $this->router->get('/', 'ok')->authBasic($auth);
+            $this->router->dispatch('get', '/')->response();
             $this->assertContains('HTTP/1.1 401', $header);
         }
 
@@ -204,9 +202,7 @@ namespace Respect\Rest {
             $pass           = 'Doe';
             $checkpoint     = false;
             $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode($user.':'.$pass);
-            $this->router->get('/', function() {
-                return 'ok';
-            })->authBasic(function($username, $password) use (&$checkpoint, $user, $pass) {
+            $this->router->get('/', 'ok')->authBasic(function($username, $password) use (&$checkpoint, $user, $pass) {
                             if (($username == $user) && ($password == $pass)) {
                                 $checkpoint = true;
                                 return true;
@@ -226,9 +222,7 @@ namespace Respect\Rest {
             $checkpoint     = false;
             $_SERVER['PHP_AUTH_USER'] = $user;
             $_SERVER['PHP_AUTH_PW']   = $pass;
-            $this->router->get('/', function(){
-                        return 'ok';
-                        })->authBasic(function($username, $password) use (&$checkpoint, $user, $pass) {
+            $this->router->get('/', 'ok')->authBasic(function($username, $password) use (&$checkpoint, $user, $pass) {
                             if (($username == $user) && ($password == $pass)) {
                                 $checkpoint = true;
                                 return true;    
