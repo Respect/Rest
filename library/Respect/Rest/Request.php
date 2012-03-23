@@ -42,10 +42,12 @@ class Request
             return null;
 
         foreach ($this->route->routines as $routine)
-            if ($routine instanceof ProxyableBy
-                && false === $this->routineCall('by', $this->method, $routine,
-                    $this->params))
-                return false;
+            if (!$routine instanceof ProxyableBy)
+                continue;
+            elseif (false === $result = $this->routineCall('by', $this->method, $routine, $this->params))
+                    return false;
+            elseif ($result instanceof AbstractRoute)
+                    return $this->forward($result);
 
         $response = $this->route->runTarget($this->method, $this->params);
         

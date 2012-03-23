@@ -200,11 +200,13 @@ namespace Respect\Rest {
         {
             global $header;
 
-            $auth = function($username, $password) {
-                            ;
+            $login = $this->router->get('/login', 'Login');
+            $auth = function($username, $password) use($login) {
+                        return $login;
                 };
             $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
-            $this->router->dispatch('get', '/')->response();
+            $response = $this->router->dispatch('get', '/')->response();
+            $this->assertEquals('Login', $response);
             $this->assertContains('HTTP/1.1 401', $header);
             $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
         }
@@ -225,6 +227,8 @@ namespace Respect\Rest {
                          });
             (string) $this->router->dispatch('GET', '/')->response();
             $this->assertTrue($checkpoint, 'Auth not run');
+            $this->assertNotContains('HTTP/1.1 401', $header);
+            $this->assertNotContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
             unset($_SERVER['HTTP_AUTHORIZATION']);
         }
 
@@ -245,6 +249,8 @@ namespace Respect\Rest {
                          });
             (string) $this->router->dispatch('GET', '/')->response();
             $this->assertTrue($checkpoint, 'Auth not run');
+            $this->assertNotContains('HTTP/1.1 401', $header);
+            $this->assertNotContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
             unset($_SERVER['PHP_AUTH_PW'], $_SERVER['PHP_AUTH_USER']);
         }
     }
