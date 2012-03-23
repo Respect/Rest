@@ -183,7 +183,7 @@ namespace Respect\Rest {
             $this->assertEmpty((string) $response);
         }
 
-        function test_http_auth_fail()
+        function test_http_auth_should_send_401_and_WWW_headers_when_authentication_fails()
         {
             global $header;
 
@@ -196,7 +196,7 @@ namespace Respect\Rest {
             $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
         }
 
-        function test_auth_basic_request()
+        function test_auth_basic_request_should_be_aware_of_Authorization_headers()
         {
             global $header;
             $user           = 'John';
@@ -215,7 +215,7 @@ namespace Respect\Rest {
             unset($_SERVER['HTTP_AUTHORIZATION']);
         }
 
-        function test_auth_basic_authorized()
+        function test_auth_basic_authorized_should_be_aware_of_PHP_env_auth_variables()
         {
             global $header;
             $user           = 'John';
