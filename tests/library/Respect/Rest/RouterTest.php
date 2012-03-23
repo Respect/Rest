@@ -196,6 +196,19 @@ namespace Respect\Rest {
             $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
         }
 
+        function test_http_auth_should_allow_redirects_inside_auth_closure()
+        {
+            global $header;
+
+            $auth = function($username, $password) {
+                            ;
+                };
+            $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
+            $this->router->dispatch('get', '/')->response();
+            $this->assertContains('HTTP/1.1 401', $header);
+            $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
+        }
+
         function test_auth_basic_request_should_be_aware_of_Authorization_headers()
         {
             global $header;
