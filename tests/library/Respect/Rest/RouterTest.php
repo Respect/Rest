@@ -260,7 +260,7 @@ namespace Respect\Rest {
         **/
         function test_optional_parameter_in_class_routes(){
             $r = new Router();
-            $r->any('/optional/*', 'Respect\Rest\MyOptionalParamRoute');
+            $r->any('/optional/*', 'MyOptionalParamRoute');
             $response = $r->dispatch('get', '/optional')->response();
             $this->assertEquals('John Doe', (string) $response);
         }
@@ -278,7 +278,7 @@ namespace Respect\Rest {
 
     class MyOptionalParamRoute implements Routable
     {
-    
+
         public function get($user=null)
         {
             return $user ?: 'John Doe';
