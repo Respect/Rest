@@ -253,6 +253,36 @@ namespace Respect\Rest {
             $this->assertNotContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
             unset($_SERVER['PHP_AUTH_PW'], $_SERVER['PHP_AUTH_USER']);
         }
+
+        /**
+         * @group issues
+         * @ticket 37
+        **/
+        function test_optional_parameter_in_class_routes(){
+            $r = new Router();
+            $r->any('/optional/*', 'Respect\Rest\MyOptionalParamRoute');
+            $response = $r->dispatch('get', '/optional')->response();
+            $this->assertEquals('John Doe', (string) $response);
+        }
+
+        function test_optional_parameter_in_function_routes(){
+            $r = new Router();
+            $r->any('/optional/*', function($user=null){
+                return $user ?: 'John Doe';
+            });
+            $response = $r->dispatch('get', '/optional')->response();
+            $this->assertEquals('John Doe', (string) $response);
+        }
+        
+    }
+
+    class MyOptionalParamRoute implements Routable
+    {
+    
+        public function get($user=null)
+        {
+            return $user ?: 'John Doe';
+        }
     }
 
     function header($string, $replace=true, $http_response_code=200)
