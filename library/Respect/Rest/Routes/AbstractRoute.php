@@ -18,6 +18,8 @@ abstract class AbstractRoute
     const QUOTED_PARAM_IDENTIFIER = '/\*';
     const REGEX_CATCHALL = '(/.*)?';
     const REGEX_SINGLE_PARAM = '/([^/]+)';
+    const REGEX_ONE_ENDING_PARAM = '/([^/]+)';
+    const REGEX_ONE_OPTIONAL_PARAM = '(?:/([^/]+))?';
     const REGEX_TWO_ENDING_PARAMS = '/([^/]+)/([^/]+)';
     const REGEX_TWO_MIXED_PARAMS = '(?:/([^/]+))?/([^/]+)';
     const REGEX_TWO_OPTIONAL_ENDING_PARAMS = '/([^/]+)(?:/([^/]+))?';
@@ -135,15 +137,17 @@ abstract class AbstractRoute
     /** Turn sequenced parameters optional */
     protected function fixOptionalParams($quotedPattern)
     {
-        if (strlen($quotedPattern) - strlen(static::REGEX_TWO_ENDING_PARAMS)
-            === strripos($quotedPattern, static::REGEX_TWO_ENDING_PARAMS))
+        if (strlen($quotedPattern) - strlen(static::REGEX_ONE_ENDING_PARAM)
+            === strripos($quotedPattern, static::REGEX_ONE_ENDING_PARAM))
             $quotedPattern = str_replace(
                 array(
-                static::REGEX_TWO_ENDING_PARAMS,
-                static::REGEX_TWO_MIXED_PARAMS
+                    static::REGEX_ONE_ENDING_PARAM,
+                    static::REGEX_TWO_ENDING_PARAMS,
+                    static::REGEX_TWO_MIXED_PARAMS
                 ), array(
-                static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
-                static::REGEX_TWO_OPTIONAL_PARAMS
+                    static::REGEX_ONE_OPTIONAL_PARAM,
+                    static::REGEX_TWO_OPTIONAL_ENDING_PARAMS,
+                    static::REGEX_TWO_OPTIONAL_PARAMS
                 ), $quotedPattern
             );
 

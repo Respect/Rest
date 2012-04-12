@@ -260,7 +260,7 @@ namespace Respect\Rest {
         **/
         function test_optional_parameter_in_class_routes(){
             $r = new Router();
-            $r->any('/optional/*', 'MyOptionalParamRoute');
+            $r->any('/optional/*', __NAMESPACE__.'\\MyOptionalParamRoute');
             $response = $r->dispatch('get', '/optional')->response();
             $this->assertEquals('John Doe', (string) $response);
         }
@@ -272,6 +272,22 @@ namespace Respect\Rest {
             });
             $response = $r->dispatch('get', '/optional')->response();
             $this->assertEquals('John Doe', (string) $response);
+        }
+        function test_two_optional_parameters_in_function_routes(){
+            $r = new Router();
+            $r->any('/optional/*/*', function($user=null, $list=null){
+                return $user . $list;
+            });
+            $response = $r->dispatch('get', '/optional/Foo/Bar')->response();
+            $this->assertEquals('FooBar', (string) $response);
+        }
+        function test_two_optional_parameters_one_passed_in_function_routes(){
+            $r = new Router();
+            $r->any('/optional/*/*', function($user=null, $list=null){
+                return $user . $list;
+            });
+            $response = $r->dispatch('get', '/optional/Foo')->response();
+            $this->assertEquals('Foo', (string) $response);
         }
         
     }
