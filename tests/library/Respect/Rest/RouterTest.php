@@ -273,6 +273,18 @@ namespace Respect\Rest {
             $response = $r->dispatch('get', '/optional')->response();
             $this->assertEquals('John Doe', (string) $response);
         }
+
+        function test_optional_parameter_in_function_routes_multiple(){
+            $r = new Router();
+            $r->any('/optional', function(){
+                return 'No User';
+            });
+            $r->any('/optional/*', function($user=null){
+                return $user ?: 'John Doe';
+            });
+            $response = $r->dispatch('get', '/optional')->response();
+            $this->assertEquals('No User', (string) $response);
+        }
         function test_two_optional_parameters_in_function_routes(){
             $r = new Router();
             $r->any('/optional/*/*', function($user=null, $list=null){

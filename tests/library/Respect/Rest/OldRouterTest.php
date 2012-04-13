@@ -498,12 +498,12 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
                 return 4;
             }
         );
-        $this->object->any('/*/versions/*', function() {
-                return 5;
-            }
-        );
         $this->object->any('/*/*', function() {
                 return 6;
+            }
+        );
+        $this->object->any('/*/versions/*', function() {
+                return 5;
             }
         );
         $this->assertEquals(
