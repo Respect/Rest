@@ -24,12 +24,12 @@ class Router
     public static function cleanUpParams($params)
     {
         return array_values(
-                        array_filter(
-                                array_slice($params, 1), function($param) {
-                                    return $param !== '';
-                                }
-                        )
-                );
+            array_filter(
+                $params, function($param) {
+                   return $param !== '';
+                }
+            )
+        );
     }
 
     public function __call($method, $args)

@@ -21,14 +21,9 @@ namespace Respect\Rest {
             global $header;
             $header = array();
         }
-        function test_cleaning_up_params_should_remove_first_param_always()
-        {
-            $params = array('/', 'foo', '', 'bar');
-            $this->assertNotContains('/', Router::cleanUpParams($params));
-        }
         function test_cleaning_up_params_should_remove_empty_string_params()
         {
-            $params = array('/', 'foo', '', 'bar');
+            $params = array('foo', '', 'bar');
             $expected = array('foo', 'bar');
             $this->assertEquals($expected, Router::cleanUpParams($params));
         }
@@ -344,6 +339,26 @@ namespace Respect\Rest {
             });
             $response = $r->dispatch('get', '/optional/Foo')->response();
             $this->assertEquals('Foo', (string) $response);
+        }
+        function test_single_last_param()
+        {
+            $r = new Router();
+            $args = array();
+            $r->any('/documents/*', function($documentId) use (&$args) {
+                $args = func_get_args();
+            });
+            $r->dispatch('get', '/documents/1234')->response();
+            $this->assertEquals(array('1234'), $args);
+        }
+        function test_single_last_param2()
+        {
+            $r = new Router();
+            $args = array();
+            $r->any('/documents/**', function($documentsPath) use (&$args) {
+                $args = func_get_args();
+            });
+            $r->dispatch('get', '/documents/foo/bar')->response();
+            $this->assertEquals(array(array('foo', 'bar')), $args);
         }
         
     }

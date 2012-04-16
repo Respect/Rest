@@ -95,9 +95,11 @@ abstract class AbstractRoute
         if (!preg_match($this->regexForMatch, $matchUri, $params))
             return false;
 
-        if (count($params) > 1 && false !== stripos(end($params), '/')) {
+        array_shift($params);
+        
+        if (false !== stripos($this->pattern, '/**') && false !== stripos(end($params), '/')) {
             $lastParam = array_pop($params);
-            $params = array_merge($params, explode('/', $lastParam));
+            $params[] = explode('/', ltrim($lastParam, '/'));
         }
 
         return true;
