@@ -2,6 +2,8 @@
 
 namespace Respect\Rest\Routines;
 
+use Respect\Rest\Request;
+
 /** Handles mime type content negotiation */
 class Accept extends AbstractAccept
 {
@@ -19,6 +21,16 @@ class Accept extends AbstractAccept
             return true;
 
         return false;
+    }
+
+    public function when(Request $request, $params)
+    {
+        $valid = parent::when($request, $params);
+
+        if (!$valid)
+            header('HTTP/1.1 406');
+
+        return $valid;
     }
 
 }

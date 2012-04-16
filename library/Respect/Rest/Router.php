@@ -158,17 +158,15 @@ class Router
         foreach ($matchedByPath as $route) 
             if (0 !== stripos($request->method, '__')
                 && ($route->method === $request->method || $route->method === 'ANY' || ($route->method === 'GET' && $request->method === 'HEAD')))
-                if ($route->matchRoutines($request, $params)) 
+                if ($route->matchRoutines($request, $params))
                     return $this->configureRequest($request, $route, static::cleanUpParams($params));
                 else
                     $badRequest = true;
 
-        if (isset($badRequest))
-            header('HTTP/1.1 400');
-        else
+        if (!isset($badRequest))
             header('HTTP/1.1 405');
 
-        if ($allowedMethods)
+        if ($matchedByPath && $allowedMethods)
             header('Allow: '.implode(', ', $allowedMethods));
 
         $request->route = null;

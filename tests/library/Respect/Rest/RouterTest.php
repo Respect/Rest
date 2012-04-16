@@ -132,6 +132,15 @@ namespace Respect\Rest {
             $this->assertContains('HTTP/1.1 405', $header);
             $this->assertContains('Allow: GET', $header);
         }
+        function test_method_not_acceptable()
+        {
+            global $header;
+            $this->router->get('/', function() { return 'ok'; })
+                         ->accept(array('foo/bar' => function($d) {return $d;}));
+            $this->router->dispatch('get', '/');
+            $this->assertContains('HTTP/1.1 406', $header);
+            $this->assertContains('Allow: GET', $header);
+        }
         function test_http_method_head()
         {
             global $header;
