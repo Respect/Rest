@@ -10,7 +10,7 @@ Thin controller for RESTful applications and APIs.
 Installation
 ------------
 
-Packages available **soon* on [PEAR](http://respect.li/pear) and [Composer](http://packagist.org/packages/Respect/Rest). Autoloading is [PSR-0](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md) compatible. Old packages available though.
+Packages available on [PEAR](http://respect.li/pear) and [Composer](http://packagist.org/packages/Respect/Rest). Autoloading is [PSR-0](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md) compatible.
 
 Feature Guide
 -------------
@@ -114,7 +114,7 @@ Sometimes you need to catch an undefined number of parameters. You can use
 Routes with catch-all parameters like this:
 
     $r3->get('/users/*/documents/**', function($user, $documentPath) {
-        return readfile(PATH_STORAGE.$documentPath);
+        return readfile(PATH_STORAGE. implode('/', $documentPath));
     });
 
  1. The above sample will match `/users/alganet/documents/foo/bar/baz/anything`.
