@@ -116,6 +116,13 @@ namespace Respect\Rest {
             $this->assertContains('HTTP/1.1 405', $header);
             $this->assertContains('Allow: GET, PUT', $header);
         }
+        function test_bad_request_header()
+        {
+            global $header;
+            $this->router->get('/', function() { return 'ok'; })->when(function(){return false;});
+            $this->router->dispatch('get', '/');
+            $this->assertContains('HTTP/1.1 400', $header);
+        }
         function test_method_not_allowed_header_with_conneg()
         {
             global $header;
