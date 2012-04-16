@@ -10,7 +10,7 @@ Thin controller for RESTful applications and APIs.
 Installation
 ------------
 
-Packages available on [PEAR](http://respect.li/pear) and [Composer](http://packagist.org/packages/Respect/Rest). Autoloading is [PSR-0](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md) compatible.
+For now, check out the develop branch from GitHub. Old packages available on PEAR http://respect.li/pear.
 
 Feature Guide
 -------------
