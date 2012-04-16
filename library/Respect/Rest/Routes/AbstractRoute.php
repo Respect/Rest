@@ -86,6 +86,7 @@ abstract class AbstractRoute
     /** Checks if this route matches a request */
     public function match(Request $request, &$params=array())
     {
+        $params = array();
         $matchUri = $request->uri;
 
         foreach ($this->routines as $routine)

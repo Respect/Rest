@@ -164,7 +164,11 @@ class Router
         $allowedMethods = array();
 
         foreach ($this->routes as $route) 
-            if ($this->matchRoute($request, $route, $params)) {
+            if ($this->matchRoute($request, $route, $tempParams)) {
+                
+                if (!isset($params)) 
+                    $params = $tempParams;
+                
                 $matchedByPath[] = $route;
                 $allowedMethods[] = $route->method;
             }
@@ -236,7 +240,7 @@ class Router
     }
 
     /** Configures a request for a specific route with specific parameters */
-    protected function configureRequest(Request $request, AbstractRoute $route, array $params)
+    protected function configureRequest(Request $request, AbstractRoute $route, array $params=array())
     {
         $request->route = $route;
         $request->params = $params;
