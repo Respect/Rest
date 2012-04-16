@@ -363,12 +363,14 @@ namespace Respect\Rest {
         
     }
 
-    class MyOptionalParamRoute implements Routable
-    {
-
-        public function get($user=null)
+    if (!class_exists(__NAMESPACE__.'\\MyOptionalParamRoute')) {
+        class MyOptionalParamRoute implements Routable
         {
-            return $user ?: 'John Doe';
+
+            public function get($user=null)
+            {
+                return $user ?: 'John Doe';
+            }
         }
     }
 
