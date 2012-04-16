@@ -11,8 +11,10 @@ namespace Respect\Rest {
             $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
             $_SERVER['REQUEST_URI'] = '/';
             $_SERVER['REQUEST_METHOD'] = 'GET';
+            $_REQUEST['_method'] = '';
             $this->router = new Router;
             $this->router->isAutoDispatched = false;
+            $this->router->methodOverriding = false;
         }
         public function tearDown()
         {
@@ -131,6 +133,32 @@ namespace Respect\Rest {
             $this->router->dispatch('delete', '/');
             $this->assertContains('HTTP/1.1 405', $header);
             $this->assertContains('Allow: GET', $header);
+        }
+        function test_transparent_options_allow_methods()
+        {
+            global $header;
+            $this->router->get('/', function() { return 'ok'; });
+            $this->router->post('/', function() { return 'ok'; });
+            $this->router->dispatch('options', '/');
+            $this->assertNotContains('HTTP/1.1 405', $header);
+            $this->assertContains('Allow: GET, POST', $header);
+        }
+        function test_transparent_global_options_allow_methods()
+        {
+            global $header;
+            $this->router->get('/', function() { return 'ok'; });
+            $this->router->post('/', function() { return 'ok'; });
+            $this->router->dispatch('options', '*');
+            $this->assertNotContains('HTTP/1.1 405', $header);
+            $this->assertContains('Allow: GET, POST', $header);
+        }
+        function test_method_overriding()
+        {
+            $this->router->methodOverriding = true;
+            $_REQUEST['_method'] = 'PUT';
+            $this->router->put('/', function() { return 'ok'; });
+            $response = $this->router->run(new Request('POST', '/'));
+            $this->assertEquals('ok', (string) $response);
         }
         function test_method_not_acceptable()
         {

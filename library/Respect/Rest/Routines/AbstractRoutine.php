@@ -8,7 +8,7 @@ use ReflectionMethod;
 use Respect\Rest\Routes\AbstractRoute;
 
 /** Base class for callback routines */
-abstract class AbstractRoutine
+abstract class AbstractRoutine implements Routinable
 {
 
     protected $callback;

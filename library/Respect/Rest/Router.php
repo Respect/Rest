@@ -15,6 +15,7 @@ class Router
 {
 
     public $isAutoDispatched = true;
+    public $methodOverriding = false;
     protected $globalRoutines = array();
     protected $routes = array();
     protected $virtualHost = '';
@@ -120,6 +121,25 @@ class Router
     /** Dispatch the current route with a custom Request */
     public function dispatchRequest(Request $request=null)
     {
+        $this->isAutoDispatched = false;
+        if (!$request)
+            $request = new Request;
+
+        if ($this->methodOverriding && isset($_REQUEST['_method']))
+            $request->method = strtoupper($_REQUEST['_method']);
+
+        if ($request->method === 'OPTIONS' && $request->uri === '*') {
+            $allowedMethods = array();
+
+            foreach ($this->routes as $route) 
+                $allowedMethods[] = $route->method;
+
+            if ($allowedMethods)
+                header('Allow: '.implode(', ', $allowedMethods));
+
+            return $request;
+        }
+
         usort($this->routes, function($a, $b) {
                 $a = $a->pattern;
                 $b = $b->pattern;
@@ -135,9 +155,6 @@ class Router
                     < substr_count($b, AbstractRoute::PARAM_IDENTIFIER) ? -1 : 1;
             }
         );
-        $this->isAutoDispatched = false;
-        if (!$request)
-            $request = new Request;
 
         if ($this->virtualHost)
             $request->uri =
@@ -151,6 +168,11 @@ class Router
                 $matchedByPath[] = $route;
                 $allowedMethods[] = $route->method;
             }
+
+        if ($request->method === 'OPTIONS' && $allowedMethods) {
+            header('Allow: '.implode(', ', $allowedMethods));
+            return $request;
+        }
 
         if (!$matchedByPath)
             header('HTTP/1.1 404');

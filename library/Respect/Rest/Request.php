@@ -7,7 +7,7 @@ use ReflectionFunctionAbstract;
 use ReflectionParameter;
 use RuntimeException;
 use Respect\Rest\Routes\AbstractRoute;
-use Respect\Rest\Routines\AbstractRoutine;
+use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\ProxyableBy;
 use Respect\Rest\Routines\ProxyableThrough;
 use Respect\Rest\Routines\ProxyableWhen;
@@ -70,7 +70,7 @@ class Request
     }
 
     /** Calls a routine on the current route and returns its result */
-    public function routineCall($type, $method, AbstractRoutine $routine, &$routeParamsValues)
+    public function routineCall($type, $method, Routinable $routine, &$routeParamsValues)
     {
         $reflection = $this->route->getReflection($method);
 
