@@ -137,7 +137,7 @@ matches the routes from the most specific to the most generic.
   * Routes with multiple parameters are even less specific.
   * Routes with catch-all parameters are the most generic ones.
 
-Summing up: Slashes and asterisks places your route at the bottom.
+Summing up: Slashes and asterisks places your route at the top to match first.
 
 Respect\Rest does this automatically, but is highly recommended to declare routes
 from the most specific to the most generic. This will improve performance and
