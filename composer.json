@@ -1,27 +1,100 @@
 {
-    "name": "Respect/Rest",
-    "version": "0.3.2",
+    "name": "Respect\/Rest",
+    "description": "Thin controller for RESTful applications",
+    "version": "0.3.1",
     "type": "library",
-    "description": "Thin controller for RESTful application.",
-    "keywords": ["respect", "RESTful"],
-    "homepage": "https://github.com/Respect/Rest",
-    "license" : "New BSD",
-    "authors" : [
+    "time": "2012-04-16 21:05:40",
+    "homepage": "",
+    "license": "BSD Style",
+    "authors": [
+        {
+            "name": "Alexandre",
+            "email": "alexandre@gaigalas.net"
+        },
+        {
+            "name": "Alexandre Gaigalas",
+            "email": "alexandre@gaiaglas.net"
+        },
+        {
+            "name": "Alexandre Gaigalas",
+            "email": "alexandre@gaigalas.net"
+        },
+        {
+            "name": "Alexandre Gaigalas",
+            "email": "alganet@alganet-workstation.(none)"
+        },
         {
             "name": "Alexandre Gomes Gaigalas",
             "email": "alexandre@gaigalas.net"
         },
         {
+            "name": "Alexandre Gomes Gaigalas",
+            "email": "alganet@alganet-workstation.(none)"
+        },
+        {
+            "name": "Anderson Casimiro",
+            "email": "duodraco@duo.draco"
+        },
+        {
+            "name": "Anderson Casimiro",
+            "email": "duodraco@gmail.com"
+        },
+        {
+            "name": "augustohp",
+            "email": "augusto@phpsp.org.br"
+        },
+        {
             "name": "Augusto Pascutti",
             "email": "augusto@phpsp.org.br"
+        },
+        {
+            "name": "Augusto Pascutti",
+            "email": "contato@augustopascutti.com"
+        },
+        {
+            "name": "Ben Ramsey",
+            "email": "ben@benramsey.com"
+        },
+        {
+            "name": "eduardomarcate",
+            "email": "eduardo@marcate.info"
+        },
+        {
+            "name": "Eduardo M. Garcia",
+            "email": "eduardo@debian.elam"
+        },
+        {
+            "name": "Henrique Moody",
+            "email": "henriquemoody@gmail.com"
+        },
+        {
+            "name": "kleberhs007",
+            "email": "kleberhs007@yahoo.com"
+        },
+        {
+            "name": "Leandro",
+            "email": "lleitep3@gmail.com"
+        },
+        {
+            "name": "Nick Rawe",
+            "email": "nickrawe2@gmail.com"
+        },
+        {
+            "name": "Pablo Lacerda de Miranda",
+            "email": "pablolmiranda@gmail.com"
+        },
+        {
+            "name": "Rogerio Prado de Jesus",
+            "email": "rogeriopradoj@gmail.com"
+        },
+        {
+            "name": "wesleyvicthor",
+            "email": "w.v.mendes.s@gmail.com"
         }
     ],
-    "require": {
-        "php": ">=5.3.0"
-    },
     "autoload": {
         "psr-0": {
-            "Respect\\Rest": "library/"
+            "Respect\\Rest": "library\/"
         }
     }
 }
