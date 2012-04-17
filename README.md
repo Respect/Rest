@@ -410,7 +410,7 @@ When applying conneg routines to multiple routes that can return streams you
 
 Support for Basic HTTP Authentication is already implemented as a routine:
 
-    $r3->authBasic('My Realm', function($user, $pass) {
+    $r3->get('/home', 'HomeController')->authBasic('My Realm', function($user, $pass) {
         return $user === 'admin' && $user === 'p4ss';
     }); 
 
@@ -436,6 +436,8 @@ You can pass several itens on the array, like any conneg routine. The array
 key is a regular expression matcher without delimiters.
 
 ### Input Content-Type
+
+Note that this is not currently implemented.
 
 By default, HTML forms send POST data as `multipart/form-data`, but API clients
 may send any other format. PUT requests often send other mime types. You can pre-process
