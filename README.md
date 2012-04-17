@@ -54,7 +54,7 @@ declaring routes to run it. If you want to ommit this behavior, you can set:
 
 You can then dispatch it yourself at the end of the proccess:
 
-  print $r3->run();
+    print $r3->run();
 
 You can print the output or store in a variable if you want. This allows you to better
 test and integrate the Router into existing applications.
