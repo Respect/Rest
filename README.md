@@ -490,7 +490,7 @@ appended to the router. Custom routines have several different interfaces that c
 
   * IgnorableFileExtension - Instructs the router to ignore the file extension in requests
   * ParamSynced - Sycs parameters with the route function/method.
-  * ProxyalbeBy - Instructs the router to run method `by()` before the route.
+  * ProxyableBy - Instructs the router to run method `by()` before the route.
   * ProxyableThrough - Instructs the router to run method `through()` after the route.
   * ProxyableWhen - Instructs the router to run method `when()` to validate the route match.
   * Unique - Makes this routine be replaced, not appended, if more than one is declared for
