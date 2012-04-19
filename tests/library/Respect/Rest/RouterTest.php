@@ -103,6 +103,7 @@ namespace Respect\Rest {
             $this->router->any('/', function() {});
             $this->router->dispatch('get', '/my/name/is/hall');
             $this->assertContains('HTTP/1.1 404', $header);
+            $this->assertNotContains('HTTP/1.1 405', $header);
         }
         function test_method_not_allowed_header()
         {
