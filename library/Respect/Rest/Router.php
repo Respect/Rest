@@ -189,7 +189,7 @@ class Router
                 else
                     $badRequest = true;
 
-        if (!isset($badRequest))
+        if ($matchedByPath && !isset($badRequest))
             header('HTTP/1.1 405');
 
         if ($matchedByPath && $allowedMethods)

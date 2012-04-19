@@ -137,7 +137,7 @@ matches the routes from the most specific to the most generic.
   * Routes with multiple parameters are even less specific.
   * Routes with catch-all parameters are the most generic ones.
 
-Summing up: Slashes and asterisks places your route at the bottom.
+Summing up: Slashes and asterisks places your route at the top to match first.
 
 Respect\Rest does this automatically, but is highly recommended to declare routes
 from the most specific to the most generic. This will improve performance and
@@ -410,7 +410,7 @@ When applying conneg routines to multiple routes that can return streams you
 
 Support for Basic HTTP Authentication is already implemented as a routine:
 
-    $r3->authBasic('My Realm', function($user, $pass) {
+    $r3->get('/home', 'HomeController')->authBasic('My Realm', function($user, $pass) {
         return $user === 'admin' && $user === 'p4ss';
     }); 
 
@@ -436,6 +436,8 @@ You can pass several itens on the array, like any conneg routine. The array
 key is a regular expression matcher without delimiters.
 
 ### Input Content-Type
+
+Note that this is not currently implemented.
 
 By default, HTML forms send POST data as `multipart/form-data`, but API clients
 may send any other format. PUT requests often send other mime types. You can pre-process
