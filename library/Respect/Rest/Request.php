@@ -64,7 +64,7 @@ class Request
         if (!empty($proxyResults))
             foreach ($proxyResults as $proxyCallback)
                 if (is_callable($proxyCallback))
-                    $response = $proxyCallback($response);
+                    $response = call_user_func_array($proxyCallback, array($response)); //$proxyCallback($response);
 
         return $response;
     }

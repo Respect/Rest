@@ -361,6 +361,22 @@ namespace Respect\Rest {
             $r->dispatch('get', '/documents/foo/bar')->response();
             $this->assertEquals(array(array('foo', 'bar')), $args);
         }
+        /**
+         * @ticket 46
+         */
+        public function test_is_callable_proxy()
+        {
+            $_SERVER['HTTP_ACCEPT'] = 'text/html';
+            $f = new Foo();
+            $e = 'Hello';
+            $r = new Router();
+            $r->get('/', $e)
+              ->accept(array(
+                'text/html' => array($f, 'getBar')
+              ));
+            $response = $r->dispatch('get', '/')->response();
+            $this->assertEquals($e, (string) $response);
+        }
         
     }
 
@@ -371,6 +387,16 @@ namespace Respect\Rest {
             public function get($user=null)
             {
                 return $user ?: 'John Doe';
+            }
+        }
+    }
+
+    if (!class_exists(__NAMESPACE__.'\\Foo')) {
+        class Foo
+        {
+            public function getBar($bar)
+            {
+                return $bar;
             }
         }
     }
