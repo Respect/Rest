@@ -491,7 +491,7 @@ In the sample above, `MyRoutine` is a provided user routine declared as a class 
 appended to the router. Custom routines have several different interfaces that can be implemented:
 
   * IgnorableFileExtension - Instructs the router to ignore the file extension in requests
-  * ParamSynced - Sycs parameters with the route function/method.
+  * ParamSynced - Syncs parameters with the route function/method.
   * ProxyableBy - Instructs the router to run method `by()` before the route.
   * ProxyableThrough - Instructs the router to run method `through()` after the route.
   * ProxyableWhen - Instructs the router to run method `when()` to validate the route match.
