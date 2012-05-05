@@ -148,6 +148,9 @@ namespace Respect\Rest {
             $this->assertNotContains('HTTP/1.1 405', $header);
             $this->assertContains('Allow: GET, POST', $header);
         }
+        /**
+         * @ticket 45
+         */
         function test_method_overriding()
         {
             $this->router->methodOverriding = true;
@@ -157,6 +160,9 @@ namespace Respect\Rest {
             $this->assertEquals('ok', (string) $response);
             $this->router->methodOverriding = false;
         }
+        /**
+         * @ticket 45
+         */
         function test_invalid_method_overriding_with_get()
         {
             global $header;
@@ -373,6 +379,7 @@ namespace Respect\Rest {
             $r->dispatch('get', '/documents/foo/bar')->response();
             $this->assertEquals(array(array('foo', 'bar')), $args);
         }
+
         /**
          * @ticket 46
          */
@@ -389,6 +396,32 @@ namespace Respect\Rest {
             $response = $r->dispatch('get', '/')->response();
             $this->assertEquals($e, (string) $response);
         }   
+
+        static function provider_content_type()
+        {
+            return array(
+                array('text/html'),
+                array('application/json')
+            );
+        }
+
+        /**
+         * @dataProvider provider_content_type
+         * @ticket 44
+         */
+        function test_automatic_content_type_header_html($ctype)
+        {
+            global $header;
+            $_SERVER['HTTP_ACCEPT'] = $ctype;
+            $r = new Router();
+            $r->get('/auto', '')->accept(array($ctype=>'json_encode'));
+
+            
+            $r = $r->dispatch('get', '/auto')->response();
+            var_dump($header);
+            $this->assertContains('Content-Type: '.$ctype, $header);
+        }
+        
     }
 
     if (!class_exists(__NAMESPACE__.'\\MyOptionalParamRoute')) {

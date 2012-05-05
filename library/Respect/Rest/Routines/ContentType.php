@@ -3,6 +3,7 @@
 namespace Respect\Rest\Routines;
 
 use SplObjectStorage;
+use UnexpectedValueException;
 use Respect\Rest\Request;
 
 /** Handles content type content negotiation */
@@ -15,7 +16,7 @@ class ContentType extends AbstractRoutine implements ProxyableWhen, ProxyableBy,
     public function __construct(array $callbacksPerContentType = array())
     {
         if (!array_filter($callbacksPerContentType, 'is_callable'))
-            throw new \Exception(''); //TODO
+            throw new UnexpectedValueException('Not a callable argument for Content-Type negotiation.');
 
             $this->negotiated = new SplObjectStorage;
         $this->contentMap = $callbacksPerContentType;
@@ -29,8 +30,9 @@ class ContentType extends AbstractRoutine implements ProxyableWhen, ProxyableBy,
 
         $requested = $_SERVER['CONTENT_TYPE'];
         foreach ($this->contentMap as $provided => $callback)
-            if ($requested == $provided)
+            if ($requested == $provided) {
                 return $this->negotiated[$request] = $callback;
+            }
 
         return false;
     }
