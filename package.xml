@@ -131,10 +131,10 @@
     <active>yes</active>
   </lead>
   <date>2012-05-05</date>
-  <time>08:43:05</time>
+  <time>10:21:55</time>
   <version>
-    <release>0.4.3</release>
-    <api>0.4.3</api>
+    <release>0.4.4</release>
+    <api>0.4.4</api>
   </version>
   <stability>
     <release>alpha</release>
@@ -145,9 +145,9 @@
   <contents>
     <dir name="/">
       <file name="tests/bootstrap.php" role="test" md5sum="b45373a5ae5ae625b3ef470fecbf1d17"/>
-      <file name="tests/library/Respect/Rest/OldRouterTest.php" role="test" md5sum="a737b3cc7d92cc12466b7e6f7805d86c"/>
+      <file name="tests/library/Respect/Rest/OldRouterTest.php" role="test" md5sum="1784f826fcce4f616d5c17949aaeaeaa"/>
       <file name="tests/library/Respect/Rest/RequestTest.php" role="test" md5sum="d0909a1d692ddf24399bdd6c77f456ea"/>
-      <file name="tests/library/Respect/Rest/RouterTest.php" role="test" md5sum="56406875a51506519066b0a8033d92eb"/>
+      <file name="tests/library/Respect/Rest/RouterTest.php" role="test" md5sum="1e400c3be67aa1a45dba34c2e26957c6"/>
       <file name="tests/library/Respect/Rest/Routes/ClassNameTest.php" role="test" md5sum="df5de658babe724b014928079093cfc0"/>
       <file name="tests/library/Respect/Rest/Routes/FactoryTest.php" role="test" md5sum="8e4474121623112c90cf5fc03ffc7081"/>
       <file name="tests/library/Respect/Rest/Routes/InstanceTest.php" role="test" md5sum="8ae200d068d6f36ace2de6dc49884d53"/>
@@ -155,7 +155,7 @@
       <file name="tests/phpunit.xml" role="test" md5sum="03642477f5a201be9c3161eb64dde993"/>
       <file name="library/Respect/Rest/Request.php" role="php" md5sum="e82cff15b920fea54735cbb4adf1a8f5"/>
       <file name="library/Respect/Rest/Routable.php" role="php" md5sum="ff81676f381d3d61eeaeab34749631f6"/>
-      <file name="library/Respect/Rest/Router.php" role="php" md5sum="235f453324781718a1d8c32844ff7b0c"/>
+      <file name="library/Respect/Rest/Router.php" role="php" md5sum="580b26aca4cae2bbe2942c56ff068d66"/>
       <file name="library/Respect/Rest/Routes/AbstractRoute.php" role="php" md5sum="b024c326e581f06a333d841d31027684"/>
       <file name="library/Respect/Rest/Routes/Callback.php" role="php" md5sum="85bf2eeb750aeaa0c82f5100ad301948"/>
       <file name="library/Respect/Rest/Routes/ClassName.php" role="php" md5sum="72cc390f4b2bf4c6cec8306e3d78c540"/>
@@ -165,13 +165,13 @@
       <file name="library/Respect/Rest/Routines/AbstractAccept.php" role="php" md5sum="42f690fb663722b71daee017a4200833"/>
       <file name="library/Respect/Rest/Routines/AbstractRoutine.php" role="php" md5sum="17acbdff201c9fecbe4ff829f5ae81a7"/>
       <file name="library/Respect/Rest/Routines/AbstractSyncedRoutine.php" role="php" md5sum="28b5f44c41eae726c4246f8e4a6ed13a"/>
-      <file name="library/Respect/Rest/Routines/Accept.php" role="php" md5sum="668592e1290d4815a0088001ddcc9c22"/>
+      <file name="library/Respect/Rest/Routines/Accept.php" role="php" md5sum="131e1822870fd236727842b338a2357d"/>
       <file name="library/Respect/Rest/Routines/AcceptCharset.php" role="php" md5sum="87a86ff4048c54e1ba4fb3173bf1bfac"/>
       <file name="library/Respect/Rest/Routines/AcceptEncoding.php" role="php" md5sum="0065dca1bfa3ea673029634f2204730e"/>
       <file name="library/Respect/Rest/Routines/AcceptLanguage.php" role="php" md5sum="b25eb74e326ae968869da2ea6f96b6b0"/>
       <file name="library/Respect/Rest/Routines/AuthBasic.php" role="php" md5sum="b81f02cf485c28bfb8d55a37834027f1"/>
       <file name="library/Respect/Rest/Routines/By.php" role="php" md5sum="06ca3f2f90711420275701cc48e9d8b8"/>
-      <file name="library/Respect/Rest/Routines/ContentType.php" role="php" md5sum="3ef942c61c6891356566d8f476861a7d"/>
+      <file name="library/Respect/Rest/Routines/ContentType.php" role="php" md5sum="50205e9c1613e7e05e24ec01bbb572c4"/>
       <file name="library/Respect/Rest/Routines/IgnorableFileExtension.php" role="php" md5sum="e9945c89caa5378b9cd4dbe7ab8b6d33"/>
       <file name="library/Respect/Rest/Routines/LastModified.php" role="php" md5sum="f69871c5797e4719ede2301a40df9de9"/>
       <file name="library/Respect/Rest/Routines/ParamSynced.php" role="php" md5sum="2258987cc30bb435d451e96e7eee8250"/>
