@@ -1,6 +1,5 @@
 <?php
-
-namespace Respect\Rest;
+namespace Respect\Rest {
 
 class OldRouterTest extends \PHPUnit_Framework_TestCase
 {
@@ -767,15 +766,6 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
     {
         global $header;
         $header = array();
-        eval('
-        namespace Respect\Rest\Routines;
-
-        function header($s) {
-            global $header;
-            $header[] = $s;
-        }
-
-        ');
         $_SERVER['IF_MODIFIED_SINCE'] = '2011-11-11 11:11:11';
         $requestBoth = new Request('get', '/users/alganet');
         $this->object->get('/users/*', function() {
@@ -916,6 +906,16 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('John Doe', (string) $response);
     }
 }
+if (!function_exists(__NAMESPACE__.'\\header')) {
+    function header($string, $replace=true, $http_response_code=200)
+    {
+        global $header;
+        if (!$replace && isset($header))
+            return;
+
+        $header[$string] = $string;
+    }
+}
 
 class MyOptionalParamRoute implements Routable
 {
@@ -947,4 +947,18 @@ class MyController implements Routable
         return array($user, 'post', $this->params);
     }
 
+}
+}
+
+namespace Routines {
+    if (!function_exists(__NAMESPACE__.'\\header')) {
+        function header($string, $replace=true, $http_response_code=200)
+        {
+            global $header;
+            if (!$replace && isset($header))
+                return;
+
+            $header[$string] = $string;
+        }
+    }
 }

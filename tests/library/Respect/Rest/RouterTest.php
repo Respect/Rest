@@ -404,12 +404,11 @@ namespace Respect\Rest {
                 array('application/json')
             );
         }
-
         /**
          * @dataProvider provider_content_type
          * @ticket 44
          */
-        function test_automatic_content_type_header_html($ctype)
+        function test_automatic_content_type_header($ctype)
         {
             global $header;
             $_SERVER['HTTP_ACCEPT'] = $ctype;
@@ -418,10 +417,46 @@ namespace Respect\Rest {
 
             
             $r = $r->dispatch('get', '/auto')->response();
-            var_dump($header);
             $this->assertContains('Content-Type: '.$ctype, $header);
         }
-        
+        /**
+         * @dataProvider provider_content_type
+         * @ticket 44
+         */
+        function test_wildcard_automatic_content_type_header($ctype)
+        {
+            global $header;
+            $_SERVER['HTTP_ACCEPT'] = '*/*';
+            $r = new Router();
+            $r->get('/auto', '')->accept(array($ctype=>'json_encode'));
+
+            
+            $r = $r->dispatch('get', '/auto')->response();
+            $this->assertContains('Content-Type: '.$ctype, $header);
+        }
+        static function provider_content_type_extension()
+        {
+            return array(
+                array('text/html','.html'),
+                array('application/json','.json'),
+                array('text/xml','.xml')
+            );
+        }
+        /**
+         * @dataProvider provider_content_type_extension
+         * @ticket 44
+         */
+        function test_do_not_set_automatic_content_type_header_for_extensions($ctype, $ext)
+        {
+            global $header;
+            $_SERVER['HTTP_ACCEPT'] = $ctype;
+            $r = new Router();
+            $r->get('/auto', '')->accept(array($ext=>'json_encode'));
+
+            
+            $r = $r->dispatch('get', '/auto'.$ext)->response();
+            $this->assertEmpty($header);
+        }
     }
 
     if (!class_exists(__NAMESPACE__.'\\MyOptionalParamRoute')) {
@@ -445,13 +480,28 @@ namespace Respect\Rest {
         }
     }
 
-    function header($string, $replace=true, $http_response_code=200)
-    {
-        global $header;
-        if (!$replace && isset($header))
-            return;
+    if (!function_exists(__NAMESPACE__.'\\header')) {
+        function header($string, $replace=true, $http_response_code=200)
+        {
+            global $header;
+            if (!$replace && isset($header))
+                return;
 
-        $header[$string] = $string;
+            $header[$string] = $string;
+        }
+    }
+}
+
+namespace Respect\Rest\Routines {
+    if (!function_exists(__NAMESPACE__.'\\header')) {
+        function header($string, $replace=true, $http_response_code=200)
+        {
+            global $header;
+            if (!$replace && isset($header))
+                return;
+
+            $header[$string] = $string;
+        }
     }
 }
 
