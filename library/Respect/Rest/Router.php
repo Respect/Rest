@@ -125,7 +125,7 @@ class Router
         if (!$request)
             $request = new Request;
 
-        if ($this->methodOverriding && isset($_REQUEST['_method']))
+        if ($this->methodOverriding && isset($_REQUEST['_method']) && $request->method == 'POST')
             $request->method = strtoupper($_REQUEST['_method']);
 
         if ($request->method === 'OPTIONS' && $request->uri === '*') {

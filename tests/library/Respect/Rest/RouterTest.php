@@ -155,6 +155,18 @@ namespace Respect\Rest {
             $this->router->put('/', function() { return 'ok'; });
             $response = $this->router->run(new Request('POST', '/'));
             $this->assertEquals('ok', (string) $response);
+            $this->router->methodOverriding = false;
+        }
+        function test_invalid_method_overriding_with_get()
+        {
+            global $header;
+            $this->router->methodOverriding = true;
+            $_REQUEST['_method'] = 'PUT';
+            $this->router->put('/', function() { return 'ok'; });
+            $response = $this->router->run(new Request('GET', '/'));
+            $this->assertNotEquals('ok', (string) $response);
+            $this->assertContains('HTTP/1.1 405', $header);
+            $this->router->methodOverriding = false;
         }
         function test_method_not_acceptable()
         {
@@ -376,8 +388,7 @@ namespace Respect\Rest {
               ));
             $response = $r->dispatch('get', '/')->response();
             $this->assertEquals($e, (string) $response);
-        }
-        
+        }   
     }
 
     if (!class_exists(__NAMESPACE__.'\\MyOptionalParamRoute')) {
