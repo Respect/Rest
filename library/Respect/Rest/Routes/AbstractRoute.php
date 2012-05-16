@@ -10,7 +10,32 @@ use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Unique;
 use Respect\Rest\Exception\MethodNotAllowed;
 
-/** Base class for all Routes */
+/**
+ * Base class for all Routes
+ *
+ * @method \Respect\Rest\Routes\AbstractRoute abstractAccept()
+ * @method \Respect\Rest\Routes\AbstractRoute abstractRoutine()
+ * @method \Respect\Rest\Routes\AbstractRoute abstractSyncedRoutine()
+ * @method \Respect\Rest\Routes\AbstractRoute acceptCharset()
+ * @method \Respect\Rest\Routes\AbstractRoute acceptEncoding()
+ * @method \Respect\Rest\Routes\AbstractRoute acceptLanguage()
+ * @method \Respect\Rest\Routes\AbstractRoute accept()
+ * @method \Respect\Rest\Routes\AbstractRoute authBasic()
+ * @method \Respect\Rest\Routes\AbstractRoute by()
+ * @method \Respect\Rest\Routes\AbstractRoute contentType()
+ * @method \Respect\Rest\Routes\AbstractRoute ignorableFileExtension()
+ * @method \Respect\Rest\Routes\AbstractRoute lastModified()
+ * @method \Respect\Rest\Routes\AbstractRoute paramSynced()
+ * @method \Respect\Rest\Routes\AbstractRoute proxyableBy()
+ * @method \Respect\Rest\Routes\AbstractRoute proxyableThrough()
+ * @method \Respect\Rest\Routes\AbstractRoute proxyableWhen()
+ * @method \Respect\Rest\Routes\AbstractRoute routinable()
+ * @method \Respect\Rest\Routes\AbstractRoute through()
+ * @method \Respect\Rest\Routes\AbstractRoute unique()
+ * @method \Respect\Rest\Routes\AbstractRoute userAgent()
+ * @method \Respect\Rest\Routes\AbstractRoute when()
+ * ...
+ */
 abstract class AbstractRoute
 {
     const CATCHALL_IDENTIFIER = '/**';

@@ -11,6 +11,14 @@ use Respect\Rest\Routes;
 use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Exception\MethodNotAllowed;
 
+/**
+ * @method \Respect\Rest\Routes\AbstractRoute get(string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute post(string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute put(string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute head(string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute delete(string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute any(string $path, $routeTarget)
+ */
 class Router
 {
 
