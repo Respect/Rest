@@ -461,10 +461,10 @@ namespace Respect\Rest {
         function test_optional_parameters_should_be_allowed_only_at_the_end_of_the_path()
         {
             $r = new Router();
-            $r->get('/users/*/photos/*', function($username, $photoId) {
+            $r->get('/users/*/photos/*', function($username, $photoId=null) {
                 return 'match';
             });
-            $response = (string) $r->dispatch('get', '/users/photos');
+            $response = $r->dispatch('get', '/users/photos')->response();
             $this->assertNotEquals('match', $response);
         }
     }
