@@ -1,9 +1,9 @@
 {
     "name": "Respect\/Rest",
     "description": "Thin controller for RESTful applications",
-    "version": "0.4.4",
+    "version": "0.4.5",
     "type": "library",
-    "time": "2012-05-05 10:21:55",
+    "time": "2012-05-17 00:36:37",
     "homepage": "",
     "license": "BSD Style",
     "authors": [
