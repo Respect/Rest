@@ -50,10 +50,10 @@ class Request
                     return $this->forward($result);
 
         $response = $this->route->runTarget($this->method, $this->params);
-        
+
         if ($response instanceof AbstractRoute)
             return $this->forward($response);
-        
+
         $proxyResults = array();
 
         foreach ($this->route->routines as $routine)
@@ -72,7 +72,7 @@ class Request
     /** Calls a routine on the current route and returns its result */
     public function routineCall($type, $method, Routinable $routine, &$routeParamsValues)
     {
-        $reflection = $this->route->getReflection($method);
+        $reflection = $this->route->getReflection($method == 'HEAD' ? 'GET' : $method);
 
         $callbackParameters = array();
 
@@ -99,8 +99,8 @@ class Request
 
         return null;
     }
-    
-    protected function forward(AbstractRoute $route) 
+
+    protected function forward(AbstractRoute $route)
     {
         $this->route = $route;
         return $this->response();

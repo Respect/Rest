@@ -6,7 +6,7 @@ namespace Respect\Rest {
 
     class NewRouterTest extends \PHPUnit_Framework_TestCase
     {
-        function setUp() 
+        function setUp()
         {
             $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
             $_SERVER['REQUEST_URI'] = '/';
@@ -40,47 +40,47 @@ namespace Respect\Rest {
         function test_magic_call_with_closure_should_create_callback_route()
         {
             $route = $this->router->thisIsAMagicCall('/some/path', function() {});
-            $this->assertInstanceOf('Respect\Rest\Routes\Callback', $route); 
+            $this->assertInstanceOf('Respect\Rest\Routes\Callback', $route);
         }
         function test_magic_call_with_func_name_should_create_callback_route()
         {
             $route = $this->router->thisIsAMagicCall('/some/path', 'strlen');
-            $this->assertInstanceOf('Respect\Rest\Routes\Callback', $route); 
+            $this->assertInstanceOf('Respect\Rest\Routes\Callback', $route);
         }
         function test_magic_call_with_object_instance_should_create_instance_route()
-        { 
+        {
             $route = $this->router->thisIsAMagicCall(
                 '/some/path', new DummyRoute
             );
-            $this->assertInstanceOf('Respect\Rest\Routes\Instance', $route); 
+            $this->assertInstanceOf('Respect\Rest\Routes\Instance', $route);
         }
         function test_magic_call_with_class_name_should_return_classname_route()
-        { 
+        {
             $route = $this->router->thisIsAMagicCall(
                 '/some/path', 'DateTime'
             );
-            $this->assertInstanceOf('Respect\Rest\Routes\ClassName', $route); 
+            $this->assertInstanceOf('Respect\Rest\Routes\ClassName', $route);
         }
         function test_magic_call_with_class_callback_should_return_factory_route()
-        { 
+        {
             $route = $this->router->thisIsAMagicCall(
                 '/some/path', 'DateTime', array(new \Datetime, 'format')
             );
-            $this->assertInstanceOf('Respect\Rest\Routes\Factory', $route); 
+            $this->assertInstanceOf('Respect\Rest\Routes\Factory', $route);
         }
         function test_magic_call_with_class_with_constructor_should_return_class_route()
-        { 
+        {
             $route = $this->router->thisIsAMagicCall(
                 '/some/path', 'DateTime', array('2989374983')
             );
-            $this->assertInstanceOf('Respect\Rest\Routes\ClassName', $route); 
+            $this->assertInstanceOf('Respect\Rest\Routes\ClassName', $route);
         }
         function test_magic_call_with_some_static_value()
-        { 
+        {
             $route = $this->router->thisIsAMagicCall(
                 '/some/path', array('foo')
             );
-            $this->assertInstanceOf('Respect\Rest\Routes\StaticValue', $route); 
+            $this->assertInstanceOf('Respect\Rest\Routes\StaticValue', $route);
         }
         function test_destructor_runs_router_automatically_when_protocol_is_present()
         {
@@ -187,13 +187,24 @@ namespace Respect\Rest {
         {
             global $header;
             $expectedHeader = 'X-Burger: With Cheese!';
-            $this->router->get('/', function() use ($expectedHeader) { 
+            $this->router->get('/', function() use ($expectedHeader) {
                 header($expectedHeader);
-                return 'ok'; 
+                return 'ok';
             });
             $headResponse = $this->router->dispatch('HEAD', '/');
             $getResponse  = $this->router->dispatch('GET', '/');
             $this->assertEquals('ok', (string) $getResponse);
+            $this->assertContains($expectedHeader, $header);
+        }
+        function test_http_method_head_with_classes_and_routines()
+        {
+            global $header;
+            $expectedHeader = 'X-Burger: With Cheese!';
+            $this->router->get('/', __NAMESPACE__.'\\HeadTest', array($expectedHeader))
+                         ->when(function(){return true;});
+            $headResponse = $this->router->dispatch('HEAD', '/');
+            $getResponse  = $this->router->dispatch('GET', '/');
+            $this->assertEquals('ok', $getResponse->response());
             $this->assertContains($expectedHeader, $header);
         }
         function test_user_agent_content_negotiation()
@@ -231,10 +242,10 @@ namespace Respect\Rest {
                                 $done = true;
                                 $self->assertTrue(is_resource($stream));
                                 stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
-                                return $stream; //now deflated on demand 
+                                return $stream; //now deflated on demand
                             }
                          ));
-            
+
             $response = $this->router->run($request);
             $this->assertTrue($done);
             //var_dump((string)$response);
@@ -301,7 +312,7 @@ namespace Respect\Rest {
             $this->router->get('/', 'ok')->authBasic("Test Realm", function($username, $password) use (&$checkpoint, $user, $pass) {
                             if (($username == $user) && ($password == $pass)) {
                                 $checkpoint = true;
-                                return true;    
+                                return true;
                             }
                             return false;
                          });
@@ -395,7 +406,7 @@ namespace Respect\Rest {
               ));
             $response = $r->dispatch('get', '/')->response();
             $this->assertEquals($e, (string) $response);
-        }   
+        }
 
         static function provider_content_type()
         {
@@ -415,7 +426,7 @@ namespace Respect\Rest {
             $r = new Router();
             $r->get('/auto', '')->accept(array($ctype=>'json_encode'));
 
-            
+
             $r = $r->dispatch('get', '/auto')->response();
             $this->assertContains('Content-Type: '.$ctype, $header);
         }
@@ -430,7 +441,7 @@ namespace Respect\Rest {
             $r = new Router();
             $r->get('/auto', '')->accept(array($ctype=>'json_encode'));
 
-            
+
             $r = $r->dispatch('get', '/auto')->response();
             $this->assertContains('Content-Type: '.$ctype, $header);
         }
@@ -453,7 +464,7 @@ namespace Respect\Rest {
             $r = new Router();
             $r->get('/auto', '')->accept(array($ext=>'json_encode'));
 
-            
+
             $r = $r->dispatch('get', '/auto'.$ext)->response();
             $this->assertEmpty($header);
         }
@@ -489,6 +500,22 @@ namespace Respect\Rest {
             }
         }
     }
+
+    if (!class_exists(__NAMESPACE__.'\\HeadTest')) {
+        class HeadTest implements Routable
+        {
+            public function __construct($expectedHeader)
+            {
+                $this->expectedHeader = $expectedHeader;
+            }
+            public function get()
+            {
+                header($this->expectedHeader);
+                return 'ok';
+            }
+        }
+    }
+
 
     if (!function_exists(__NAMESPACE__.'\\header')) {
         function header($string, $replace=true, $http_response_code=200)
