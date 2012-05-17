@@ -63,10 +63,10 @@ project-info:
 	@echo "         package-version:" `$(CONFIG_TOOL) package-version `
 	@echo "       package-stability:" `$(CONFIG_TOOL) package-stability `
 	@echo "\r         project-authors: "`$(CONFIG_TOOL) package-authors ` \
-		| tr -t ',' '\n' \
+		| tr ',' '\n' \
 		| awk -F' <' '{ printf "                         %-10-s \t<%15-s \n",$$1,$$2 }' 
 	@echo "\r    project-contributors: "`$(CONFIG_TOOL) package-contributors ` \
-		| tr -t ',' '\n' \
+		| tr ',' '\n' \
 		| awk -F' <' '{ printf "                         %-10-s \t<%15-s \n",$$1,$$2 }' 
 
 	@echo "       package-date-time:" `$(CONFIG_TOOL) package-date-time `
