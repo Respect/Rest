@@ -457,6 +457,16 @@ namespace Respect\Rest {
             $r = $r->dispatch('get', '/auto'.$ext)->response();
             $this->assertEmpty($header);
         }
+
+        function test_optional_parameters_should_be_allowed_only_at_the_end_of_the_path()
+        {
+            $r = new Router();
+            $r->get('/users/*/photos/*', function($username, $photoId) {
+                return 'match';
+            });
+            $response = (string) $r->dispatch('get', '/users/photos');
+            $this->assertNotEquals('match', $response);
+        }
     }
 
     if (!class_exists(__NAMESPACE__.'\\MyOptionalParamRoute')) {
