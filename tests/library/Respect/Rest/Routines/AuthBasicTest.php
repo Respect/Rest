@@ -2,10 +2,6 @@
 
 namespace Respect\Rest\Routines;
 
-/**
- * @since 21.05.12
- * @brief new class. write something here, plz
- */
 class AuthBasicTest extends \PHPUnit_Framework_TestCase {
 
     private static $wantedParams;
