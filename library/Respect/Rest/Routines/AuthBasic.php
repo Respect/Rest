@@ -20,8 +20,8 @@ class AuthBasic extends AbstractRoutine implements ProxyableBy
 		if (isset($_SERVER['HTTP_AUTHORIZATION']))
 			return call_user_func_array(
 				$this->callback,
-				array_merge(explode(':', base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6)), $params)
-			));
+				array_merge(explode(':', base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6))), $params)
+			);
 		elseif (isset($_SERVER['PHP_AUTH_USER']))
                        return call_user_func_array(
                                $this->callback,
