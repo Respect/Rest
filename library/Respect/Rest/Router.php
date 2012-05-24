@@ -191,7 +191,9 @@ class Router
 
         foreach ($matchedByPath as $route) 
             if (0 !== stripos($request->method, '__')
-                && ($route->method === $request->method || $route->method === 'ANY' || ($route->method === 'GET' && $request->method === 'HEAD')))
+                && ($route->method === $request->method 
+                    || $route->method === 'ANY' 
+                    || ($route->method === 'GET' && $request->method === 'HEAD')))
                 if ($route->matchRoutines($request, $params))
                     return $this->configureRequest($request, $route, static::cleanUpParams($params));
                 else

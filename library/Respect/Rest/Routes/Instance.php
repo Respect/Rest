@@ -33,7 +33,7 @@ class Instance extends AbstractRoute
     public function runTarget($method, &$params)
     {
         if (!$this->instance instanceof Routable)
-            throw new InvalidArgumentException(''); //TODO
+            throw new InvalidArgumentException('Route target must be an instance of Respect\Rest\Routable');
 
             return call_user_func_array(
             array($this->instance, $method), $params
