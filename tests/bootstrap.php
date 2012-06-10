@@ -12,7 +12,7 @@ if (!($autoload = @include __DIR__ . '/../vendor/autoload.php')) {
 
     /* Include path */
     set_include_path(implode(PATH_SEPARATOR, array(
-        __DIR__ . '/../src',
+        __DIR__ . '/../library',
         get_include_path(),
     )));
 
