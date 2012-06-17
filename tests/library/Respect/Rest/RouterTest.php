@@ -323,6 +323,29 @@ namespace Respect\Rest {
             unset($_SERVER['PHP_AUTH_PW'], $_SERVER['PHP_AUTH_USER']);
         }
 
+        function test_auth_basic_pass_all_parameters_to_routine()
+        {
+            global $header;
+            $user = 'John';
+            $pass = 'Doe';
+            $param1 = 'parameterX';
+            $param2 = 'parameterY';
+            $checkpoint = false;
+            $_SERVER['PHP_AUTH_USER'] = $user;
+            $_SERVER['PHP_AUTH_PW'] = $pass;
+            $this->router->get('/*/*', 'ok')->authBasic("Test Realm", function($username, $password, $p1, $p2) use (&$checkpoint, $user, $pass, $param1, $param2)
+            {
+                if (($p1 === $param1) && $p2 === $param2) {
+                    $checkpoint = true;
+                    return true;
+                }
+                return false;
+            });
+            (string)$this->router->dispatch('GET', "/$param1/$param2")->response();
+            $this->assertTrue($checkpoint, 'Parameters passed incorrectly');
+            unset($_SERVER['PHP_AUTH_PW'], $_SERVER['PHP_AUTH_USER']);
+        }
+
         /**
          * @group issues
          * @ticket 37
