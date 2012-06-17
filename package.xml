@@ -131,10 +131,10 @@
     <active>yes</active>
   </lead>
   <date>2012-06-17</date>
-  <time>14:59:34</time>
+  <time>15:13:30</time>
   <version>
-    <release>0.4.7</release>
-    <api>0.4.7</api>
+    <release>0.4.8</release>
+    <api>0.4.8</api>
   </version>
   <stability>
     <release>alpha</release>
@@ -223,7 +223,7 @@
       <file name="library/Respect/Rest/Routes/Callback.php" role="php" md5sum="85bf2eeb750aeaa0c82f5100ad301948"/>
       <file name="library/Respect/Rest/Routes/StaticValue.php" role="php" md5sum="be100e66b91aa7f0ea86ddd032d1e06a"/>
       <file name="library/Respect/Rest/Routes/ClassName.php" role="php" md5sum="413a424c4df62aba16e43d49339deb1a"/>
-      <file name="library/Respect/Rest/Routes/AbstractRoute.php" role="php" md5sum="9704b9ce266f33899759efb167909236"/>
+      <file name="library/Respect/Rest/Routes/AbstractRoute.php" role="php" md5sum="468e7e0c652c79db5623e9e73ce3b40c"/>
       <file name="library/Respect/Rest/Routes/Instance.php" role="php" md5sum="7a7d1ea4222711c485e03c8e5ab1d78d"/>
     </dir>
   </contents>
