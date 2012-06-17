@@ -95,7 +95,7 @@ abstract class AbstractRoute
         );
     }
 
-    public function matchRoutines(Request $request, &$params=array())
+    public function matchRoutines(Request $request, $params=array())
     {
         foreach ($this->routines as $routine)
             if ($routine instanceof ProxyableWhen
