@@ -40,7 +40,9 @@ class ClassName extends AbstractRoute
 
     public function getReflection($method)
     {
-        return new ReflectionMethod($this->class, $method);
+        $mirror = new ReflectionClass($this->class);
+        if ($mirror->hasMethod($method))
+            return new ReflectionMethod($this->class, $method);
     }
 
     public function runTarget($method, &$params)
