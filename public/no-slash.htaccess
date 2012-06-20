@@ -1,6 +1,6 @@
 RewriteEngine On
 
-# Request redirect with response code 301 Permanently mowed if a trailing
+# Request redirect with response code 301 "Permanently moved" if a trailing
 # / was found. This will indicate to search engines that the content is 
 # the same and that we prefer not using a slash.
 RewriteCond %{ENV:REDIRECT_STATUS} =""
@@ -13,7 +13,7 @@ RewriteRule ^(.*)/$  /$1 [R=301,L]
 # Be careful not to use both at the same time or you will end
 # up with a redirect loop.
 
-# Redirect all requets not pointing at an actual file to index.php
+# Redirect all requests not pointing at an actual file to index.php
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule . index.php [L] 
 
