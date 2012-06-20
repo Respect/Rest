@@ -3,6 +3,7 @@
 namespace Respect\Rest\Routines;
 
 use SplObjectStorage;
+use UnexpectedValueException;
 use Respect\Rest\Request;
 
 /** Base class for content-negotiation */
@@ -23,7 +24,7 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, Pr
     protected function parseAcceptMap(array $callbacksPerType)
     {
         if (!array_filter($callbacksPerType, 'is_callable'))
-            throw new \Exception(''); //TODO
+            throw new UnexpectedValueException('Not a callable argument for Content-Type negotiation.');
 
             foreach ($callbacksPerType as $acceptSpec => $callback)
             if ('.' === $acceptSpec[0])

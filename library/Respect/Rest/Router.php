@@ -170,12 +170,12 @@ class Router
 
         $matchedByPath = array();
         $allowedMethods = array();
+        $paramsByPath = new \SplObjectStorage;
 
         foreach ($this->routes as $route) 
-            if ($this->matchRoute($request, $route, $tempParams)) {
+            if ($this->matchRoute($request, $route, $params)) {
                 
-                if (!isset($params)) 
-                    $params = $tempParams;
+                $paramsByPath[$route] = $params;
                 
                 $matchedByPath[] = $route;
                 $allowedMethods[] = $route->method;
@@ -191,9 +191,11 @@ class Router
 
         foreach ($matchedByPath as $route) 
             if (0 !== stripos($request->method, '__')
-                && ($route->method === $request->method || $route->method === 'ANY' || ($route->method === 'GET' && $request->method === 'HEAD')))
-                if ($route->matchRoutines($request, $params))
-                    return $this->configureRequest($request, $route, static::cleanUpParams($params));
+                && ($route->method === $request->method 
+                    || $route->method === 'ANY' 
+                    || ($route->method === 'GET' && $request->method === 'HEAD')))
+                if ($route->matchRoutines($request, $tempParams = $paramsByPath[$route]))
+                    return $this->configureRequest($request, $route, static::cleanUpParams($tempParams));
                 else
                     $badRequest = true;
 
@@ -258,8 +260,10 @@ class Router
     /** Returns true if the passed route matches the passed request */
     protected function matchRoute(Request $request, AbstractRoute $route, &$params=array())
     {
-        $request->route = $route;
-        return $route->match($request, $params);
+        if ($route->match($request, $params)) {
+            $request->route = $route;
+            return true;
+        }
     }
 
 }

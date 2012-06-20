@@ -323,6 +323,29 @@ namespace Respect\Rest {
             unset($_SERVER['PHP_AUTH_PW'], $_SERVER['PHP_AUTH_USER']);
         }
 
+        function test_auth_basic_pass_all_parameters_to_routine()
+        {
+            global $header;
+            $user = 'John';
+            $pass = 'Doe';
+            $param1 = 'parameterX';
+            $param2 = 'parameterY';
+            $checkpoint = false;
+            $_SERVER['PHP_AUTH_USER'] = $user;
+            $_SERVER['PHP_AUTH_PW'] = $pass;
+            $this->router->get('/*/*', 'ok')->authBasic("Test Realm", function($username, $password, $p1, $p2) use (&$checkpoint, $user, $pass, $param1, $param2)
+            {
+                if (($p1 === $param1) && $p2 === $param2) {
+                    $checkpoint = true;
+                    return true;
+                }
+                return false;
+            });
+            (string)$this->router->dispatch('GET', "/$param1/$param2")->response();
+            $this->assertTrue($checkpoint, 'Parameters passed incorrectly');
+            unset($_SERVER['PHP_AUTH_PW'], $_SERVER['PHP_AUTH_USER']);
+        }
+
         /**
          * @group issues
          * @ticket 37
@@ -478,6 +501,58 @@ namespace Respect\Rest {
             $response = $r->dispatch('get', '/users/photos')->response();
             $this->assertNotEquals('match', $response);
         }
+
+        function test_route_ordering_with_when()
+        {               
+
+            $when = false;
+            $r = new Router();
+
+            $r->get('/','HOME');
+
+            $r->get('/users',function(){
+                return 'users';
+            });
+
+            $r->get('/users/*',function($userId){
+                return 'user-'.$userId;
+            })->when(function($userId) use (&$when){
+                $when = true;
+                return is_numeric($userId) && $userId > 0;
+            });
+
+            $r->get('/docs', function() {return 'DOCS!';});
+            $response = $r->dispatch('get', '/users/1')->response();
+
+            $this->assertTrue($when);
+            $this->assertEquals('user-1', $response);
+        }
+
+        function test_when_should_be_called_only_on_existent_methods()
+        {
+            $_SERVER['HTTP_ACCEPT'] = 'application/json';
+
+            $router = new \Respect\Rest\Router();
+            $router->isAutoDispatched = false;
+
+            $r1 = $router->any('/meow/*', __NAMESPACE__.'\\RouteKnowsGet');
+            $r1->accept(array('application/json' => 'json_encode')); // some routine inheriting from AbstractAccept 
+
+            $router->any('/moo/*', __NAMESPACE__.'\\RouteKnowsNothing');
+
+            $out = (string) $router->run(new \Respect\Rest\Request('get', '/meow/blub')); // ReflectionException
+
+            $this->assertEquals('"ok: blub"', $out);
+
+        }
+    }
+
+    class RouteKnowsGet implements \Respect\Rest\Routable {
+        public function get($param) {
+            return "ok: $param";
+        }
+    }
+    class RouteKnowsNothing implements \Respect\Rest\Routable {
     }
 
     if (!class_exists(__NAMESPACE__.'\\MyOptionalParamRoute')) {

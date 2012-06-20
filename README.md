@@ -25,7 +25,7 @@ Bootstrapping is easy. Just create an instance of Respect\Rest\Router.
 
     $r3 = new Router;
 
-This assumes you have an `.htaccess` file that redirects every request to this PHP file and
+This assumes you have a `.htaccess` file that redirects every request to this PHP file and
 you're running this from the domain root (http://example.com/ without any subfolder).
 
 If you want to use it from a subfolder, you can pass the virtual root to the Router:
@@ -34,12 +34,12 @@ If you want to use it from a subfolder, you can pass the virtual root to the Rou
 
 This will instruct the router to work from http://example.com/myapp/.
 
-You can also use the Router without an `.htaccess` file. This uses the CGI `PATH_INFO` variable,
+You can also use the Router without a `.htaccess` file. This uses the CGI `PATH_INFO` variable,
 and can be declared as:
 
     $r3 = new Router('/index.php/');
 
-Also using folders:
+The same goes for folders:
 
     $r3 = new Router('/myapp/index.php/');
 
@@ -48,7 +48,7 @@ This assumes that every URL in the project will begin with these namespaces.
 ### Dispatching
 
 The Router is auto-dispatched, which means that you don't have to call anything more than
-declaring routes to run it. If you want to ommit this behavior, you can set:
+declaring routes to run it. If you want to omit this behavior, you can set:
 
     $r3->autoDispatched = false;
 
@@ -61,14 +61,14 @@ test and integrate the Router into existing applications.
 
 ### Simple Routing
 
-The Hello World route is something like this:
+The Hello World route goes something like this:
 
     $r3->get('/', function() {
         return 'Hello World';
     });
 
 Hitting `http://localhost/` (consider your local configuration for this) will print
-"Hello World" on the browser. You can declare as many routes as you want:
+"Hello World" in the browser. You can declare as many routes as you want:
 
     $r3->get('/hello', function() {
         return 'Hello from Path';
@@ -78,15 +78,15 @@ Hitting `http://localhost/hello` will now print "Hello from Path".
 
 ### Using Parameters
 
-You can declare routes that receives parameters by the URL. For this, every parameter
+You can declare routes that receives parameters from the URL. For this, every parameter
 is a `/*` on the route path. Considering the previous sample model:
 
     $r3->get('/users/*', function($screenName) {
         echo "User {$screenName}";
     });
 
-Accessing `http://localhost/users/alganet` with any username instead of `alganet` will
-now print "User alganet" (or any username you pass to it).
+Accessing `http://localhost/users/alganet` or any other username besides `alganet` will
+now print "User alganet" (or the username of your choosing).
 
 Multiple parameters can be defined:
 
@@ -95,8 +95,8 @@ Multiple parameters can be defined:
     });
 
 Last parameters on the route path are optional by default, so declaring just
-a `->get('/posts/*'` will match for `http://localhost/posts/` without any
-parameter. You can declare a second `->get('/posts'`, then the Router will
+a `->get('/posts/*'` will match `http://localhost/posts/` without any
+parameter. You can declare a second `->get('/posts'`, now the Router will
 match it properly, or treat the missing parameter yourself by making them
 `null`able on the passed function:
 
@@ -128,25 +128,25 @@ Routes with catch-all parameters like this:
 
 ### Route Matching
 
-Things now got more deeper. We got simple routes, routes with parameters, optional 
+Things can became very complex quick. We have simple routes, routes with parameters, optional 
 parameters and catch-all parameters. A simple rule to keep in mind is that Respect\Rest
 matches the routes from the most specific to the most generic.
 
-  * Routes with most slashes `/` are more specific and match first.
+  * Routes with the most slashes `/` are more specific and will be matched first.
   * Routes with parameters are less specific than routes without parameters.
-  * Routes with multiple parameters are even less specific.
-  * Routes with catch-all parameters are the most generic ones.
+  * Routes with multiple parameters are even less specific than a route with one parameter.
+  * Routes with catch-all parameters are the least specific and will be matched last.
 
-Summing up: Slashes and asterisks places your route at the top to match first.
+Summing up: Slashes and asterisks places your route at the top of the priority list to match first.
 
-Respect\Rest does this automatically, but is highly recommended to declare routes
+Respect\Rest sort routes automatically, but it is highly recommended to declare routes
 from the most specific to the most generic. This will improve performance and
-manutenibility of the code.
+maintainability of the code.
 
 ### Matching any HTTP Method
 
-Sometimes you need to use the router to proxy request to some other router or map
-requests to a class. Using the `any` magic method you can pass any method to the given
+Sometimes you need to use a router to proxy requests to some other router or map
+requests to a class. By using the magic method `any`, you can pass any HTTP method to a given
 function.
 
     $r3->any('/users/*', function($userName) {
@@ -158,7 +158,7 @@ function.
 
 ### Class Controllers
 
-The `any` is highly useful to bind classes to controllers, one of the Respect\Rest most 
+The `any` method is extremely useful to bind classes to controllers, one of Respect\Rest's most 
 awesome features:
 
     use Respect\Rest\Routable;
@@ -171,17 +171,16 @@ awesome features:
 
     $r3->any('/article/*', 'MyArticle');
 
-  1. The above will bind the class methods to the HTTP methods using the same
-     path.
-  2. Parameters will be sent to the class methods just like the callbacks on
-     the other samples.
+  1. This route will bind the class methods to the HTTP methods for the given path.
+  2. Parameters will be sent to the class methods just like the callbacks from
+     the previous examples.
   3. Controllers are lazy loaded and persistent. The *MyArticle* class will
-     be instantiated only when a route matches one of his methods, and this
-     instance will be reused on other requests (redirects, etc).
+     be instantiated only when a route matches one of its methods, and this
+     instance will be reused on subsequent callbacks (redirects, etc).
   4. Classes must implement the interface Respect\Rest\Routable for safety reasons.
      (Imagine someone mapping HTTP to a PDO class automatically, that wouldn't be right).
 
-Passing construtor arguments to the class is also possible:
+Passing constructor arguments to the class is also possible:
 
     $r3->any('/images/*', 'ImageController', array($myImageHandler, $myDb));
 
@@ -206,8 +205,8 @@ And you can even use a factory or DI container to build the controller class:
 
 ### Routing Streams
 
-Sometimes you need to route users to streams. The Router doesn't need to handle
-large files or wait for streams to finish to begin serving them.
+Sometimes you need to route users to streams. The Router doesn't have to first handle
+large files or wait for streams to finish before serving them.
 
     $r3->get('/images/*/hi-res', function($imageName) {
         header('Content-type: image/jpg');
@@ -217,19 +216,19 @@ large files or wait for streams to finish to begin serving them.
 This will redirect the file directly to the browser without keeping it in
 memory.
 
-CAUTION: We did a very wrong thing in the sample: passing a parameter
-directly to a `fopen` handle. Please validate the parameter before using it. This 
-is demonstrational only.
+CAUTION: We created a possible security vulnerability in the sample: passing a parameter
+directly to a `fopen` handle. Please validate user input parameters before using them. 
+This is for demonstrational purposes only.
 
 ### Routing Static Values
 
-No secret here, you can make a route return a plain string:
+No surprises here, you can make a route return a plain string:
 
     $r3->get('/greetings', 'Hello!');
 
 ### Forwarding Routes
 
-Respect\Rest has an internal forwarding mechanism. First you need to know that
+Respect\Rest has an internal forwarding mechanism. First you'll need to understand that
 every route declaration returns an instance:
 
     $usersRoute = $r3->any('/users', 'UsersController');
@@ -242,7 +241,7 @@ Then you can `use` and `return` this route in another one:
         }
     });
 
-Illustrative sample above will redirect internally when an user is not premium to 
+Illustrative sample above will redirect internally when an user is not privileged to 
 another route that handle normal users.
 
 ### When Routine (if)
@@ -260,13 +259,13 @@ Respect\Rest uses a different approach to validate route parameters:
      condition (but does not need to appear in the same order).
   3. You can specify more than one parameter per condition callback.
   4. You can specify more than one callback: `when($cb1)->when($cb2)->when($etc)`
-  5. Conditions will also sync with parameters on binded classes and instances
+  5. Conditions will also sync with parameters on binded classes and instance
      methods.
 
-This makes possible to the user to validate parameters using any custom routine and
-not just data types as `int` or `string`.
+This makes it possible for the user to validate parameters using any custom routine and
+not just data types such as `int` or `string`.
 
-We highly recommend you to use a strong validation library when using this. Consider
+We highly recommend that you use a strong validation library when using this. Consider
 [Respect\Validation](http://github.com/Respect/Validation).
 
     $r3->get('/images/*/hi-res', function($imageName) {
@@ -289,14 +288,14 @@ useful for logging, authentication and similar purposes.
         $myLogger->logAlbumVisit($albumName);
     });
 
-  1. This will execute the callback defined on *by* before the route action.
-     The route needs to match.
-  2. Parameters are also synced by name, not order, like `when`.
+  1. This will execute the callback defined with *by* before the route action
+     which needs to match a route.
+  2. Parameters are also synced by name and not by order, like with `when`.
   3. You can specify more than one parameter per proxy callback.
   4. You can specify more than one proxy: `by($cb1)->by($cb2)->by($etc)`
-  5. A `return false` on a proxy will stop the execution of following proxies
-     and the route action.
-  6. Proxies will also sync with parameters on binded classes and instances
+  5. A `return false` from a proxy will stop the execution of any following proxies
+     as well as the route action.
+  6. Proxies will also sync with parameters on binded classes and instance
      methods.
 
 If your By routine returns `false`, then the route method/function will not be
@@ -317,7 +316,7 @@ saving some new information.
 
   1. `by` proxies will be executed before the route action, `through proxies`
      will be executed after.
-  2. You don't need to use them both at the same time.
+  2. You are free to use them separately or in tandem.
   3. `through` can also receive parameters by name.
 
 Sample above allows you to do something based on the route parameters, but when
@@ -338,7 +337,7 @@ outputing the result.
 
 ### Controller Splitting
 
-Using routines is encouraged to separate the controller logic into components. You can 
+When using routines you are encouraged to separate the controller logic into components. You can 
 reuse them:
 
     $logRoutine = function() use ($myLogger, $r3) {
@@ -352,7 +351,7 @@ A simple way of applying routines to every route on the router is:
 
     $r3->always('By', $logRoutine);
 
-You can use the param sync to get advantage of this:
+You can use the param sync to take advantage of this:
 
     $r3->always('When', function($user=null) {
         if ($user) {
@@ -370,7 +369,7 @@ verify them all automatically by its name.
 
 ### Content Negotiation
 
-Respect currently supports the four distinct types of content-negotiation: 
+Respect/Rest currently supports the four distinct types of Accept header content-negotiation: 
 Mimetype, Encoding, Language and Charset. Usage sample:
 
     $r3->get('/about', function() {
@@ -386,13 +385,13 @@ Mimetype, Encoding, Language and Charset. Usage sample:
         'application/json' => 'json_encode'
     ));
 
-As in every routine, conneg routines are executed in the same order that
+As in every routine, conneg routines are executed in the same order in which
 you appended them to the route. You can also use `->always` to apply this
 routine to every route on the Router.
 
 Please note that when returning streams, conneg routines are also called.
-You can take advantage of this processing streams. The hardcore sample
-below serves a text using the deflate encoding directly to the browser:
+You may take advantage of this when processing streams. The hardcore example
+below serves text, using the deflate encoding, directly to the browser:
 
     $r3->get('/text/*', function($filename) {
       return fopen('data/'.$filename, 'r+');
@@ -419,7 +418,7 @@ to return true or false. True means that the user could be authenticated.
 
 Respect\Rest will handle the authentication flow, sending the appropriate
 headers when unauthenticated. You can also return another route, which will
-act as a internal forward (see the section about this above).
+act as an internal forward (see the section on forwarding above).
 
 ### Filtering Browsers
 
@@ -432,10 +431,10 @@ Below is an illustrative sample of how to block requests from mobile devices:
         }
     ));
 
-You can pass several itens on the array, like any conneg routine. The array
+You can pass several items in the array, like any conneg routine. The array
 key is a regular expression matcher without delimiters.
 
-### Input Content-Type
+### Input Content-Type (input data)
 
 Note that this is not currently implemented.
 
@@ -460,13 +459,13 @@ this data before doing anything:
 
 ### HTTP Errors
 
-Respect\Rest currently implement these errors by default:
+Respect\Rest currently handle the following errors by default:
 
-  * 404, when no matching route path is found.
+  * 404, when no matching route paths are found.
   * 401, when the client sends an unauthenticated request to a route using `authBasic` routine.
-  * 405, when a matching path is found but the method don't.
+  * 405, when a matching path is found but the method isn't specified.
   * 400, when a `when` validation fails.
-  * 406, when the route path and method matches but content-negotiation don't.
+  * 406, when the route path and method matches but content-negotiation doesn't.
 
 ### RESTful Extras
 
@@ -487,8 +486,9 @@ own routines by instance using:
 
     $r3->get('/greetings', 'Hello World')->appendRoutine(new MyRoutine);
 
-In the sample above, `MyRoutine` is a provided user routine declared as a class and
-appended to the router. Custom routines have several different interfaces that can be implemented:
+In the sample above, `MyRoutine` is a user provided routine declared as a class and
+appended to the router. Custom routines have the option of several different interfaces 
+which can be implemented:
 
   * IgnorableFileExtension - Instructs the router to ignore the file extension in requests
   * ParamSynced - Syncs parameters with the route function/method.
@@ -498,5 +498,5 @@ appended to the router. Custom routines have several different interfaces that c
   * Unique - Makes this routine be replaced, not appended, if more than one is declared for
     the same type.
 
-You can use any combination of the above, and you also need to implement Routinable.
+You can use any combination of the above but also need to implement the Routinable interface.
 
