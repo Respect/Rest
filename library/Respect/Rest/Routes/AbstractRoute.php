@@ -124,6 +124,8 @@ abstract class AbstractRoute
             $lastParam = array_pop($params);
             $params[] = explode('/', ltrim($lastParam, '/'));
         }
+        elseif (false !== stripos($this->pattern, '/**') && !isset($params[0]))
+                $params[] = array(); // callback expects a parameter give it
 
         return true;
     }
