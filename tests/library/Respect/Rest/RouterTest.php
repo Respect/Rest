@@ -348,6 +348,25 @@ namespace Respect\Rest {
 
         /**
          * @group issues
+         * @ticket 49
+         */
+        function test_http_auth_should_send_401_and_WWW_headers_when_authBasic_returns_false()
+        {
+            global $header;
+            $user = 'John';
+            $pass = 'Doe';
+            $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode($user.':'.$pass);
+            $this->router->get('/', 'ok')->authBasic('Test Realm', function($username, $password) {
+                return (($username == 'user') && ($password == 'pass'));
+            });
+            (string) $this->router->dispatch('GET', '/')->response();
+            $this->assertContains('HTTP/1.1 401', $header);
+            $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
+            unset($_SERVER['HTTP_AUTHORIZATION']);
+        }
+
+        /**
+         * @group issues
          * @ticket 37
         **/
         function test_optional_parameter_in_class_routes(){
