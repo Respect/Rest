@@ -432,6 +432,22 @@ namespace Respect\Rest {
             $r->dispatch('get', '/documents/foo/bar')->response();
             $this->assertEquals(array(array('foo', 'bar')), $args);
         }
+        /**
+         * Unit test for Commit: 3e8d536
+         *
+         * Catchall route called with / only would not get passed a parameter
+         * to the callback function.
+         */
+        function test_catchall_on_root_call_should_get_callback_parameter()
+        {
+            $r = new Router();
+            $args = array();
+            $r->any('/**', function($documentsPath) use (&$args) {
+                $args = func_get_args();
+            });
+            $r->dispatch('get', '/')->response();
+            $this->assertTrue(\is_array($args[0]));
+        }
 
         /**
          * @ticket 46
@@ -522,7 +538,7 @@ namespace Respect\Rest {
         }
 
         function test_route_ordering_with_when()
-        {               
+        {
 
             $when = false;
             $r = new Router();
@@ -555,7 +571,7 @@ namespace Respect\Rest {
             $router->isAutoDispatched = false;
 
             $r1 = $router->any('/meow/*', __NAMESPACE__.'\\RouteKnowsGet');
-            $r1->accept(array('application/json' => 'json_encode')); // some routine inheriting from AbstractAccept 
+            $r1->accept(array('application/json' => 'json_encode')); // some routine inheriting from AbstractAccept
 
             $router->any('/moo/*', __NAMESPACE__.'\\RouteKnowsNothing');
 
