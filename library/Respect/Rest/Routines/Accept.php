@@ -9,7 +9,7 @@ class Accept extends AbstractAccept
 {
     const ACCEPT_HEADER = 'HTTP_ACCEPT';
 
-    protected function compareItens($requested, $provided)
+    protected function compareItems($requested, $provided)
     {
         if ($requested === $provided || $requested === '*/*')
                 return $provided;

@@ -55,7 +55,7 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, Pr
         arsort($acceptList);
         foreach ($acceptList as $requested => $quality)
             foreach ($this->callbacksPerMimeType as $provided => $callback)
-                if (false !== ($accepted = $this->compareItens($requested, $provided))) {
+                if (false !== ($accepted = $this->compareItems($requested, $provided))) {
                     $this->negotiated[$request] = $callback;
                     return $this->responseHeaders($accepted);
                 }
@@ -114,7 +114,7 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, Pr
     }
 
     /** Compares two given content-negotiation elements */
-    protected function compareItens($requested, $provided)
+    protected function compareItems($requested, $provided)
     {
         return $requested == $provided;
     }

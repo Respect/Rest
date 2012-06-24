@@ -7,7 +7,7 @@ class UserAgent extends AbstractAccept
 {
     const ACCEPT_HEADER = 'HTTP_USER_AGENT';
 
-    protected function compareItens($requested, $provided)
+    protected function compareItems($requested, $provided)
     {
         if ($provided === '*' || preg_match("#$provided#", $requested))
             return true;

@@ -9,7 +9,7 @@ use Respect\Rest\Request;
 {
     const ACCEPT_HEADER = 'HTTP_ACCEPT_LANGUAGE';
 
-    protected function compareItens($requested, $provided)
+    protected function compareItems($requested, $provided)
     {
         $requested = preg_replace('/^x\-/', '', $requested);
         $provided = preg_replace('/^x\-/', '', $provided);
