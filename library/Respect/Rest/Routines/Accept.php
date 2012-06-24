@@ -11,19 +11,14 @@ class Accept extends AbstractAccept
 
     protected function compareItens($requested, $provided)
     {
-        if ($requested === $provided || $requested === '*/*') {
-            header('Content-Type: '.$provided);
-            return true;
-        }
-            
+        if ($requested === $provided || $requested === '*/*')
+                return $provided;
 
         list($requestedA, $requestedB) = explode('/', $requested);
         list($providedA, ) = explode('/', $provided);
 
-        if ($providedA === $requestedA && $requestedB === '*') {
-            header('Content-Type: '.$providedA);
-            return true;
-        }
+        if ($providedA === $requestedA && $requestedB === '*')
+                return $providedA;
 
         return false;
     }

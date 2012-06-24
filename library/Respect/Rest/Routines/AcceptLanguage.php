@@ -15,7 +15,7 @@ use Respect\Rest\Request;
         $provided = preg_replace('/^x\-/', '', $provided);
 
         if ($requested == $provided)
-            return true;
+            return $provided;
 
         if (stripos($requested, '-') || !stripos($provided, '-'))
             return false;
@@ -23,7 +23,7 @@ use Respect\Rest\Request;
         list($providedA, ) = explode('-', $provided);
 
         if ($requested === $providedA)
-            return true;
+            return $providedA;
 
         return false;
     }

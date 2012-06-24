@@ -55,34 +55,10 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, Pr
         arsort($acceptList);
         foreach ($acceptList as $requested => $quality)
             foreach ($this->callbacksPerMimeType as $provided => $callback)
-                if (false !== ($accepted = $this->compareItens($requested, $provided))) {
-                    $this->negotiated[$request] = $callback;
-                    return $this->responseHeaders($accepted);
-                }
+                if ($this->compareItens($requested, $provided))
+                    return $this->negotiated[$request] = $callback;
 
         return false;
-    }
-
-    private function responseHeaders($negotiated) {
-        $header_type = preg_replace(
-                array(
-                        '/(^.*)(?=\w*$)/U', // select namespace to strip
-                        '/(?!^)([A-Z]+)/'   // select camels to add -
-                     ),
-                array('','-$1'), get_class($this));
-
-        $content_header = 'Content-Type';
-
-        if (false !== strpos($header_type, '-'))
-            $content_header = str_replace('Accept', 'Content', $header_type);
-
-        header("$content_header: $negotiated");                // RFC 2616
-        header("Vary: negotiate,".strtolower($header_type));   // RFC 2616/2295
-        header("Content-Location: {$_SERVER['REQUEST_URI']}"); // RFC 2616
-        header('Expires: Thu, 01 Jan 1980 00:00:00 GMT');      // RFC 2295
-        header('Cache-Control: max-age=86400');                // RFC 2295
-
-        return true;
     }
 
     public function by(Request $request, $params)

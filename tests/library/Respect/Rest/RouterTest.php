@@ -511,6 +511,45 @@ namespace Respect\Rest {
                 array('text/xml','.xml')
             );
         }
+        function test_negotiate_acceptable_complete_headers()
+        {
+            global $header;
+            $_SERVER['REQUEST_URI'] = '/accept';
+            $_SERVER['HTTP_ACCEPT'] = 'foo/bar';
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = '13375p34|<';
+            $this->router->get('/accept', function() { return 'ok'; })
+                         ->accept(array('foo/bar' => function($d) {return $d;}))
+                         ->acceptLanguage(array('13375p34|<' => function($d) {return $d;}));
+            $this->router->dispatch('get', '/accept');
+            \print_r(implode("\n", $header));
+            $this->assertContains('Content-Type: foo/bar', $header);
+            $this->assertContains('Content-Language: 13375p34|<', $header);
+            $this->assertRegExp('/Vary: negotiate,.*accept(?!-)/', implode("\n", $header));
+            $this->assertRegExp('/Vary: negotiate,.*accept-language/', implode("\n", $header));
+            $this->assertContains('Content-Location: /accept', $header);
+            $this->assertContains('Expires: Thu, 01 Jan 1980 00:00:00 GMT', $header);
+            $this->assertContains('Cache-Control: max-age=86400', $header);
+        }
+        function test_accept_content_type_header()
+        {
+            global $header;
+            $_SERVER['HTTP_ACCEPT'] = 'foo/bar';
+            $this->router->get('/', function() { return 'ok'; })
+                         ->accept(array('foo/bar' => function($d) {return $d;}));
+            $this->router->dispatch('get', '/');
+            $this->assertContains('Content-Type: foo/bar', $header);
+            $this->assertRegExp('/Vary: negotiate,.*accept(?!-)/', implode("\n", $header));
+        }
+        function test_accept_content_language_header()
+        {
+            global $header;
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = '13375p34|<';
+            $this->router->get('/', function() { return 'ok'; })
+                         ->acceptLanguage(array('13375p34|<' => function($d) {return $d;}));
+            $this->router->dispatch('get', '/');
+            $this->assertContains('Content-Language: 13375p34|<', $header);
+            $this->assertRegExp('/Vary: negotiate,.*accept-language/', implode("\n", $header));
+        }
         /**
          * @dataProvider provider_content_type_extension
          * @ticket 44
