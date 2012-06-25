@@ -7,7 +7,7 @@ use UnexpectedValueException;
 use Respect\Rest\Request;
 
 /** Base class for content-negotiation */
-abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, ProxyableWhen, ProxyableThrough, Unique , IgnorableFileExtension  
+abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, ProxyableWhen, ProxyableThrough, Unique , IgnorableFileExtension
 {
 
     protected $callbacksPerMimeType = array();
@@ -87,7 +87,7 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, Pr
 
     public function by(Request $request, $params)
     {
-        $unsyncedParams = $request->params;        
+        $unsyncedParams = $request->params;
         $extensions = array_keys($this->callbacksPerExtension);
 
         if (empty($extensions) || empty($unsyncedParams))
