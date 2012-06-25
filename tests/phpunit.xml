@@ -11,8 +11,14 @@
          syntaxCheck="false"
          verbose="false">
     <filter>
-        <whitelist>
-            <directory>../library/</directory>
+        <whitelist addUncoveredFilesFromWhitelist="false">
+            <directory>../library/Respect/</directory>
         </whitelist>
     </filter>
+    <testsuite name="Respect\Rest Test Suite">
+        <directory>.</directory>
+    </testsuite>
+    <logging>
+        <log type="coverage-text" target="php://stdout" showUncoveredFiles="false"/>
+    </logging>
 </phpunit>

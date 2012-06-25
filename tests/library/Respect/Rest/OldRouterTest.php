@@ -539,6 +539,7 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
 
     public function testAccept()
     {
+        $_SERVER['REQUEST_URI'] = '/users/alganet';
         $request = new Request('get', '/users/alganet');
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
         $this->object->get('/users/*', function() {
@@ -950,7 +951,7 @@ class MyController implements Routable
 }
 }
 
-namespace Routines {
+namespace Respect\Rest\Routines {
     if (!function_exists(__NAMESPACE__.'\\header')) {
         function header($string, $replace=true, $http_response_code=200)
         {
@@ -961,4 +962,8 @@ namespace Routines {
             $header[$string] = $string;
         }
     }
+}
+
+namespace {
+    $header=array();
 }
