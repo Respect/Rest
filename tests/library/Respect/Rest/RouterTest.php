@@ -618,8 +618,61 @@ namespace Respect\Rest {
             $this->assertEquals('"ok: blub"', $out);
 
         }
-    }
 
+        function test_route_inspector()
+        {
+            $inspector = new RouteInspectorGuy();
+            $when = false;
+            $r = new Router();
+
+            $r->get('/','HOME');
+            $r->any('/about','About');
+            $r->get('/blogs',function(){return 'blogs';});
+            $r->get('/blogs/*',function($blogId){return 'blog';});
+            $r->get('/users',function(){return 'users';});
+            $r->get('/users/*',function($userId){return 'user';});
+
+            $r->get('/users/*/*', function($userId,$blogId){
+                return 'user-'.$userId.'-'.$blogId;
+            })->appendRoutine($inspector);
+
+            $r->post('/users/*/*',function($userId,$blogId){return 'post';});
+            $r->put('/users/*/*',function($userId,$blogId){return 'put';});
+            $r->delete('/users/*/*',function($userId,$blogId){return 'delete';});
+            $r->wicked('/users/*/*',function($userId,$blogId){return 'wicked';});
+            $r->get('/docs', function() {return 'DOCS!';});
+            $response = $r->dispatch('get', '/users/532/3223535')->response();
+            $this->assertEquals('user-532-3223535', $response);
+            $this->assertEquals('/users/532/3223535', $inspector->uri);
+            $this->assertEquals('/users/*/*', $inspector->uriPattern);
+            $this->assertContains('GET', $inspector->method);
+            $this->assertContains('GET', $inspector->allowedMethods);
+            $this->assertContains('POST', $inspector->allowedMethods);
+            $this->assertContains('PUT', $inspector->allowedMethods);
+            $this->assertContains('DELETE', $inspector->allowedMethods);
+            $this->assertContains('PUT', $inspector->allowedMethods);
+            $this->assertContains('/', $inspector->routePatterns);
+            $this->assertContains('/about', $inspector->routePatterns);
+            $this->assertContains('/blogs', $inspector->routePatterns);
+            $this->assertContains('/blogs/*', $inspector->routePatterns);
+            $this->assertContains('/users', $inspector->routePatterns);
+            $this->assertContains('/users/*', $inspector->routePatterns);
+            $this->assertContains('/users/*/*', $inspector->routePatterns);
+            $this->assertContains('/docs', $inspector->routePatterns);
+        }
+    }
+    class RouteInspectorGuy implements Routines\RouteInspector, Routines\Routinable {
+        public $uri,$method,$allowedMethods,$uriPattern,$routePatterns=array();
+        public function inspect(array $routes,Routes\AbstractRoute $active,
+                                            $allowedMethods, $method, $uri) {
+            $this->uri = $uri;
+            $this->allowedMethods = $allowedMethods;
+            $this->method = $method;
+            $this->uriPattern = $active->pattern;
+            foreach ($routes as $route)
+                $this->routePatterns[] = $route->pattern;
+        }
+    }
     class RouteKnowsGet implements \Respect\Rest\Routable {
         public function get($param) {
             return "ok: $param";
