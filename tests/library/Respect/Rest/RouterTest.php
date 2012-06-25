@@ -521,7 +521,6 @@ namespace Respect\Rest {
                          ->accept(array('foo/bar' => function($d) {return $d;}))
                          ->acceptLanguage(array('13375p34|<' => function($d) {return $d;}));
             $this->router->dispatch('get', '/accept');
-            \print_r(implode("\n", $header));
             $this->assertContains('Content-Type: foo/bar', $header);
             $this->assertContains('Content-Language: 13375p34|<', $header);
             $this->assertRegExp('/Vary: negotiate,.*accept(?!-)/', implode("\n", $header));
