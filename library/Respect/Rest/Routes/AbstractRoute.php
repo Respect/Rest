@@ -9,6 +9,7 @@ use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Unique;
 use Respect\Rest\Exception\MethodNotAllowed;
+use Respect\Rest\Routines\RouteInspector;
 
 /**
  * Base class for all Routes
@@ -97,12 +98,17 @@ abstract class AbstractRoute
 
     public function matchRoutines(Request $request, $params=array())
     {
-        foreach ($this->routines as $routine)
+        $return = true;
+
+        foreach ($this->routines as $routine) {
             if ($routine instanceof ProxyableWhen
                 && !$request->routineCall('when', $request->method, $routine, $params))
                 return false;
+            if ($routine instanceof RouteInspector)
+                $return = $routine;
+        }
 
-        return true;
+        return $return;
     }
 
     /** Checks if this route matches a request */
