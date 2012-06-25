@@ -19,8 +19,7 @@ Feature Guide
 
 Bootstrapping is easy. Just create an instance of Respect\Rest\Router.
 ```php
-    <?php
-
+<?php
     use Respect\Rest\Router;
 
     $r3 = new Router;
