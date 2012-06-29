@@ -207,6 +207,19 @@ namespace Respect\Rest {
             $this->assertEquals('ok', $getResponse->response());
             $this->assertContains($expectedHeader, $header);
         }
+        function test_user_agent_class()
+        {
+            $u = new KnowsUserAgent(array('*' => function () {
+        //        print_r(\func_get_args());
+            }));
+
+            $this->assertFalse($u->knowsCompareItems('a','b'));
+            $this->assertFalse($u->knowsCompareItems('c','b'));
+            $this->assertTrue($u->knowsCompareItems(1,'1'));
+            $this->assertTrue($u->knowsCompareItems('0',''));
+            $this->assertTrue($u->knowsCompareItems('a','*'));
+        }
+
         function test_user_agent_content_negotiation()
         {
             $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
@@ -679,6 +692,12 @@ namespace Respect\Rest {
         }
     }
     class RouteKnowsNothing implements \Respect\Rest\Routable {
+    }
+
+    class KnowsUserAgent extends Routines\UserAgent {
+        public function knowsCompareItems($requested, $provided) {
+            return $this->authorize($requested, $provided);
+        }
     }
 
     if (!class_exists(__NAMESPACE__.'\\MyOptionalParamRoute')) {

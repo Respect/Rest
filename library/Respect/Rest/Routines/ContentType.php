@@ -7,34 +7,31 @@ use UnexpectedValueException;
 use Respect\Rest\Request;
 
 /** Handles content type content negotiation */
-class ContentType extends AbstractRoutine implements ProxyableWhen, ProxyableBy, Unique
+class ContentType extends AbstractCallbackMediator implements ProxyableBy, Unique
 {
 
     protected $contentMap = array();
     protected $negotiated = null;
 
-    public function __construct(array $callbacksPerContentType = array())
+    protected function identifyRequested(Request $request, $params)
     {
-        if (!array_filter($callbacksPerContentType, 'is_callable'))
-            throw new UnexpectedValueException('Not a callable argument for Content-Type negotiation.');
-
-            $this->negotiated = new SplObjectStorage;
-        $this->contentMap = $callbacksPerContentType;
+        return isset($_SERVER['CONTENT_TYPE'])? array($_SERVER['CONTENT_TYPE']) : array();
     }
-
-    /** Negotiates the content type with the given request */
-    protected function negotiate(Request $request)
+    protected function considerProvisions($requested)
+    {   
+        return $this->getKeys();
+    }
+    protected function notifyApproved($requested, $provided, Request $request, $params)
     {
-        if (!isset($_SERVER['CONTENT_TYPE']))
-            return false;
-
-        $requested = $_SERVER['CONTENT_TYPE'];
-        foreach ($this->contentMap as $provided => $callback)
-            if ($requested == $provided) {
-                return $this->negotiated[$request] = $callback;
-            }
-
-        return false;
+        $this->negotiated = new SplObjectStorage;;
+        $this->negotiated[$request] = $this->getCallback($provided);
+    }
+    protected function notifyDeclined($requested, $provided, Request $request, $params)
+    {
+        if (isset($this->negotiated))
+             $this->negotiated[$request] = null;
+        else
+             $this->negotiated = null;
     }
 
     public function by(Request $request, $params)
@@ -45,10 +42,4 @@ class ContentType extends AbstractRoutine implements ProxyableWhen, ProxyableBy,
 
         return call_user_func($this->negotiated[$request]);
     }
-
-    public function when(Request $request, $params)
-    {
-        return false !== $this->negotiate($request);
-    }
-
 }
