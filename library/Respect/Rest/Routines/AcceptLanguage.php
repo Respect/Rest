@@ -5,12 +5,12 @@ namespace Respect\Rest\Routines;
 use Respect\Rest\Request;
 
 /** Handles Language content negotiation */
-    class AcceptLanguage extends AbstractAccept
+class AcceptLanguage extends AbstractAccept
 {
     const ACCEPT_HEADER = 'HTTP_ACCEPT_LANGUAGE';
 
-    protected function compareItems($requested, $provided)
-    {
+    protected function authorize($requested, $provided)
+    { 
         $requested = preg_replace('/^x\-/', '', $requested);
         $provided = preg_replace('/^x\-/', '', $provided);
 
@@ -25,16 +25,7 @@ use Respect\Rest\Request;
         if ($requested === $providedA)
             return $providedA;
 
-        return false;
+        return parent::authorize($requested, $provided);
     }
 
-    public function when(Request $request, $params)
-    {
-        $valid = parent::when($request, $params);
-
-        if (!$valid)
-            header('HTTP/1.1 406');
-
-        return $valid;
-    }
 }
