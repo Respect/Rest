@@ -11,6 +11,7 @@ namespace Respect\Rest {
             $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
             $_SERVER['REQUEST_URI'] = '/';
             $_SERVER['REQUEST_METHOD'] = 'GET';
+            $_SERVER['CONTENT_TYPE'] = 'text/html';
             $_REQUEST['_method'] = '';
             $this->router = new Router;
             $this->router->isAutoDispatched = false;
@@ -673,6 +674,90 @@ namespace Respect\Rest {
             $this->assertContains('/users/*/*', $inspector->routePatterns);
             $this->assertContains('/docs', $inspector->routePatterns);
         }
+        function test_abstract_route_inspector()
+        {
+            $_SERVER['HTTP_ACCEPT_CHARSET'] = 'utf-8';
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'af';
+
+            $inspector = new AwesomeRouteInspectorGuy();
+
+            $when = false;
+            $r = new Router();
+
+            $r->get('/'       ,function(){return 'home';});
+            $r->get('/blogs'  ,function(){return 'blogs';});
+            $r->get('/blogs/*',function($blogId){return 'blog';});
+            $r->get('/users'  ,function(){return 'users';});
+            $r->get('/users/*',function($userId){return 'user';});
+
+            $r->any('/about'  ,function(){return 'about';})
+            ->appendRoutine($inspector);
+
+            $login = $this->router->get('/login', 'Login');
+
+            $r->get('/users/*/*', function($userId, $blogId){
+                return 'user-'.$userId.'-'.$blogId;
+            })
+            ->authBasic("T-Realm",
+                function($user,$pass)use($login){return true;}//$login;}
+            )
+            ->lastModified(
+                function() {return new \DateTime('2011-11-11 11:11:12');}
+            )
+            ->contentType(array(
+                'application/json'    => function($i_dat=null){return 'application/json';},
+                'text/html'           => function($i_dat=null){return 'text/html';},
+                'multipart/form-data' => function($i_dat=null){return 'multipart/form-data';},
+            ))
+            ->accept(array(
+                'text/html'           => function($data){return 'text/html';},
+                'application/json'    => function($data){return 'application/json';},
+            ))
+            ->acceptCharset(array(
+                'utf-8'   => function($userId){return 'utf-8';},
+                'utf-16'  => function($userId){return 'utf-16';},
+            ))
+            ->acceptEncoding(array(
+                'deflate' => function($stream){return 'deflate';},
+            ))
+            ->acceptLanguage(array(
+                'en'      => function($data)  {return 'en';},
+                'pt'      => function($data)  {return 'pt';},
+                'af'      => function($data)  {return 'af';},
+            ))
+            ->userAgent(array(
+                'FIREFOX' => function()       {return 'FIREFOX';},
+                'CHROME'  => function()       {return 'CHROME';},
+                'ANDROID' => function()       {return 'ANDROID';},
+                '*'       => function()       {return '*';},
+            ))
+            ->appendRoutine($inspector);
+
+            $r->post(  '/users/*/*',function($userId,$blogId){return 'post';});
+            $r->put(   '/users/*/*',function($userId,$blogId){return 'put';});
+            $r->delete('/users/*/*',function($userId,$blogId){return 'delete';});
+            $r->wicked('/users/*/*',function($userId,$blogId){return 'wicked';});
+            $r->get(   '/docs'     ,function() {return 'DOCS!';});
+            $response = $r->dispatch('get', '/users/532/3223535')->response();
+//echo "\n======== response out ============\n$response\n";
+//            $this->assertEquals('user-532-3223535', $response);
+//            $this->assertEquals('/users/532/3223535', $inspector->uri);
+//            $this->assertEquals('/users/*/*', $inspector->uriPattern);
+//            $this->assertContains('GET', $inspector->method);
+//            $this->assertContains('GET', $inspector->allowedMethods);
+//            $this->assertContains('POST', $inspector->allowedMethods);
+//            $this->assertContains('PUT', $inspector->allowedMethods);
+//            $this->assertContains('DELETE', $inspector->allowedMethods);
+//            $this->assertContains('PUT', $inspector->allowedMethods);
+//            $this->assertContains('/', $inspector->routePatterns);
+//            $this->assertContains('/about', $inspector->routePatterns);
+//            $this->assertContains('/blogs', $inspector->routePatterns);
+//            $this->assertContains('/blogs/*', $inspector->routePatterns);
+//            $this->assertContains('/users', $inspector->routePatterns);
+//            $this->assertContains('/users/*', $inspector->routePatterns);
+//            $this->assertContains('/users/*/*', $inspector->routePatterns);
+//            $this->assertContains('/docs', $inspector->routePatterns);
+        }
     }
     class RouteInspectorGuy implements Routines\RouteInspector, Routines\Routinable {
         public $uri,$method,$allowedMethods,$uriPattern,$routePatterns=array();
@@ -685,6 +770,15 @@ namespace Respect\Rest {
             foreach ($routes as $route)
                 $this->routePatterns[] = $route->pattern;
         }
+    }
+    class AwesomeRouteInspectorGuy extends Routines\AbstractRouteInspector {
+
+            function routeInfoResponse($data,
+                                Routines\AbstractRouteInspector $routeInfo,
+                                Request $request, $params) {
+                return print_r($routeInfo->getActiveRoute(), TRUE);
+            }
+
     }
     class RouteKnowsGet implements \Respect\Rest\Routable {
         public function get($param) {
