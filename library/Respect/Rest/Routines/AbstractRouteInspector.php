@@ -164,6 +164,13 @@ abstract class AbstractRouteInspector implements ProxyableThrough,
     }
 }
 
+/**
+ * @codeCoverageIgnore Private class - would be so if we were able
+ *
+ * DynamicClass server only to allow closures to be methods on
+ * dynamically created url objects. It is the hope that eventually
+ * PHP will evolve to make this work around redundant.
+ */
 class DynamicClass {
     private $members;
     public function __construct(array $members)
