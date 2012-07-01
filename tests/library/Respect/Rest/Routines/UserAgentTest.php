@@ -1,5 +1,5 @@
 <?php
-namespace Respect\Rest\Routines{
+namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
 /**
@@ -53,41 +53,13 @@ class UserAgentTest extends \PHPUnit_Framework_TestCase
         $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
         $this->assertTrue($alias->when($request, $params));
         $this->assertInstanceOf('Closure', $alias->through($request, $params));
-        $this->setUp();
+
         $_SERVER['HTTP_USER_AGENT'] = 'InhernetExplorer';
         $this->assertTrue($alias->when($request, $params));
         $this->assertInstanceOf('Closure', $alias->through($request, $params));
-        $this->setUp();
+
         $_SERVER['HTTP_USER_AGENT'] = 'CHROME';
         $this->assertFalse($alias->when($request, $params));
         $this->assertNull($alias->through($request, $params));
     }
-}
-    if (!function_exists(__NAMESPACE__.'\\header')) {
-        function header($string, $replace=true, $http_response_code=200)
-        {echo "hedaec1 $string\n";
-            global $header;
-            if (!$replace && isset($header))
-                return;
-
-            $header[$string] = $string;
-        }
-    }
-}
-
-namespace Respect\Rest {
-    if (!function_exists(__NAMESPACE__.'\\header')) {
-        function header($string, $replace=true, $http_response_code=200)
-        {echo "hedaec2 $string\n";
-            global $header;
-            if (!$replace && isset($header))
-                return;
-
-            $header[$string] = $string;
-        }
-    }
-}
-
-namespace {
-    $header=array('a');
 }
