@@ -89,11 +89,10 @@ abstract class AbstractRouteInspector implements ProxyableThrough,
         foreach ($route->getReflection(true)->getParameters() as $parameter)
             $parameters[] = '{'.$parameter->name.'}';
         $uriTemplate = $self = new DynamicClass(array(
-            'template' => call_user_method_array('createUri',$route,$parameters)
-                          ?: '/',
-            'parameters'      => $parameters,
-            'pattern'         => $route->pattern,
-            'matchPattern'    => $route->regexForMatch,
+            'template' => call_user_func_array(array($route, 'createUri'), $parameters) ?: '/',
+            'parameters' => $parameters,
+            'pattern' => $route->pattern,
+            'matchPattern' => $route->regexForMatch,
             'regexForReplace' => $route->regexForReplace,
 
         ));
@@ -115,12 +114,27 @@ abstract class AbstractRouteInspector implements ProxyableThrough,
 
     public function through(Request $request, $params)
     {
-        return call_user_func_array(function ($routeInfo, $request, $params) {
-            return function($data)use($routeInfo, $request, $params) {
-                return call_user_method_array('routeInfoResponse', $routeInfo,
-                        array($data, $routeInfo, $request, $params));
-            };
-        }, array($this, $request, $params));
+        return call_user_func_array(
+            function ($routeInfo, $request, $params)
+            {
+                return function($data) use($routeInfo, $request, $params)
+                {
+                    return call_user_func_array(
+                        array(
+                            $routeInfo, 
+                            'routeInfoResponse'
+                        ),
+                        array(
+                            $data, 
+                            $routeInfo, 
+                            $request, 
+                            $params
+                        )
+                    );
+                };
+            },
+            array($this, $request, $params)
+        );
     }
 
     /**
