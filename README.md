@@ -50,7 +50,7 @@ This assumes that every URL in the project will begin with these namespaces.
 The Router is auto-dispatched, which means that you don't have to call anything more than
 declaring routes to run it. If you want to ommit this behavior, you can set:
 
-    $r3->autoDispatched = false;
+    $r3->isAutoDispatched = false;
 
 You can then dispatch it yourself at the end of the proccess:
 
