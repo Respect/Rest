@@ -118,7 +118,7 @@ abstract class AbstractRoute
             return false;
 
         array_shift($params);
-        
+
         if (false !== stripos($this->pattern, '/**') && false !== stripos(end($params), '/')) {
             $lastParam = array_pop($params);
             $params[] = explode('/', ltrim($lastParam, '/'));
