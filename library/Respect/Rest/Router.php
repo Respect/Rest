@@ -86,10 +86,12 @@ class Router
     }
 
     /** Applies a routine to every route */
-    public function always($routineName, $routineParameter)
+    public function always($routineName, $routineParameters)
     {
-        $routineClass = 'Respect\\Rest\\Routines\\' . $routineName;
-        $routineInstance = new $routineClass($routineParameter);
+        $routineParameters = func_get_args();
+        $routineName = array_shift($routineParameters);
+        $routineClass = new ReflectionClass('Respect\\Rest\\Routines\\' . $routineName);
+        $routineInstance = $routineClass->newInstanceArgs($routineParameters);
         $this->globalRoutines[] = $routineInstance;
 
         foreach ($this->routes as $route)

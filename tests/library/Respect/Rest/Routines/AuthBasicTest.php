@@ -43,4 +43,21 @@ class AuthBasicTest extends \PHPUnit_Framework_TestCase {
         $routine = new AuthBasic('auth realm', array($this, 'shunt_wantedParams'));
         $routine->by(new \Respect\Rest\Request('GET', "/$param1/$param2"), array($param1, $param2));
     }
+
+    /**
+     * @covers Respect\Rest\Router::always
+     * #64
+     */
+    public function test_always_can_take_multiple_parameters_for_routine_constructor() {
+        $this->assertEmpty(DummyRoutine::$result);
+        $r3 = new \Respect\Rest\Router();
+        $r3->always('dummyRoutine', 'arg1', 'arg2', 'arg3');
+        $this->assertEquals('arg1, arg2, arg3', DummyRoutine::$result);
+    }
+}
+class DummyRoutine implements Routinable {
+    public static $result = '';
+    public function __construct($param1, $param2, $param3) {
+        static::$result = "$param1, $param2, $param3";
+    }
 }
