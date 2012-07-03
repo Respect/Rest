@@ -2,7 +2,6 @@
 
 namespace Respect\Rest;
 
-use Exception;
 use InvalidArgumentException;
 use Respect\Rest\Routes;
 use Respect\Rest\Routes\AbstractRoute;

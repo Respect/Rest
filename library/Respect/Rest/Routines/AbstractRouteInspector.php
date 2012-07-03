@@ -186,7 +186,7 @@ abstract class AbstractRouteInspector implements ProxyableThrough,
  * dynamically created url objects. It is the hope that eventually
  * PHP will evolve to make this work around redundant.
  */
-class AbstractRouteInspector
+class DynamicClass
 {
     private $members;
     public function __construct(array $members)
