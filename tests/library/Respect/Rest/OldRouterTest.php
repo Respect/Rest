@@ -14,7 +14,7 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $this->object = new Router;
         $this->result = null;
         $result = &$this->result;
-        $this->callback = function() use(&$result) {
+        $this->callback = function() use (&$result) {
                 $result = func_get_args();
             };
     }
@@ -369,7 +369,7 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $proxy3 = function($baz) use (&$result) {
                 $result[] = $baz;
             };
-        $this->object->get('/users/*/*/*', function($foo, $bar, $baz) use(&$result) {
+        $this->object->get('/users/*/*/*', function($foo, $bar, $baz) use (&$result) {
                 $result[] = 'main';
             })->by($proxy1)->through($proxy2)->through($proxy3);
         $this->object->dispatch('get', '/users/abc/def/ghi')->response();
@@ -385,7 +385,7 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $proxy1 = function($foo=null, $abc=null) use (&$resultProxy) {
                 $resultProxy = func_get_args();
             };
-        $callback = function($bar, $foo=null) use(&$resultCallback) {
+        $callback = function($bar, $foo=null) use (&$resultCallback) {
                 $resultCallback = func_get_args();
             };
         $this->object->get('/users/*/*', $callback)->by($proxy1);
@@ -399,6 +399,7 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $result = array();
         $proxy1 = function($foo) use (&$result) {
                 $result[] = $foo;
+
                 return false;
             };
         $proxy2 = function($bar) use (&$result) {
@@ -407,7 +408,7 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $proxy3 = function($baz) use (&$result) {
                 $result[] = $baz;
             };
-        $this->object->get('/users/*/*/*', function($foo, $bar, $baz) use(&$result) {
+        $this->object->get('/users/*/*/*', function($foo, $bar, $baz) use (&$result) {
                 $result[] = 'main';
             })->by($proxy1)->through($proxy2)->through($proxy3);
         $this->object->dispatch('get', '/users/abc/def/ghi')->response();
@@ -596,6 +597,7 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $request = new Request('get', '/users.json/10.20');
         $this->object->get('/users.json/*', function($param) {
                 list($min, $max) = explode('.', $param);
+
                 return range($min, $max);
             });
         $r = $this->object->dispatchRequest($request)->response();
@@ -693,10 +695,10 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $this->object->get('/users/*', function() {
 
             })->acceptLanguage(array(
-            'en' => function() use (&$neverRun){
+            'en' => function() use (&$neverRun) {
                 $neverRun = true;
             },
-            'pt' => function() use (&$neverRun){
+            'pt' => function() use (&$neverRun) {
                 $neverRun = true;
             }))->acceptLanguage(array(
             'en' => function() {
@@ -912,6 +914,7 @@ if (!function_exists(__NAMESPACE__.'\\header')) {
     {
         global $header;
         if (!$replace && isset($header))
+
             return;
 
         $header[$string] = $string;
@@ -935,6 +938,7 @@ class MyController implements Routable
     public function __construct()
     {
         $this->params = func_get_args();
+
         return 'whoops';
     }
 
@@ -957,6 +961,7 @@ namespace Respect\Rest\Routines {
         {
             global $header;
             if (!$replace && isset($header))
+
                 return;
 
             $header[$string] = $string;

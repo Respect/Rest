@@ -2,14 +2,10 @@
 
 namespace Respect\Rest;
 
-use Exception;
-use ReflectionClass;
-use ReflectionMethod;
-use RuntimeException;
 use InvalidArgumentException;
 use Respect\Rest\Routes;
 use Respect\Rest\Routes\AbstractRoute;
-use Respect\Rest\Exception\MethodNotAllowed;
+use Respect\Rest\Routines\RouteInspector;
 
 /**
  * @method \Respect\Rest\Routes\AbstractRoute get(string $path, $routeTarget)
@@ -48,20 +44,26 @@ class Router
         list ($path, $routeTarget) = $args;
 
         if (is_callable($routeTarget)) //closures, func names, callbacks
+
             return $this->callbackRoute($method, $path, $routeTarget);
         elseif ($routeTarget instanceof Routable) //direct instances
+
             return $this->instanceRoute($method, $path, $routeTarget);
         elseif (!is_string($routeTarget)) //static returns the argument itself
+
             return $this->staticRoute($method, $path, $routeTarget);
         elseif (is_string($routeTarget) && !class_exists($routeTarget))
+
             return $this->staticRoute($method, $path, $routeTarget);
-        else
-            if (!isset($args[2])) //raw classnames
-                return $this->classRoute($method, $path, $routeTarget);
-            elseif (is_callable($args[2])) //classnames as factories
-                return $this->factoryRoute($method, $path, $routeTarget, $args[2]);
-            else //classnames with constructor arguments
-                return $this->classRoute($method, $path, $routeTarget, $args[2]);
+        elseif (!isset($args[2])) //raw classnames
+
+            return $this->classRoute($method, $path, $routeTarget);
+        elseif (is_callable($args[2])) //classnames as factories
+
+            return $this->factoryRoute($method, $path, $routeTarget, $args[2]);
+        else //classnames with constructor arguments
+
+            return $this->classRoute($method, $path, $routeTarget, $args[2]);
     }
 
     public function __construct($virtualHost=null)
@@ -72,11 +74,12 @@ class Router
     public function __destruct()
     {
         if (!$this->isAutoDispatched || !isset($_SERVER['SERVER_PROTOCOL']))
+
             return;
 
         echo $this;
     }
-    
+
     public function __toString()
     {
         return $this->run();
@@ -109,6 +112,7 @@ class Router
     {
         $route = new Routes\Callback($method, $path, $callback);
         $this->appendRoute($route);
+
         return $route;
     }
 
@@ -117,6 +121,7 @@ class Router
     {
         $route = new Routes\ClassName($method, $path, $class, $arguments);
         $this->appendRoute($route);
+
         return $route;
     }
 
@@ -139,7 +144,7 @@ class Router
         if ($request->method === 'OPTIONS' && $request->uri === '*') {
             $allowedMethods = array();
 
-            foreach ($this->routes as $route) 
+            foreach ($this->routes as $route)
                 $allowedMethods[] = $route->method;
 
             if ($allowedMethods)
@@ -153,10 +158,13 @@ class Router
                 $b = $b->pattern;
 
                 if (0 === stripos($a, $b) || $a == AbstractRoute::CATCHALL_IDENTIFIER)
+
                     return 1;
                 elseif (0 === stripos($b, $a) || $b == AbstractRoute::CATCHALL_IDENTIFIER)
+
                     return -1;
                 elseif (substr_count($a, '/') < substr_count($b, '/'))
+
                     return 1;
 
                 return substr_count($a, AbstractRoute::PARAM_IDENTIFIER)
@@ -172,31 +180,38 @@ class Router
         $allowedMethods = array();
         $paramsByPath = new \SplObjectStorage;
 
-        foreach ($this->routes as $route) 
+        foreach ($this->routes as $route)
             if ($this->matchRoute($request, $route, $params)) {
-                
+
                 $paramsByPath[$route] = $params;
-                
+
                 $matchedByPath[] = $route;
                 $allowedMethods[] = $route->method;
             }
 
         if ($request->method === 'OPTIONS' && $allowedMethods) {
             header('Allow: '.implode(', ', $allowedMethods));
+
             return $request;
         }
 
         if (!$matchedByPath)
             header('HTTP/1.1 404');
 
-        foreach ($matchedByPath as $route) 
+        foreach ($matchedByPath as $route)
             if (0 !== stripos($request->method, '__')
-                && ($route->method === $request->method 
-                    || $route->method === 'ANY' 
+                && ($route->method === $request->method
+                    || $route->method === 'ANY'
                     || ($route->method === 'GET' && $request->method === 'HEAD')))
-                if ($route->matchRoutines($request, $tempParams = $paramsByPath[$route]))
-                    return $this->configureRequest($request, $route, static::cleanUpParams($tempParams));
-                else
+                if (false !== ($inspector = $route->matchRoutines($request,
+                        $tempParams = $paramsByPath[$route]))) {
+                    if ($inspector instanceof RouteInspector)
+                        $inspector->inspect($this->routes, $route,
+                            $allowedMethods, $request->method, $request->uri);
+
+                    return $this->configureRequest($request, $route,
+                            static::cleanUpParams($tempParams));
+                } else
                     $badRequest = true;
 
         if ($matchedByPath && !isset($badRequest))
@@ -206,6 +221,7 @@ class Router
             header('Allow: '.implode(', ', $allowedMethods));
 
         $request->route = null;
+
         return $request;
     }
 
@@ -214,13 +230,16 @@ class Router
     {
         $route = $this->dispatchRequest($request);
         if (!$route || (isset($request->method) && $request->method === 'HEAD'))
+
             return null;
 
         $response = $route->response();
         if (is_resource($response)) {
             fpassthru($response);
+
             return '';
         }
+
         return (string) $response;
 
     }
@@ -230,6 +249,7 @@ class Router
     {
         $route = new Routes\Factory($method, $path, $className, $factory);
         $this->appendRoute($route);
+
         return $route;
     }
 
@@ -238,14 +258,16 @@ class Router
     {
         $route = new Routes\Instance($method, $path, $instance);
         $this->appendRoute($route);
+
         return $route;
     }
-    
+
     /** Creates and returns a static route */
     public function staticRoute($method, $path, $instance)
     {
         $route = new Routes\StaticValue($method, $path, $instance);
         $this->appendRoute($route);
+
         return $route;
     }
 
@@ -254,6 +276,7 @@ class Router
     {
         $request->route = $route;
         $request->params = $params;
+
         return $request;
     }
 
@@ -262,6 +285,7 @@ class Router
     {
         if ($route->match($request, $params)) {
             $request->route = $route;
+
             return true;
         }
     }

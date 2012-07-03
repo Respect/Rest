@@ -24,9 +24,11 @@ if (!($autoload = @include __DIR__ . '/../vendor/autoload.php')) {
                 $path .= DIRECTORY_SEPARATOR . $filename;
                 if (is_file($path)) {
                     require_once $path;
+
                     return true;
                 }
             }
+
             return false;
         }
     );

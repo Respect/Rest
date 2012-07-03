@@ -3,46 +3,22 @@
 namespace Respect\Rest\Routines;
 
 use SplObjectStorage;
-use UnexpectedValueException;
 use Respect\Rest\Request;
 
 /** Base class for content-negotiation */
-abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, ProxyableWhen, ProxyableThrough, Unique , IgnorableFileExtension
+abstract class AbstractAccept extends AbstractCallbackMediator implements ProxyableBy, ProxyableThrough, Unique , IgnorableFileExtension
 {
 
-    protected $callbacksPerMimeType = array();
-    protected $callbacksPerExtension = array();
     protected $negotiated = null;
+    protected $request_uri;
 
-    public function __construct(array $callbacksPerType = array())
+    protected function identifyRequested(Request $request, $params)
     {
-        $this->negotiated = new SplObjectStorage;
-        $this->parseAcceptMap($callbacksPerType);
-    }
-
-    /** Parses an array of callbacks per accept-type */
-    protected function parseAcceptMap(array $callbacksPerType)
-    {
-        if (!array_filter($callbacksPerType, 'is_callable'))
-            throw new UnexpectedValueException('Not a callable argument for Content-Type negotiation.');
-
-            foreach ($callbacksPerType as $acceptSpec => $callback)
-            if ('.' === $acceptSpec[0])
-                $this->callbacksPerExtension[$acceptSpec] = $callback;
-            else
-                $this->callbacksPerMimeType[$acceptSpec] = $callback;
-    }
-
-    /** Negotiate content with the given Request */
-    protected function negotiate(Request $request)
-    {
-        foreach ($this->callbacksPerExtension as $provided => $callback)
-            if (false !== stripos($request->uri, $provided))
-                return $this->negotiated[$request] = $callback;
+        $this->request_uri = $request->uri;
 
         if (!isset($_SERVER[static::ACCEPT_HEADER]))
-            return false;
 
+                    return array();
         $acceptHeader = $_SERVER[static::ACCEPT_HEADER];
         $acceptParts = explode(',', $acceptHeader);
         $acceptList = array();
@@ -53,17 +29,18 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, Pr
             $acceptList[$provided] = $quality;
         }
         arsort($acceptList);
-        foreach ($acceptList as $requested => $quality)
-            foreach ($this->callbacksPerMimeType as $provided => $callback)
-                if (false !== ($accepted = $this->compareItems($requested, $provided))) {
-                    $this->negotiated[$request] = $callback;
-                    return $this->responseHeaders($accepted);
-                }
 
-        return false;
+        return array_keys($acceptList);
     }
-
-    private function responseHeaders($negotiated) {
+    protected function considerProvisions($requested)
+    {
+        return $this->getKeys(); // no need to split see authorize
+    }
+    protected function notifyApproved($requested, $provided, Request $request, $params)
+    {
+        $this->negotiated = new SplObjectStorage;;
+        $this->negotiated[$request] = $this->getCallback($provided);
+if (false === strpos($provided, '.')) {
         $header_type = preg_replace(
                 array(
                         '/(^.*)(?=\w*$)/U', // select namespace to strip
@@ -76,21 +53,38 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, Pr
         if (false !== strpos($header_type, '-'))
             $content_header = str_replace('Accept', 'Content', $header_type);
 
-        header("$content_header: $negotiated");                // RFC 2616
+        header("$content_header: $provided");                // RFC 2616
         header("Vary: negotiate,".strtolower($header_type));   // RFC 2616/2295
         header("Content-Location: {$_SERVER['REQUEST_URI']}"); // RFC 2616
         header('Expires: Thu, 01 Jan 1980 00:00:00 GMT');      // RFC 2295
         header('Cache-Control: max-age=86400');                // RFC 2295
+}
+    }
+    protected function notifyDeclined($requested, $provided, Request $request, $params)
+    {
+        $this->negotiated = false;
+        header('HTTP/1.1 406');
+    }
 
-        return true;
+    protected function authorize($requested, $provided)
+    {
+        // negotiate on file extension
+        if (false !== strpos($provided, '.'))
+              if (false !== stripos($this->request_uri, $provided))
+
+                      return true;
+
+        // normal matching requirements
+        return $requested == $provided;
     }
 
     public function by(Request $request, $params)
     {
         $unsyncedParams = $request->params;
-        $extensions = array_keys($this->callbacksPerExtension);
+        $extensions = array_keys($this->filterKeysContain('.'));
 
         if (empty($extensions) || empty($unsyncedParams))
+
             return;
 
         $unsyncedParams[] = str_replace(
@@ -103,20 +97,9 @@ abstract class AbstractAccept extends AbstractRoutine implements ProxyableBy, Pr
     {
         if (!isset($this->negotiated[$request])
             || false === $this->negotiated[$request])
-            return;
+
+                return;
 
         return $this->negotiated[$request];
     }
-
-    public function when(Request $request, $params)
-    {
-        return false !== $this->negotiate($request);
-    }
-
-    /** Compares two given content-negotiation elements */
-    protected function compareItems($requested, $provided)
-    {
-        return $requested == $provided;
-    }
-
 }

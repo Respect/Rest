@@ -8,7 +8,7 @@ use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Unique;
-use Respect\Rest\Exception\MethodNotAllowed;
+use Respect\Rest\Routines\RouteInspector;
 
 /**
  * Base class for all Routes
@@ -90,6 +90,7 @@ abstract class AbstractRoute
     {
         $params = func_get_args();
         array_unshift($params, $this->regexForReplace);
+
         return call_user_func_array(
                 'sprintf', $params
         );
@@ -97,12 +98,18 @@ abstract class AbstractRoute
 
     public function matchRoutines(Request $request, $params=array())
     {
-        foreach ($this->routines as $routine)
+        $return = true;
+
+        foreach ($this->routines as $routine) {
             if ($routine instanceof ProxyableWhen
                 && !$request->routineCall('when', $request->method, $routine, $params))
-                return false;
 
-        return true;
+                return false;
+            if ($routine instanceof RouteInspector)
+                $return = $routine;
+        }
+
+        return $return;
     }
 
     /** Checks if this route matches a request */
@@ -116,15 +123,15 @@ abstract class AbstractRoute
                 $matchUri = preg_replace('#(\.\w+)*$#', '', $request->uri);
 
         if (!preg_match($this->regexForMatch, $matchUri, $params))
+
             return false;
 
         array_shift($params);
-        
+
         if (false !== stripos($this->pattern, '/**') && false !== stripos(end($params), '/')) {
             $lastParam = array_pop($params);
             $params[] = explode('/', ltrim($lastParam, '/'));
-        }
-        elseif (false !== stripos($this->pattern, '/**') && !isset($params[0]))
+        } elseif (false !== stripos($this->pattern, '/**') && !isset($params[0]))
                 $params[] = array(); // callback expects a parameter give it
 
         return true;
@@ -141,6 +148,7 @@ abstract class AbstractRoute
         $replacePattern = str_replace(static::PARAM_IDENTIFIER, '/%s', $pattern);
         $matchPattern = $this->fixOptionalParams($matchPattern);
         $matchRegex = "#^{$matchPattern}{$extra}$#";
+
         return array($matchRegex, $replacePattern);
     }
 
@@ -158,6 +166,7 @@ abstract class AbstractRoute
         $pattern = str_replace(
             static::CATCHALL_IDENTIFIER, static::PARAM_IDENTIFIER, $pattern
         );
+
         return $extra;
     }
 

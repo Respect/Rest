@@ -11,6 +11,7 @@ namespace Respect\Rest {
             $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
             $_SERVER['REQUEST_URI'] = '/';
             $_SERVER['REQUEST_METHOD'] = 'GET';
+            $_SERVER['CONTENT_TYPE'] = 'text/html';
             $_REQUEST['_method'] = '';
             $this->router = new Router;
             $this->router->isAutoDispatched = false;
@@ -189,6 +190,7 @@ namespace Respect\Rest {
             $expectedHeader = 'X-Burger: With Cheese!';
             $this->router->get('/', function() use ($expectedHeader) {
                 header($expectedHeader);
+
                 return 'ok';
             });
             $headResponse = $this->router->dispatch('HEAD', '/');
@@ -207,6 +209,19 @@ namespace Respect\Rest {
             $this->assertEquals('ok', $getResponse->response());
             $this->assertContains($expectedHeader, $header);
         }
+        function test_user_agent_class()
+        {
+            $u = new KnowsUserAgent(array('*' => function () {
+        //        print_r(\func_get_args());
+            }));
+
+            $this->assertFalse($u->knowsCompareItems('a','b'));
+            $this->assertFalse($u->knowsCompareItems('c','b'));
+            $this->assertTrue($u->knowsCompareItems(1,'1'));
+            $this->assertTrue($u->knowsCompareItems('0',''));
+            $this->assertTrue($u->knowsCompareItems('a','*'));
+        }
+
         function test_user_agent_content_negotiation()
         {
             $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
@@ -242,13 +257,14 @@ namespace Respect\Rest {
                                 $done = true;
                                 $self->assertTrue(is_resource($stream));
                                 stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
+
                                 return $stream; //now deflated on demand
                             }
                          ));
 
             $response = $this->router->run($request);
             $this->assertTrue($done);
-            //var_dump((string)$response);
+            //var_dump((string) $response);
             $this->assertEmpty((string) $response);
         }
 
@@ -270,7 +286,7 @@ namespace Respect\Rest {
             global $header;
 
             $login = $this->router->get('/login', 'Login');
-            $auth = function($username, $password) use($login) {
+            $auth = function($username, $password) use ($login) {
                         return $login;
                 };
             $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
@@ -290,8 +306,10 @@ namespace Respect\Rest {
             $this->router->get('/', 'ok')->authBasic("Test Realm", function($username, $password) use (&$checkpoint, $user, $pass) {
                             if (($username == $user) && ($password == $pass)) {
                                 $checkpoint = true;
+
                                 return true;
                             }
+
                             return false;
                          });
             (string) $this->router->dispatch('GET', '/')->response();
@@ -312,8 +330,10 @@ namespace Respect\Rest {
             $this->router->get('/', 'ok')->authBasic("Test Realm", function($username, $password) use (&$checkpoint, $user, $pass) {
                             if (($username == $user) && ($password == $pass)) {
                                 $checkpoint = true;
+
                                 return true;
                             }
+
                             return false;
                          });
             (string) $this->router->dispatch('GET', '/')->response();
@@ -333,15 +353,16 @@ namespace Respect\Rest {
             $checkpoint = false;
             $_SERVER['PHP_AUTH_USER'] = $user;
             $_SERVER['PHP_AUTH_PW'] = $pass;
-            $this->router->get('/*/*', 'ok')->authBasic("Test Realm", function($username, $password, $p1, $p2) use (&$checkpoint, $user, $pass, $param1, $param2)
-            {
+            $this->router->get('/*/*', 'ok')->authBasic("Test Realm", function($username, $password, $p1, $p2) use (&$checkpoint, $user, $pass, $param1, $param2) {
                 if (($p1 === $param1) && $p2 === $param2) {
                     $checkpoint = true;
+
                     return true;
                 }
+
                 return false;
             });
-            (string)$this->router->dispatch('GET', "/$param1/$param2")->response();
+            (string) $this->router->dispatch('GET', "/$param1/$param2")->response();
             $this->assertTrue($checkpoint, 'Parameters passed incorrectly');
             unset($_SERVER['PHP_AUTH_PW'], $_SERVER['PHP_AUTH_USER']);
         }
@@ -369,14 +390,16 @@ namespace Respect\Rest {
          * @group issues
          * @ticket 37
         **/
-        function test_optional_parameter_in_class_routes(){
+        function test_optional_parameter_in_class_routes()
+        {
             $r = new Router();
             $r->any('/optional/*', __NAMESPACE__.'\\MyOptionalParamRoute');
             $response = $r->dispatch('get', '/optional')->response();
             $this->assertEquals('John Doe', (string) $response);
         }
 
-        function test_optional_parameter_in_function_routes(){
+        function test_optional_parameter_in_function_routes()
+        {
             $r = new Router();
             $r->any('/optional/*', function($user=null){
                 return $user ?: 'John Doe';
@@ -385,7 +408,8 @@ namespace Respect\Rest {
             $this->assertEquals('John Doe', (string) $response);
         }
 
-        function test_optional_parameter_in_function_routes_multiple(){
+        function test_optional_parameter_in_function_routes_multiple()
+        {
             $r = new Router();
             $r->any('/optional', function(){
                 return 'No User';
@@ -396,7 +420,8 @@ namespace Respect\Rest {
             $response = $r->dispatch('get', '/optional')->response();
             $this->assertEquals('No User', (string) $response);
         }
-        function test_two_optional_parameters_in_function_routes(){
+        function test_two_optional_parameters_in_function_routes()
+        {
             $r = new Router();
             $r->any('/optional/*/*', function($user=null, $list=null){
                 return $user . $list;
@@ -404,7 +429,8 @@ namespace Respect\Rest {
             $response = $r->dispatch('get', '/optional/Foo/Bar')->response();
             $this->assertEquals('FooBar', (string) $response);
         }
-        function test_two_optional_parameters_one_passed_in_function_routes(){
+        function test_two_optional_parameters_one_passed_in_function_routes()
+        {
             $r = new Router();
             $r->any('/optional/*/*', function($user=null, $list=null){
                 return $user . $list;
@@ -484,7 +510,6 @@ namespace Respect\Rest {
             $r = new Router();
             $r->get('/auto', '')->accept(array($ctype=>'json_encode'));
 
-
             $r = $r->dispatch('get', '/auto')->response();
             $this->assertContains('Content-Type: '.$ctype, $header);
         }
@@ -498,7 +523,6 @@ namespace Respect\Rest {
             $_SERVER['HTTP_ACCEPT'] = '*/*';
             $r = new Router();
             $r->get('/auto', '')->accept(array($ctype=>'json_encode'));
-
 
             $r = $r->dispatch('get', '/auto')->response();
             $this->assertContains('Content-Type: '.$ctype, $header);
@@ -560,7 +584,6 @@ namespace Respect\Rest {
             $r = new Router();
             $r->get('/auto', '')->accept(array($ext=>'json_encode'));
 
-
             $r = $r->dispatch('get', '/auto'.$ext)->response();
             $this->assertEmpty($header);
         }
@@ -589,8 +612,9 @@ namespace Respect\Rest {
 
             $r->get('/users/*',function($userId){
                 return 'user-'.$userId;
-            })->when(function($userId) use (&$when){
+            })->when(function($userId) use (&$when) {
                 $when = true;
+
                 return is_numeric($userId) && $userId > 0;
             });
 
@@ -618,14 +642,172 @@ namespace Respect\Rest {
             $this->assertEquals('"ok: blub"', $out);
 
         }
-    }
 
-    class RouteKnowsGet implements \Respect\Rest\Routable {
-        public function get($param) {
+        function test_route_inspector()
+        {
+            $inspector = new RouteInspectorGuy();
+            $when = false;
+            $r = new Router();
+
+            $r->get('/','HOME');
+            $r->any('/about','About');
+            $r->get('/blogs',function(){return 'blogs';});
+            $r->get('/blogs/*',function($blogId){return 'blog';});
+            $r->get('/users',function(){return 'users';});
+            $r->get('/users/*',function($userId){return 'user';});
+
+            $r->get('/users/*/*', function($userId,$blogId){
+                return 'user-'.$userId.'-'.$blogId;
+            })->appendRoutine($inspector);
+
+            $r->post('/users/*/*',function($userId,$blogId){return 'post';});
+            $r->put('/users/*/*',function($userId,$blogId){return 'put';});
+            $r->delete('/users/*/*',function($userId,$blogId){return 'delete';});
+            $r->wicked('/users/*/*',function($userId,$blogId){return 'wicked';});
+            $r->get('/docs', function() {return 'DOCS!';});
+            $response = $r->dispatch('get', '/users/532/3223535')->response();
+            $this->assertEquals('user-532-3223535', $response);
+            $this->assertEquals('/users/532/3223535', $inspector->uri);
+            $this->assertEquals('/users/*/*', $inspector->uriPattern);
+            $this->assertContains('GET', $inspector->method);
+            $this->assertContains('GET', $inspector->allowedMethods);
+            $this->assertContains('POST', $inspector->allowedMethods);
+            $this->assertContains('PUT', $inspector->allowedMethods);
+            $this->assertContains('DELETE', $inspector->allowedMethods);
+            $this->assertContains('PUT', $inspector->allowedMethods);
+            $this->assertContains('/', $inspector->routePatterns);
+            $this->assertContains('/about', $inspector->routePatterns);
+            $this->assertContains('/blogs', $inspector->routePatterns);
+            $this->assertContains('/blogs/*', $inspector->routePatterns);
+            $this->assertContains('/users', $inspector->routePatterns);
+            $this->assertContains('/users/*', $inspector->routePatterns);
+            $this->assertContains('/users/*/*', $inspector->routePatterns);
+            $this->assertContains('/docs', $inspector->routePatterns);
+        }
+        function test_abstract_route_inspector()
+        {
+            $_SERVER['HTTP_ACCEPT_CHARSET'] = 'utf-8';
+            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = 'af';
+
+            $inspector = new AwesomeRouteInspectorGuy();
+
+            $when = false;
+            $r = new Router();
+
+            $r->get('/'       ,function(){return 'home';});
+            $r->get('/blogs'  ,function(){return 'blogs';});
+            $r->get('/blogs/*',function($blogId){return 'blog';});
+            $r->get('/users'  ,function(){return 'users';});
+            $r->get('/users/*',function($userId){return 'user';});
+
+            $r->any('/about'  ,function(){return 'about';})
+            ->appendRoutine($inspector);
+
+            $login = $this->router->get('/login', 'Login');
+
+            $r->get('/users/*/*', function($userId, $blogId){
+                return 'user-'.$userId.'-'.$blogId;
+            })
+            ->authBasic("T-Realm",
+                function($user,$pass) use ($login) {return true;}//$login;}
+            )
+            ->lastModified(
+                function() {return new \DateTime('2011-11-11 11:11:12');}
+            )
+            ->contentType(array(
+                'application/json'    => function($i_dat=null){return 'application/json';},
+                'text/html'           => function($i_dat=null){return 'text/html';},
+                'multipart/form-data' => function($i_dat=null){return 'multipart/form-data';},
+            ))
+            ->accept(array(
+                'text/html'           => function($data){return 'text/html';},
+                'application/json'    => function($data){return 'application/json';},
+            ))
+            ->acceptCharset(array(
+                'utf-8'   => function($userId){return 'utf-8';},
+                'utf-16'  => function($userId){return 'utf-16';},
+            ))
+            ->acceptEncoding(array(
+                'deflate' => function($stream){return 'deflate';},
+            ))
+            ->acceptLanguage(array(
+                'en'      => function($data)  {return 'en';},
+                'pt'      => function($data)  {return 'pt';},
+                'af'      => function($data)  {return 'af';},
+            ))
+            ->userAgent(array(
+                'FIREFOX' => function()       {return 'FIREFOX';},
+                'CHROME'  => function()       {return 'CHROME';},
+                'ANDROID' => function()       {return 'ANDROID';},
+                '*'       => function()       {return '*';},
+            ))
+            ->appendRoutine($inspector);
+
+            $r->post(  '/users/*/*',function($userId,$blogId){return 'post';});
+            $r->put(   '/users/*/*',function($userId,$blogId){return 'put';});
+            $r->delete('/users/*/*',function($userId,$blogId){return 'delete';});
+            $r->wicked('/users/*/*',function($userId,$blogId){return 'wicked';});
+            $r->get(   '/docs'     ,function() {return 'DOCS!';});
+            $response = $r->dispatch('get', '/users/532/3223535')->response();
+//echo "\n======== response out ============\n$response\n";
+//            $this->assertEquals('user-532-3223535', $response);
+//            $this->assertEquals('/users/532/3223535', $inspector->uri);
+//            $this->assertEquals('/users/*/*', $inspector->uriPattern);
+//            $this->assertContains('GET', $inspector->method);
+//            $this->assertContains('GET', $inspector->allowedMethods);
+//            $this->assertContains('POST', $inspector->allowedMethods);
+//            $this->assertContains('PUT', $inspector->allowedMethods);
+//            $this->assertContains('DELETE', $inspector->allowedMethods);
+//            $this->assertContains('PUT', $inspector->allowedMethods);
+//            $this->assertContains('/', $inspector->routePatterns);
+//            $this->assertContains('/about', $inspector->routePatterns);
+//            $this->assertContains('/blogs', $inspector->routePatterns);
+//            $this->assertContains('/blogs/*', $inspector->routePatterns);
+//            $this->assertContains('/users', $inspector->routePatterns);
+//            $this->assertContains('/users/*', $inspector->routePatterns);
+//            $this->assertContains('/users/*/*', $inspector->routePatterns);
+//            $this->assertContains('/docs', $inspector->routePatterns);
+        }
+    }
+    class RouteInspectorGuy implements Routines\RouteInspector, Routines\Routinable
+    {
+        public $uri,$method,$allowedMethods,$uriPattern,$routePatterns=array();
+        public function inspect(array $routes,Routes\AbstractRoute $active,
+                                            $allowedMethods, $method, $uri) {
+            $this->uri = $uri;
+            $this->allowedMethods = $allowedMethods;
+            $this->method = $method;
+            $this->uriPattern = $active->pattern;
+            foreach ($routes as $route)
+                $this->routePatterns[] = $route->pattern;
+        }
+    }
+    class AwesomeRouteInspectorGuy extends Routines\AbstractRouteInspector
+    {
+            function routeInfoResponse($data,
+                                Routines\AbstractRouteInspector $routeInfo,
+                                Request $request, $params) {
+                return print_r($routeInfo->getActiveRoute(), TRUE);
+            }
+
+    }
+    class RouteKnowsGet implements \Respect\Rest\Routable
+    {
+        public function get($param)
+        {
             return "ok: $param";
         }
     }
-    class RouteKnowsNothing implements \Respect\Rest\Routable {
+    class RouteKnowsNothing implements \Respect\Rest\Routable
+    {
+    }
+
+    class KnowsUserAgent extends Routines\UserAgent
+    {
+        public function knowsCompareItems($requested, $provided)
+        {
+            return $this->authorize($requested, $provided);
+        }
     }
 
     if (!class_exists(__NAMESPACE__.'\\MyOptionalParamRoute')) {
@@ -659,17 +841,18 @@ namespace Respect\Rest {
             public function get()
             {
                 header($this->expectedHeader);
+
                 return 'ok';
             }
         }
     }
-
 
     if (!function_exists(__NAMESPACE__.'\\header')) {
         function header($string, $replace=true, $http_response_code=200)
         {
             global $header;
             if (!$replace && isset($header))
+
                 return;
 
             $header[$string] = $string;
@@ -683,6 +866,7 @@ namespace Respect\Rest\Routines {
         {
             global $header;
             if (!$replace && isset($header))
+
                 return;
 
             $header[$string] = $string;
