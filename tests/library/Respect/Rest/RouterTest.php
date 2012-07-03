@@ -197,6 +197,7 @@ namespace Respect\Rest {
         }
         /**
          * @covers Respect\Rest\Routes\AbstractRoute::__call
+         * @covers Respect\Rest\Router::__call
          */
         function test_callback_gets_param_array()
         {
