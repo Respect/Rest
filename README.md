@@ -57,7 +57,7 @@ The Router is auto-dispatched, which means that you don't have to call anything 
 declaring routes to run it. If you want to omit this behavior, you can set:
 ```php
 <?php
-    $r3->autoDispatched = false;
+    $r3->isAutoDispatched = false;
 ```
 
 You can then dispatch it yourself at the end of the proccess:
