@@ -185,6 +185,17 @@ namespace Respect\Rest {
         }
 
         /**
+         * @covers \Respect\Rest\Routes\AbstractRoute::appendRoutine
+         */
+        function test_append_routine_honours_routine_chaining()
+        {
+            $this->router->get('/one-time', function() { return "one-time"; })
+                ->appendRoutine(new Routines\Through(function ($data) {return function ($data) { return "$data-through1";};}))
+                ->through(function ($data) {return function ($data) {return "$data-through2";};});
+            $response = $this->router->dispatch('GET', '/one-time');
+            $this->assertEquals('one-time-through1-through2', $response);
+        }
+        /**
          * @covers Respect\Rest\Routes\AbstractRoute::__call
          */
         function test_callback_gets_param_array()

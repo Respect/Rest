@@ -73,9 +73,7 @@ abstract class AbstractRoute
                 'Respect\\Rest\\Routines\\' . ucfirst($method)
         );
 
-        $this->appendRoutine($routineReflection->newInstanceArgs($arguments));
-
-        return $this;
+        return $this->appendRoutine($routineReflection->newInstanceArgs($arguments));;
     }
 
     /** Appends a pre-built routine to this route */
@@ -83,6 +81,7 @@ abstract class AbstractRoute
     {
         $key = $routine instanceof Unique ? get_class($routine) : spl_object_hash($routine);
         $this->routines[$key] = $routine;
+        return $this;
     }
 
     /** Creates an URI for this route with the passed parameters */
