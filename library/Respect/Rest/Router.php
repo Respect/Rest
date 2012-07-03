@@ -79,7 +79,7 @@ class Router
 
         echo $this;
     }
-    
+
     public function __toString()
     {
         return $this->run();
@@ -144,7 +144,7 @@ class Router
         if ($request->method === 'OPTIONS' && $request->uri === '*') {
             $allowedMethods = array();
 
-            foreach ($this->routes as $route) 
+            foreach ($this->routes as $route)
                 $allowedMethods[] = $route->method;
 
             if ($allowedMethods)
@@ -177,11 +177,11 @@ class Router
         $allowedMethods = array();
         $paramsByPath = new \SplObjectStorage;
 
-        foreach ($this->routes as $route) 
+        foreach ($this->routes as $route)
             if ($this->matchRoute($request, $route, $params)) {
-                
+
                 $paramsByPath[$route] = $params;
-                
+
                 $matchedByPath[] = $route;
                 $allowedMethods[] = $route->method;
             }
@@ -194,10 +194,10 @@ class Router
         if (!$matchedByPath)
             header('HTTP/1.1 404');
 
-        foreach ($matchedByPath as $route) 
+        foreach ($matchedByPath as $route)
             if (0 !== stripos($request->method, '__')
-                && ($route->method === $request->method 
-                    || $route->method === 'ANY' 
+                && ($route->method === $request->method
+                    || $route->method === 'ANY'
                     || ($route->method === 'GET' && $request->method === 'HEAD')))
                 if ($route->matchRoutines($request, $tempParams = $paramsByPath[$route]))
                     return $this->configureRequest($request, $route, static::cleanUpParams($tempParams));
@@ -245,7 +245,7 @@ class Router
         $this->appendRoute($route);
         return $route;
     }
-    
+
     /** Creates and returns a static route */
     public function staticRoute($method, $path, $instance)
     {
