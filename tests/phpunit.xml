@@ -1,5 +1,5 @@
 <phpunit backupGlobals="false"
-         backupStaticAttributes="false" 
+         backupStaticAttributes="false"
          bootstrap="bootstrap.php"
          cacheTokens="true"
          colors="true"
@@ -22,4 +22,3 @@
         <log type="coverage-text" target="php://stdout" showUncoveredFiles="false"/>
     </logging>
 </phpunit>
-

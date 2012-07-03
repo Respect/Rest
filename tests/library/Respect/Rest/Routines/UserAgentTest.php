@@ -41,7 +41,6 @@ class UserAgentTest extends \PHPUnit_Framework_TestCase
         unset($this->object);
     }
 
-
     /**
      * @covers Respect\Rest\Routines\UserAgent::through
      */

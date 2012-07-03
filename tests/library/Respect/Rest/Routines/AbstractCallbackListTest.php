@@ -1,11 +1,14 @@
 <?php
 namespace Respect\Rest\Routines;
 
-class FunkyAbstractCallbackList extends AbstractCallbackList{
-    public function funkyExecuteCallback($key, $params) {
+class FunkyAbstractCallbackList extends AbstractCallbackList
+{
+    public function funkyExecuteCallback($key, $params)
+    {
         return $this->executeCallback($key, $params);
     }
-    public function funkyGetCallback($key) {
+    public function funkyGetCallback($key)
+    {
         return $this->getCallback($key);
     }
 }
@@ -118,8 +121,5 @@ class AbstractCallbackListTest extends \PHPUnit_Framework_TestCase
         $this->assertNotContains('d', $a);
         $this->assertContains('e', $a);
     }
-
-
-
 
 }

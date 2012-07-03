@@ -3,7 +3,6 @@
 namespace Respect\Rest\Routines;
 
 use SplObjectStorage;
-use UnexpectedValueException;
 use Respect\Rest\Request;
 
 /** Handles content type content negotiation */
@@ -18,7 +17,7 @@ class ContentType extends AbstractCallbackMediator implements ProxyableBy, Uniqu
         return isset($_SERVER['CONTENT_TYPE'])? array($_SERVER['CONTENT_TYPE']) : array();
     }
     protected function considerProvisions($requested)
-    {   
+    {
         return $this->getKeys();
     }
     protected function notifyApproved($requested, $provided, Request $request, $params)
@@ -38,6 +37,7 @@ class ContentType extends AbstractCallbackMediator implements ProxyableBy, Uniqu
     {
         if (!isset($this->negotiated[$request])
             || false === $this->negotiated[$request])
+
             return;
 
         return call_user_func($this->negotiated[$request]);

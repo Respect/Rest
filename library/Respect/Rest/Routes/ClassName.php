@@ -4,7 +4,6 @@ namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionMethod;
 use Respect\Rest\Routable;
 
@@ -28,13 +27,15 @@ class ClassName extends AbstractRoute
 
         $reflection = new ReflectionClass($className);
         if (!$reflection->implementsInterface('Respect\\Rest\\Routable'))
-            throw new InvalidArgumentException('Routed classes must implement the Respect\\Rest\\Routable interface'); 
+            throw new InvalidArgumentException('Routed classes must implement the Respect\\Rest\\Routable interface');
 
             if (empty($this->constructorParams) || !method_exists($this->class,
                 '__construct'))
+
             return new $className;
 
         $reflection = new ReflectionClass($this->class);
+
         return $reflection->newInstanceArgs($this->constructorParams);
     }
 
@@ -42,6 +43,7 @@ class ClassName extends AbstractRoute
     {
         $mirror = new ReflectionClass($this->class);
         if ($mirror->hasMethod($method))
+
             return new ReflectionMethod($this->class, $method);
     }
 

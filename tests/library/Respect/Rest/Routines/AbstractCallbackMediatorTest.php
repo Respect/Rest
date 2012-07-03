@@ -4,9 +4,8 @@ namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
 
-
-
-class Negotiator extends AbstractCallbackMediator {
+class Negotiator extends AbstractCallbackMediator
+{
     public $decisionmap = array(),
            $outcome = array();
 
@@ -14,7 +13,6 @@ class Negotiator extends AbstractCallbackMediator {
     {
         parent::__construct(array('a' => 'is_numeric'));
     }
-
 
     protected function identifyRequested(Request $request, $params)
     {
@@ -70,6 +68,7 @@ class Negotiator extends AbstractCallbackMediator {
     {
         $this->decisionmap = $decisionmap;
         $this->outcome = array();
+
        return $this->when(new Request('GET', '/'), array());
     }
 }

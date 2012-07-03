@@ -3,13 +3,11 @@
 namespace Respect\Rest\Routines;
 
 use SplObjectStorage;
-use UnexpectedValueException;
 use Respect\Rest\Request;
 
 /** Base class for content-negotiation */
 abstract class AbstractAccept extends AbstractCallbackMediator implements ProxyableBy, ProxyableThrough, Unique , IgnorableFileExtension
 {
-
 
     protected $negotiated = null;
     protected $request_uri;
@@ -19,6 +17,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements Proxya
         $this->request_uri = $request->uri;
 
         if (!isset($_SERVER[static::ACCEPT_HEADER]))
+
                     return array();
         $acceptHeader = $_SERVER[static::ACCEPT_HEADER];
         $acceptParts = explode(',', $acceptHeader);
@@ -72,13 +71,12 @@ if (false === strpos($provided, '.')) {
         // negotiate on file extension
         if (false !== strpos($provided, '.'))
               if (false !== stripos($this->request_uri, $provided))
+
                       return true;
 
         // normal matching requirements
         return $requested == $provided;
     }
-
-
 
     public function by(Request $request, $params)
     {
@@ -86,6 +84,7 @@ if (false === strpos($provided, '.')) {
         $extensions = array_keys($this->filterKeysContain('.'));
 
         if (empty($extensions) || empty($unsyncedParams))
+
             return;
 
         $unsyncedParams[] = str_replace(
@@ -98,6 +97,7 @@ if (false === strpos($provided, '.')) {
     {
         if (!isset($this->negotiated[$request])
             || false === $this->negotiated[$request])
+
                 return;
 
         return $this->negotiated[$request];

@@ -8,7 +8,6 @@ use \UnexpectedValueException;
 use \Closure;
 use \Countable;
 use \Iterator;
-use \Traversable;
 use \Serializable;
 use \ArrayAccess;
 
@@ -30,7 +29,7 @@ abstract class AbstractRouteInspector implements ProxyableThrough,
         $route_keys = array();
         foreach ($routes as $route) {
             if (!isset($route_keys[$route->pattern])) {
-                $route_keys[$route->pattern] = (object)$route->pattern;
+                $route_keys[$route->pattern] = (object) $route->pattern;
                 $this[$route_keys[$route->pattern]] = (object) array(
                   'active'          => false,
                   'uriTemplate'    => $this->createUriTemplate($route),
@@ -56,10 +55,12 @@ abstract class AbstractRouteInspector implements ProxyableThrough,
             $route = $this[$this->current()];
 
             if ($route->active)
+
                 return $route;
 
             $this->next();
         }
+
         return false;
     }
 
@@ -80,6 +81,7 @@ abstract class AbstractRouteInspector implements ProxyableThrough,
                                                 var_export($value, true))),
                 );
         }
+
         return $data;
     }
 
@@ -106,6 +108,7 @@ abstract class AbstractRouteInspector implements ProxyableThrough,
                     $return[
                         preg_replace('/}|{/', '', $self->parameters[$i])
                     ] = $matches[$i + 1];
+
             return $return;
         };
 
@@ -115,19 +118,17 @@ abstract class AbstractRouteInspector implements ProxyableThrough,
     public function through(Request $request, $params)
     {
         return call_user_func_array(
-            function ($routeInfo, $request, $params)
-            {
-                return function($data) use($routeInfo, $request, $params)
-                {
+            function ($routeInfo, $request, $params) {
+                return function($data) use ($routeInfo, $request, $params) {
                     return call_user_func_array(
                         array(
-                            $routeInfo, 
+                            $routeInfo,
                             'routeInfoResponse'
                         ),
                         array(
-                            $data, 
-                            $routeInfo, 
-                            $request, 
+                            $data,
+                            $routeInfo,
+                            $request,
                             $params
                         )
                     );
@@ -185,7 +186,8 @@ abstract class AbstractRouteInspector implements ProxyableThrough,
  * dynamically created url objects. It is the hope that eventually
  * PHP will evolve to make this work around redundant.
  */
-class DynamicClass {
+class AbstractRouteInspector
+{
     private $members;
     public function __construct(array $members)
     {   $this->members = $members;
@@ -196,6 +198,7 @@ class DynamicClass {
     private function invokeClosureAsMethod(Closure $closure, $args)
     {
         $method = new \ReflectionFunction($closure);
+
         return $method->invokeArgs ($args);
     }
     public function __get($key)

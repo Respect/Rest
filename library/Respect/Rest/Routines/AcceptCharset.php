@@ -2,8 +2,6 @@
 
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
-
 /** Handles charset content negotiation*/
 class AcceptCharset extends AbstractAccept
 {

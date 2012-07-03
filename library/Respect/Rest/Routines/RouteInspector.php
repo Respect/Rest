@@ -8,4 +8,3 @@ interface RouteInspector
 {
     public function inspect(array $routes, AbstractRoute $active, $allowedMethods, $method, $uri);
 }
-

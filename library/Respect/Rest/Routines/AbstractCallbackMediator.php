@@ -27,6 +27,7 @@ abstract class AbstractCallbackMediator extends AbstractCallbackList implements 
                 $this->notifyApproved($requested, $provided, $request, $params);
         else
                 $this->notifyDeclined($requested, $provided, $request, $params);
+
         return $decision;
     }
 
@@ -44,13 +45,13 @@ abstract class AbstractCallbackMediator extends AbstractCallbackList implements 
                 if (is_array($provisions = $this->considerProvisions($requested)))
                     foreach ($provisions as $provided) {
                         if ($this->authorize($requested, $provided, $request))
+
                                 return true;
-                        }
-                else
+                        } else
                     throw new UnexpectedValueException('Provisions must be an array of 0 to many.');
-            }
-        else
+            } else
             throw new UnexpectedValueException('Requests must be an array of 0 to many.');
+
         return false;
     }
 
@@ -61,4 +62,3 @@ abstract class AbstractCallbackMediator extends AbstractCallbackList implements 
     }
 
 }
-

@@ -2,8 +2,8 @@
 
 namespace Respect\Rest\Routines;
 
-class AuthBasicTest extends \PHPUnit_Framework_TestCase {
-
+class AuthBasicTest extends \PHPUnit_Framework_TestCase
+{
     private static $wantedParams;
 
     public function shunt_wantedParams()
@@ -26,7 +26,6 @@ class AuthBasicTest extends \PHPUnit_Framework_TestCase {
         $param1 = 'abc';
         $param2 = 'def';
         self::$wantedParams = array($user, $pass, $param1, $param2);
-
 
         $_SERVER['PHP_AUTH_USER'] = $user;
         $_SERVER['PHP_AUTH_PW'] = $pass;

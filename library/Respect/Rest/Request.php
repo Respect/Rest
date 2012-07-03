@@ -2,15 +2,12 @@
 
 namespace Respect\Rest;
 
-use ArrayAccess;
 use ReflectionFunctionAbstract;
 use ReflectionParameter;
-use RuntimeException;
 use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\ProxyableBy;
 use Respect\Rest\Routines\ProxyableThrough;
-use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\ParamSynced;
 
 /** A routed HTTP Request */
@@ -39,19 +36,23 @@ class Request
     public function response()
     {
         if (!$this->route)
+
             return null;
 
         foreach ($this->route->routines as $routine)
             if (!$routine instanceof ProxyableBy)
                 continue;
             elseif (false === $result = $this->routineCall('by', $this->method, $routine, $this->params))
+
                     return false;
             elseif ($result instanceof AbstractRoute)
+
                     return $this->forward($result);
 
         $response = $this->route->runTarget($this->method, $this->params);
 
         if ($response instanceof AbstractRoute)
+
             return $this->forward($response);
 
         $proxyResults = array();
@@ -92,9 +93,11 @@ class Request
         foreach ($callback->getParameters() as $callbackParamReflection)
             if ($callbackParamReflection->getName() === $routeParam->getName()
                 && isset($routeParamsValues[$callbackParamReflection->getPosition()]))
+
                 return $routeParamsValues[$callbackParamReflection->getPosition()];
 
         if ($routeParam->isDefaultValueAvailable())
+
             return $routeParam->getDefaultValue();
 
         return null;
@@ -103,6 +106,7 @@ class Request
     protected function forward(AbstractRoute $route)
     {
         $this->route = $route;
+
         return $this->response();
     }
 

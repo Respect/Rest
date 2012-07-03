@@ -1,12 +1,11 @@
 <?php
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
 use \UnexpectedValueException;
 use \ArrayAccess;
 
- class AbstractCallbackList implements ArrayAccess, Routinable {
-
+ class AbstractCallbackList implements ArrayAccess, Routinable
+ {
     /** hide the collection completely use accessor methods */
     private $callbackList = array();
 
@@ -97,6 +96,5 @@ use \ArrayAccess;
     public function __unset($key)
     {   unset($this->callbackList[$key]);
     }
-
 
 }

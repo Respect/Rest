@@ -32,6 +32,7 @@ class UserAgent extends AbstractCallbackMediator implements ProxyableThrough, Un
     protected function authorize($requested, $provided)
     {
         if ($provided === '*' || preg_match("#$provided#", $requested))
+
             return true;
 
         return false;
@@ -40,6 +41,7 @@ class UserAgent extends AbstractCallbackMediator implements ProxyableThrough, Un
     public function through(Request $request, $params)
     {
         if (false !== $this->negotiated[$request])
+
                 return $this->negotiated[$request];
     }
 

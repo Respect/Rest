@@ -23,8 +23,10 @@ class Callback extends AbstractRoute
     public function getCallbackReflection()
     {
         if (is_array($this->callback))
+
             return new ReflectionMethod($this->callback[0], $this->callback[1]);
         else
+
             return new ReflectionFunction($this->callback);
     }
 
