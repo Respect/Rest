@@ -2,6 +2,9 @@
 
 namespace Respect\Rest\Routines;
 
+/**
+ * @covers Respect\Rest\Routines\AuthBasic
+ */
 class AuthBasicTest extends \PHPUnit_Framework_TestCase {
 
     private static $wantedParams;
@@ -18,6 +21,9 @@ class AuthBasicTest extends \PHPUnit_Framework_TestCase {
         unset($_SERVER['HTTP_AUTHORIZATION']);
     }
 
+    /**
+     * @covers Respect\Rest\Routes\AbstractRoute::__call
+     */
     public function test_pass_all_params_to_callback()
     {
 

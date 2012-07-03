@@ -2,6 +2,9 @@
 
 namespace Respect\Rest;
 
+/**
+ * @covers \Respect\Rest\Request
+ */
 class RequestTest extends \PHPUnit_Framework_TestCase
 {
     function setUp() 
@@ -10,6 +13,9 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         $_SERVER['REQUEST_URI'] = '/';
         $_SERVER['REQUEST_METHOD'] = 'GET';
     }
+    /**
+     * @covers \Respect\Rest\Request::response
+     */
     function test_casting_to_string_returns_response()
     {
         $request = new Request;
@@ -18,7 +24,10 @@ class RequestTest extends \PHPUnit_Framework_TestCase
         });
         $this->assertEquals('ok', (string) $request);
     }
-    
+
+    /**
+     * @covers \Respect\Rest\Routes\AbstractRoute::appendRoutine
+     */
     function test_unsynced_param_comes_as_null()
     {
         $request = new Request;
