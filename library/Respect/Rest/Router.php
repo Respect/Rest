@@ -48,7 +48,10 @@ class Router
         list ($path, $routeTarget) = $args;
 
         if (is_callable($routeTarget)) //closures, func names, callbacks
-            return $this->callbackRoute($method, $path, $routeTarget);
+            if (!isset($args[2])) //raw callback
+                return $this->callbackRoute($method, $path, $routeTarget);
+            else
+                return $this->callbackRoute($method, $path, $routeTarget, $args[2]);
         elseif ($routeTarget instanceof Routable) //direct instances
             return $this->instanceRoute($method, $path, $routeTarget);
         elseif (!is_string($routeTarget)) //static returns the argument itself
@@ -105,9 +108,9 @@ class Router
     }
 
     /** Creates and returns a callback-based route */
-    public function callbackRoute($method, $path, $callback)
+    public function callbackRoute($method, $path, $callback, array $arguments = array())
     {
-        $route = new Routes\Callback($method, $path, $callback);
+        $route = new Routes\Callback($method, $path, $callback, $arguments);
         $this->appendRoute($route);
         return $route;
     }
