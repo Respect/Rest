@@ -55,16 +55,15 @@ class Router
         elseif (is_string($routeTarget) && !class_exists($routeTarget))
 
             return $this->staticRoute($method, $path, $routeTarget);
-        else
-            if (!isset($args[2])) //raw classnames
+        elseif (!isset($args[2])) //raw classnames
 
-                return $this->classRoute($method, $path, $routeTarget);
-            elseif (is_callable($args[2])) //classnames as factories
+            return $this->classRoute($method, $path, $routeTarget);
+        elseif (is_callable($args[2])) //classnames as factories
 
-                return $this->factoryRoute($method, $path, $routeTarget, $args[2]);
-            else //classnames with constructor arguments
+            return $this->factoryRoute($method, $path, $routeTarget, $args[2]);
+        else //classnames with constructor arguments
 
-                return $this->classRoute($method, $path, $routeTarget, $args[2]);
+            return $this->classRoute($method, $path, $routeTarget, $args[2]);
     }
 
     public function __construct($virtualHost=null)
