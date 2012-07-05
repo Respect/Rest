@@ -184,6 +184,30 @@ namespace Respect\Rest {
             $this->assertContains('HTTP/1.1 406', $header);
             $this->assertContains('Allow: GET', $header);
         }
+
+        /**
+         * @covers \Respect\Rest\Routes\AbstractRoute::appendRoutine
+         */
+        function test_append_routine_honours_routine_chaining()
+        {
+            $this->router->get('/one-time', function() { return "one-time"; })
+                ->appendRoutine(new Routines\Through(function ($data) {return function ($data) { return "$data-through1";};}))
+                ->through(function ($data) {return function ($data) {return "$data-through2";};});
+            $response = $this->router->dispatch('GET', '/one-time');
+            $this->assertEquals('one-time-through1-through2', $response);
+        }
+        /**
+         * @covers Respect\Rest\Routes\AbstractRoute::__call
+         * @covers Respect\Rest\Router::__call
+         */
+        function test_callback_gets_param_array()
+        {
+            $this->router->get('/one-time/*', function($frag, $param1, $param2) {
+                return "one-time-$frag-$param1-$param2";
+            }, array('addl','add2'));
+            $response = $this->router->dispatch('GET', '/one-time/1');
+            $this->assertEquals('one-time-1-addl-add2', $response);
+        }
         function test_http_method_head()
         {
             global $header;

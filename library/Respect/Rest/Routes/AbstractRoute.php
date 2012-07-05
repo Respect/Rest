@@ -74,9 +74,7 @@ abstract class AbstractRoute
                 'Respect\\Rest\\Routines\\' . ucfirst($method)
         );
 
-        $this->appendRoutine($routineReflection->newInstanceArgs($arguments));
-
-        return $this;
+        return $this->appendRoutine($routineReflection->newInstanceArgs($arguments));;
     }
 
     /** Appends a pre-built routine to this route */
@@ -84,6 +82,7 @@ abstract class AbstractRoute
     {
         $key = $routine instanceof Unique ? get_class($routine) : spl_object_hash($routine);
         $this->routines[$key] = $routine;
+        return $this;
     }
 
     /** Creates an URI for this route with the passed parameters */
@@ -125,7 +124,7 @@ abstract class AbstractRoute
             return false;
 
         array_shift($params);
-        
+
         if (false !== stripos($this->pattern, '/**') && false !== stripos(end($params), '/')) {
             $lastParam = array_pop($params);
             $params[] = explode('/', ltrim($lastParam, '/'));

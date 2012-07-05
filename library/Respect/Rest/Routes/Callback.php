@@ -10,12 +10,15 @@ class Callback extends AbstractRoute
 {
 
     protected $callback;
+    protected $arguments;
+
     /** @var ReflectionFunctionAbstract */
     protected $reflection;
 
-    public function __construct($method, $pattern, $callback)
+    public function __construct($method, $pattern, $callback, array $arguments=array())
     {
         $this->callback = $callback;
+        $this->arguments = $arguments;
         parent::__construct($method, $pattern);
     }
 
@@ -38,7 +41,7 @@ class Callback extends AbstractRoute
 
     public function runTarget($method, &$params)
     {
-        return call_user_func_array($this->callback, $params);
+        return call_user_func_array($this->callback, array_merge($params, $this->arguments));
     }
 
 }
