@@ -8,7 +8,6 @@ use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Unique;
-use Respect\Rest\Exception\MethodNotAllowed;
 
 /**
  * Base class for all Routes

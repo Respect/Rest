@@ -9,7 +9,6 @@ use RuntimeException;
 use InvalidArgumentException;
 use Respect\Rest\Routes;
 use Respect\Rest\Routes\AbstractRoute;
-use Respect\Rest\Exception\MethodNotAllowed;
 
 /**
  * @method \Respect\Rest\Routes\AbstractRoute get(string $path, $routeTarget)

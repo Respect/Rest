@@ -9,27 +9,19 @@ class Accept extends AbstractAccept
 {
     const ACCEPT_HEADER = 'HTTP_ACCEPT';
 
-    protected function compareItems($requested, $provided)
+    protected function authorize($requested, $provided)
     {
         if ($requested === $provided || $requested === '*/*')
                 return $provided;
 
-        list($requestedA, $requestedB) = explode('/', $requested);
-        list($providedA, ) = explode('/', $provided);
+        if (false !== strpos($requested, '/')) {
+            list($requestedA, $requestedB) = explode('/', $requested);
+            list($providedA, ) = explode('/', $provided);
 
-        if ($providedA === $requestedA && $requestedB === '*')
-                return $providedA;
-
-        return false;
+            if ($providedA === $requestedA && $requestedB === '*')
+                    return $providedA;
+        }
+        return parent::authorize($requested, $provided);
     }
 
-    public function when(Request $request, $params)
-    {
-        $valid = parent::when($request, $params);
-
-        if (!$valid)
-            header('HTTP/1.1 406');
-
-        return $valid;
-    }
 }
