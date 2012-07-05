@@ -9,8 +9,6 @@ use RuntimeException;
 use InvalidArgumentException;
 use Respect\Rest\Routes;
 use Respect\Rest\Routes\AbstractRoute;
-use Respect\Rest\Exception\MethodNotAllowed;
-use Respect\Rest\Routines\RouteInspector;
 
 /**
  * @method \Respect\Rest\Routes\AbstractRoute get(string $path, $routeTarget)
@@ -200,15 +198,8 @@ class Router
                 && ($route->method === $request->method
                     || $route->method === 'ANY'
                     || ($route->method === 'GET' && $request->method === 'HEAD')))
-                if (false !== ($inspector = $route->matchRoutines($request,
-                        $tempParams = $paramsByPath[$route]))) {
-                    if ($inspector instanceof RouteInspector)
-                        $inspector->inspect($this->routes, $route,
-                            $allowedMethods, $request->method, $request->uri);
-
-                    return $this->configureRequest($request, $route,
-                            static::cleanUpParams($tempParams));
-                }
+                if ($route->matchRoutines($request, $tempParams = $paramsByPath[$route]))
+                    return $this->configureRequest($request, $route, static::cleanUpParams($tempParams));
                 else
                     $badRequest = true;
 
