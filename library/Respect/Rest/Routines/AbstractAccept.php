@@ -41,25 +41,25 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements Proxya
     {
         $this->negotiated = new SplObjectStorage;;
         $this->negotiated[$request] = $this->getCallback($provided);
-if (false === strpos($provided, '.')) {
-        $header_type = preg_replace(
-                array(
-                        '/(^.*)(?=\w*$)/U', // select namespace to strip
-                        '/(?!^)([A-Z]+)/'   // select camels to add -
-                     ),
-                array('','-$1'), get_class($this));
+        if (false === strpos($provided, '.')) {
+                $header_type = preg_replace(
+                        array(
+                                '/(^.*)(?=\w*$)/U', // select namespace to strip
+                                '/(?!^)([A-Z]+)/'   // select camels to add -
+                             ),
+                        array('','-$1'), get_class($this));
 
-        $content_header = 'Content-Type';
+                $content_header = 'Content-Type';
 
-        if (false !== strpos($header_type, '-'))
-            $content_header = str_replace('Accept', 'Content', $header_type);
+                if (false !== strpos($header_type, '-'))
+                    $content_header = str_replace('Accept', 'Content', $header_type);
 
-        header("$content_header: $provided");                // RFC 2616
-        header("Vary: negotiate,".strtolower($header_type));   // RFC 2616/2295
-        header("Content-Location: {$_SERVER['REQUEST_URI']}"); // RFC 2616
-        header('Expires: Thu, 01 Jan 1980 00:00:00 GMT');      // RFC 2295
-        header('Cache-Control: max-age=86400');                // RFC 2295
-}
+                header("$content_header: $provided");                // RFC 2616
+                header("Vary: negotiate,".strtolower($header_type));   // RFC 2616/2295
+                header("Content-Location: {$_SERVER['REQUEST_URI']}"); // RFC 2616
+                header('Expires: Thu, 01 Jan 1980 00:00:00 GMT');      // RFC 2295
+                header('Cache-Control: max-age=86400');                // RFC 2295
+        }
     }
     protected function notifyDeclined($requested, $provided, Request $request, $params)
     {
