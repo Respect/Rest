@@ -39,7 +39,7 @@ class UserAgent extends AbstractCallbackMediator implements ProxyableThrough, Un
 
     public function through(Request $request, $params)
     {
-        if (false !== $this->negotiated[$request])
+        if (false !== $this->negotiated)
                 return $this->negotiated[$request];
     }
 

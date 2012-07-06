@@ -18,7 +18,7 @@ class ContentType extends AbstractCallbackMediator implements ProxyableBy, Uniqu
         return isset($_SERVER['CONTENT_TYPE'])? array($_SERVER['CONTENT_TYPE']) : array();
     }
     protected function considerProvisions($requested)
-    {   
+    {
         return $this->getKeys();
     }
     protected function notifyApproved($requested, $provided, Request $request, $params)
@@ -28,18 +28,12 @@ class ContentType extends AbstractCallbackMediator implements ProxyableBy, Uniqu
     }
     protected function notifyDeclined($requested, $provided, Request $request, $params)
     {
-        if (isset($this->negotiated))
-             $this->negotiated[$request] = null;
-        else
-             $this->negotiated = null;
+        $this->negotiated = false;
     }
 
     public function by(Request $request, $params)
     {
-        if (!isset($this->negotiated[$request])
-            || false === $this->negotiated[$request])
-            return;
-
-        return call_user_func($this->negotiated[$request]);
+        if (false !== $this->negotiated)
+            return call_user_func($this->negotiated[$request]);
     }
 }
