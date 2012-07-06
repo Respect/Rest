@@ -5,6 +5,10 @@ use Respect\Rest\Request;
 use \UnexpectedValueException;
 use \ArrayObject;
 
+/**
+ * Facilitates the keyed callback lists for routines.
+ * @author Nick Lombard <github@jigsoft.co.za>
+ */
 class AbstractCallbackList extends ArrayObject implements Routinable
 {
     /** filters out non callable from the list, step copy to new storage */

@@ -2,7 +2,14 @@
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
+use \UnexpectedValueException;
 
+/**
+ * Mediates the callback selection process when choosing the appropriate
+ * callback based on the request. Decisions are deligated to the implementation
+ * classes.
+ * @author Nick Lombard <github@jigsoft.co.za>
+ */
 abstract class AbstractCallbackMediator extends AbstractCallbackList implements ProxyableWhen
 {
     /** Implementations are tasked to provide a list of appropriate request identifiers */
