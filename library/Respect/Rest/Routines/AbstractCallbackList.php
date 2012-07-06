@@ -3,16 +3,15 @@ namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
 use \UnexpectedValueException;
-use \ArrayAccess;
+use \ArrayObject;
 
- class AbstractCallbackList implements ArrayAccess, Routinable {
-
-    /** hide the collection completely use accessor methods */
-    private $callbackList = array();
-
+class AbstractCallbackList extends ArrayObject implements Routinable
+{
     /** filters out non callable from the list, step copy to new storage */
     public function __construct(array $list = array())
     {
+        $this->setFlags(self::ARRAY_AS_PROPS);
+
         if (!($callbackList = array_filter($list, 'is_callable')))
             throw new UnexpectedValueException('Invalid setting: Not a single callable argument for callback routines: '. get_class($this));
 
@@ -33,11 +32,10 @@ use \ArrayAccess;
      */
     public function getKeys()
     {
-        return array_keys($this->callbackList);
+        return array_keys($this->getArrayCopy());
     }
     public function hasKey($key)
     {
-
         return isset($this->$key);
         return array_key_exists($key, $this);
     }
@@ -62,41 +60,12 @@ use \ArrayAccess;
      */
     protected function getCallback($key)
     {
-        return $this->callbackList[$key];
+        return $this->$key;
     }
 
     protected function executeCallback($key, $params)
     {
-        return call_user_func_array($this->callbackList[$key], $params);
+        return call_user_func_array($this->$key, $params);
     }
-
-    /**
-     * Only for suger, nothing else
-     */
-    public function offsetExists($offset)
-    {   isset($this->$offset);
-    }
-    public function offsetGet($offset)
-    {   return $this->$offset;
-    }
-    public function offsetSet($offset, $value)
-    {   $this->$offset = $value;
-    }
-    public function offsetUnset($offset)
-    {   unset($offset);
-    }
-    public function __get($key)
-    {   return $this->callbackList[$key];
-    }
-    public function __set($key,$value)
-    {   $this->callbackList[$key] = $value;
-    }
-    public function __isset($key)
-    {   return isset($this->callbackList[$key]);
-    }
-    public function __unset($key)
-    {   unset($this->callbackList[$key]);
-    }
-
 
 }
