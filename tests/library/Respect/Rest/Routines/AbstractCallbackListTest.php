@@ -1,15 +1,11 @@
 <?php
 namespace Respect\Rest\Routines;
 
-class FunkyAbstractCallbackList extends AbstractCallbackList{
-    public function funkyExecuteCallback($key, $params) {
-        return $this->executeCallback($key, $params);
-    }
-    public function funkyGetCallback($key) {
-        return $this->getCallback($key);
-    }
-}
 
+/**
+ * @covers Respect\Rest\Routines\AbstractCallbackList
+ * @author Nick Lombard <github@jigsoft.co.za>
+ */
 class AbstractCallbackListTest extends \PHPUnit_Framework_TestCase
 {
     protected $object;
@@ -123,3 +119,13 @@ class AbstractCallbackListTest extends \PHPUnit_Framework_TestCase
 
 
 }
+
+class FunkyAbstractCallbackList extends AbstractCallbackList{
+    public function funkyExecuteCallback($key, $params) {
+        return $this->executeCallback($key, $params);
+    }
+    public function funkyGetCallback($key) {
+        return $this->getCallback($key);
+    }
+}
+

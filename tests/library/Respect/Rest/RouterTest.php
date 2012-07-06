@@ -3,7 +3,41 @@
 namespace Respect\Rest {
 
     class DummyRoute extends \DateTime implements Routable {}
-
+    /**
+     * @covers Respect\Rest\Router
+     * @covers Respect\Rest\Request
+     * @covers Respect\Rest\Routable
+     * @covers Respect\Rest\Routes\AbstractRoute
+     * @covers Respect\Rest\Routes\CallBack
+     * @covers Respect\Rest\Routes\ClassName
+     * @covers Respect\Rest\Routes\Factory
+     * @covers Respect\Rest\Routes\Instance
+     * @covers Respect\Rest\Routes\StaticValue
+     * @covers Respect\Rest\Routines\AbstractAccept
+     * @covers Respect\Rest\Routines\AbstractCallbackList
+     * @covers Respect\Rest\Routines\AbstractCallbackMediator
+     * @covers Respect\Rest\Routines\AbstractRoutine
+     * @covers Respect\Rest\Routines\AbstractSyncedRoutine
+     * @covers Respect\Rest\Routines\Accept
+     * @covers Respect\Rest\Routines\AcceptCharset
+     * @covers Respect\Rest\Routines\AcceptLanguage
+     * @covers Respect\Rest\Routines\AcceptEncoding
+     * @covers Respect\Rest\Routines\AuthBasic
+     * @covers Respect\Rest\Routines\By
+     * @covers Respect\Rest\Routines\ContentType
+     * @covers Respect\Rest\Routines\IgnorableFileExtension
+     * @covers Respect\Rest\Routines\ProxyableBy
+     * @covers Respect\Rest\Routines\LastModified
+     * @covers Respect\Rest\Routines\ParamSynced
+     * @covers Respect\Rest\Routines\ProxyableBy
+     * @covers Respect\Rest\Routines\ProxyableThrough
+     * @covers Respect\Rest\Routines\ProxyableWhen
+     * @covers Respect\Rest\Routines\Routinable
+     * @covers Respect\Rest\Routines\Through
+     * @covers Respect\Rest\Routines\Unique
+     * @covers Respect\Rest\Routines\UserAgent
+     * @covers Respect\Rest\Routines\When
+     */
     class NewRouterTest extends \PHPUnit_Framework_TestCase
     {
         function setUp()
@@ -33,11 +67,13 @@ namespace Respect\Rest {
             $this->setExpectedException('InvalidArgumentException');
             $this->router->thisIsAnInvalidMagicCallWithOnlyOneArg('foo');
         }
+
         function test_magic_call_should_throw_exception_with_zero_args()
         {
             $this->setExpectedException('InvalidArgumentException');
             $this->router->thisIsAnInvalidMagicCallWithOnlyOneArg();
         }
+
         function test_magic_call_with_closure_should_create_callback_route()
         {
             $route = $this->router->thisIsAMagicCall('/some/path', function() {});
@@ -184,10 +220,6 @@ namespace Respect\Rest {
             $this->assertContains('HTTP/1.1 406', $header);
             $this->assertContains('Allow: GET', $header);
         }
-
-        /**
-         * @covers \Respect\Rest\Routes\AbstractRoute::appendRoutine
-         */
         function test_append_routine_honours_routine_chaining()
         {
             $this->router->get('/one-time', function() { return "one-time"; })
@@ -196,10 +228,6 @@ namespace Respect\Rest {
             $response = $this->router->dispatch('GET', '/one-time');
             $this->assertEquals('one-time-through1-through2', $response);
         }
-        /**
-         * @covers Respect\Rest\Routes\AbstractRoute::__call
-         * @covers Respect\Rest\Router::__call
-         */
         function test_callback_gets_param_array()
         {
             $this->router->get('/one-time/*', function($frag, $param1, $param2) {
@@ -290,118 +318,6 @@ namespace Respect\Rest {
             $this->assertEmpty((string) $response);
         }
 
-        function test_http_auth_should_send_401_and_WWW_headers_when_authentication_fails()
-        {
-            global $header;
-
-            $auth = function($username, $password) {
-                            return true;
-                };
-            $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
-            $this->router->dispatch('get', '/')->response();
-            $this->assertContains('HTTP/1.1 401', $header);
-            $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
-        }
-
-        function test_http_auth_should_allow_redirects_inside_auth_closure()
-        {
-            global $header;
-
-            $login = $this->router->get('/login', 'Login');
-            $auth = function($username, $password) use($login) {
-                        return $login;
-                };
-            $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
-            $response = $this->router->dispatch('get', '/')->response();
-            $this->assertEquals('Login', $response);
-            $this->assertContains('HTTP/1.1 401', $header);
-            $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
-        }
-
-        function test_auth_basic_request_should_be_aware_of_Authorization_headers()
-        {
-            global $header;
-            $user           = 'John';
-            $pass           = 'Doe';
-            $checkpoint     = false;
-            $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode($user.':'.$pass);
-            $this->router->get('/', 'ok')->authBasic("Test Realm", function($username, $password) use (&$checkpoint, $user, $pass) {
-                            if (($username == $user) && ($password == $pass)) {
-                                $checkpoint = true;
-                                return true;
-                            }
-                            return false;
-                         });
-            (string) $this->router->dispatch('GET', '/')->response();
-            $this->assertTrue($checkpoint, 'Auth not run');
-            $this->assertNotContains('HTTP/1.1 401', $header);
-            $this->assertNotContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
-            unset($_SERVER['HTTP_AUTHORIZATION']);
-        }
-
-        function test_auth_basic_authorized_should_be_aware_of_PHP_env_auth_variables()
-        {
-            global $header;
-            $user           = 'John';
-            $pass           = 'Doe';
-            $checkpoint     = false;
-            $_SERVER['PHP_AUTH_USER'] = $user;
-            $_SERVER['PHP_AUTH_PW']   = $pass;
-            $this->router->get('/', 'ok')->authBasic("Test Realm", function($username, $password) use (&$checkpoint, $user, $pass) {
-                            if (($username == $user) && ($password == $pass)) {
-                                $checkpoint = true;
-                                return true;
-                            }
-                            return false;
-                         });
-            (string) $this->router->dispatch('GET', '/')->response();
-            $this->assertTrue($checkpoint, 'Auth not run');
-            $this->assertNotContains('HTTP/1.1 401', $header);
-            $this->assertNotContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
-            unset($_SERVER['PHP_AUTH_PW'], $_SERVER['PHP_AUTH_USER']);
-        }
-
-        function test_auth_basic_pass_all_parameters_to_routine()
-        {
-            global $header;
-            $user = 'John';
-            $pass = 'Doe';
-            $param1 = 'parameterX';
-            $param2 = 'parameterY';
-            $checkpoint = false;
-            $_SERVER['PHP_AUTH_USER'] = $user;
-            $_SERVER['PHP_AUTH_PW'] = $pass;
-            $this->router->get('/*/*', 'ok')->authBasic("Test Realm", function($username, $password, $p1, $p2) use (&$checkpoint, $user, $pass, $param1, $param2)
-            {
-                if (($p1 === $param1) && $p2 === $param2) {
-                    $checkpoint = true;
-                    return true;
-                }
-                return false;
-            });
-            (string)$this->router->dispatch('GET', "/$param1/$param2")->response();
-            $this->assertTrue($checkpoint, 'Parameters passed incorrectly');
-            unset($_SERVER['PHP_AUTH_PW'], $_SERVER['PHP_AUTH_USER']);
-        }
-
-        /**
-         * @group issues
-         * @ticket 49
-         */
-        function test_http_auth_should_send_401_and_WWW_headers_when_authBasic_returns_false()
-        {
-            global $header;
-            $user = 'John';
-            $pass = 'Doe';
-            $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode($user.':'.$pass);
-            $this->router->get('/', 'ok')->authBasic('Test Realm', function($username, $password) {
-                return (($username == 'user') && ($password == 'pass'));
-            });
-            (string) $this->router->dispatch('GET', '/')->response();
-            $this->assertContains('HTTP/1.1 401', $header);
-            $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
-            unset($_SERVER['HTTP_AUTHORIZATION']);
-        }
 
         /**
          * @group issues
@@ -541,6 +457,19 @@ namespace Respect\Rest {
             $r = $r->dispatch('get', '/auto')->response();
             $this->assertContains('Content-Type: '.$ctype, $header);
         }
+        function test_request_forward()
+        {
+            $r = new Router();
+            $r1 = $r->get('/route1', 'route1');
+            $response = $r->dispatch('get', '/route1')->response();
+            $this->assertEquals('route1',$response);
+            $r2 = $r->get('/route2', 'route2');
+            $response = $r->dispatch('get', '/route2')->response();
+            $this->assertEquals('route2',$response);
+            $r2->by(function() use ($r1) { return $r1;});
+            $response = $r->dispatch('get', '/route2')->response();
+            $this->assertEquals('route1',$response);
+        }
         static function provider_content_type_extension()
         {
             return array(
@@ -603,6 +532,9 @@ namespace Respect\Rest {
             $this->assertEmpty($header);
         }
 
+        /**
+         * @covers \Respect\Rest\Routes\AbstractRoute
+         */
         function test_optional_parameters_should_be_allowed_only_at_the_end_of_the_path()
         {
             $r = new Router();
@@ -612,7 +544,6 @@ namespace Respect\Rest {
             $response = $r->dispatch('get', '/users/photos')->response();
             $this->assertNotEquals('match', $response);
         }
-
         function test_route_ordering_with_when()
         {
 
@@ -638,7 +569,6 @@ namespace Respect\Rest {
             $this->assertTrue($when);
             $this->assertEquals('user-1', $response);
         }
-
         function test_when_should_be_called_only_on_existent_methods()
         {
             $_SERVER['HTTP_ACCEPT'] = 'application/json';

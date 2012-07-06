@@ -1,6 +1,41 @@
 <?php
 namespace Respect\Rest {
 
+/**
+ * @covers Respect\Rest\Router
+ * @covers Respect\Rest\Request
+ * @covers Respect\Rest\Routable
+ * @covers Respect\Rest\Routes\AbstractRoute
+ * @covers Respect\Rest\Routes\CallBack
+ * @covers Respect\Rest\Routes\ClassName
+ * @covers Respect\Rest\Routes\Factory
+ * @covers Respect\Rest\Routes\Instance
+ * @covers Respect\Rest\Routes\StaticValue
+ * @covers Respect\Rest\Routines\AbstractAccept
+ * @covers Respect\Rest\Routines\AbstractCallbackList
+ * @covers Respect\Rest\Routines\AbstractCallbackMediator
+ * @covers Respect\Rest\Routines\AbstractRoutine
+ * @covers Respect\Rest\Routines\AbstractSyncedRoutine
+ * @covers Respect\Rest\Routines\Accept
+ * @covers Respect\Rest\Routines\AcceptCharset
+ * @covers Respect\Rest\Routines\AcceptEncoding
+ * @covers Respect\Rest\Routines\AcceptLanguage
+ * @covers Respect\Rest\Routines\AuthBasic
+ * @covers Respect\Rest\Routines\By
+ * @covers Respect\Rest\Routines\ContentType
+ * @covers Respect\Rest\Routines\IgnorableFileExtension
+ * @covers Respect\Rest\Routines\ProxyableBy
+ * @covers Respect\Rest\Routines\LastModified
+ * @covers Respect\Rest\Routines\ParamSynced
+ * @covers Respect\Rest\Routines\ProxyableBy
+ * @covers Respect\Rest\Routines\ProxyableThrough
+ * @covers Respect\Rest\Routines\ProxyableWhen
+ * @covers Respect\Rest\Routines\Routinable
+ * @covers Respect\Rest\Routines\Through
+ * @covers Respect\Rest\Routines\Unique
+ * @covers Respect\Rest\Routines\UserAgent
+ * @covers Respect\Rest\Routines\When
+ */
 class OldRouterTest extends \PHPUnit_Framework_TestCase
 {
 
@@ -302,6 +337,9 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('ok', $result);
     }
 
+    /**
+     * @covers Respect\Rest\Router::always
+     */
     public function testSimpleAlways()
     {
         $result = null;
@@ -316,6 +354,9 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('ok', $result);
     }
 
+    /**
+     * @covers Respect\Rest\Router::always
+     */
     public function testSimpleAlwaysAfter()
     {
         $result = null;
