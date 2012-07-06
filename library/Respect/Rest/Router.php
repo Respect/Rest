@@ -136,6 +136,8 @@ class Router
         $this->isAutoDispatched = false;
         if (!$request)
             $request = new Request;
+            
+        $this->request = $request;
 
         if ($this->methodOverriding && isset($_REQUEST['_method']) && $request->method == 'POST')
             $request->method = strtoupper($_REQUEST['_method']);

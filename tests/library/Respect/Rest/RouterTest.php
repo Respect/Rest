@@ -656,6 +656,20 @@ namespace Respect\Rest {
             $this->assertEquals('"ok: blub"', $out);
 
         }
+        
+        function test_request_should_be_available_from_router_after_dispatching()
+        {
+            $request = new \Respect\Rest\Request('get', '/foo');
+            $router = new \Respect\Rest\Router();
+            $router->isAutoDispatched = false;
+            $phpunit = $this;
+            $router->get('/foo', function() use ($router, $request, $phpunit) {
+                $phpunit->assertSame($request, $router->request);
+                return spl_object_hash($router->request);
+            });
+            $out = $router->run($request);
+            $this->assertEquals($out, spl_object_hash($request));
+        }
 
     }
     class RouteKnowsGet implements \Respect\Rest\Routable {
