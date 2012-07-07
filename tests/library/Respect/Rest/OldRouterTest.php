@@ -6,7 +6,6 @@ namespace Respect\Rest {
  * @covers Respect\Rest\Request
  * @covers Respect\Rest\Routable
  * @covers Respect\Rest\Routes\AbstractRoute
- * @covers Respect\Rest\Routes\CallBack
  * @covers Respect\Rest\Routes\ClassName
  * @covers Respect\Rest\Routes\Factory
  * @covers Respect\Rest\Routes\Instance
