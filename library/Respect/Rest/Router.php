@@ -55,7 +55,8 @@ class Router
             return $this->instanceRoute($method, $path, $routeTarget);
         elseif (!is_string($routeTarget)) //static returns the argument itself
             return $this->staticRoute($method, $path, $routeTarget);
-        elseif (is_string($routeTarget) && !class_exists($routeTarget))
+        elseif (is_string($routeTarget)
+                && !(class_exists($routeTarget) || interface_exists($routeTarget)))
             return $this->staticRoute($method, $path, $routeTarget);
         else
             if (!isset($args[2])) //raw classnames

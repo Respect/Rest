@@ -36,7 +36,7 @@ class Factory extends AbstractRoute
     public function runTarget($method, &$params)
     {
         if (is_null($this->instance))
-            $this->instance = call_user_func($this->factory);
+            $this->instance = call_user_func_array($this->factory, array($method, &$params));
 
         if (!$this->instance instanceof Routable)
             throw new InvalidArgumentException('Routed classes must implement the Respect\\Rest\\Routable interface'); 
