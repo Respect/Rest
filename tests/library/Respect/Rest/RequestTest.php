@@ -4,10 +4,14 @@ namespace Respect\Rest;
 use Exception;
 use PHPUnit_Framework_TestCase;
 
-/** @covers Respect\Rest\Request */
+/** 
+ * @covers Respect\Rest\Request 
+ */
 class RequestTest extends PHPUnit_Framework_TestCase
 {
-    /** @covers Respect\Rest\Request::__construct */
+    /** 
+     * @covers Respect\Rest\Request::__construct 
+     */
     public function testIsPossibleToConstructUsingValuesFromSuperglobals()
     {
         $_SERVER['REQUEST_URI'] = '/users';
@@ -25,9 +29,13 @@ class RequestTest extends PHPUnit_Framework_TestCase
             $request->method,
             'Should inherit the method from $_SERVER'
         );
+
+        return $request;
     }
 
-    /** @covers Respect\Rest\Request::__construct */
+    /** 
+     * @covers Respect\Rest\Request::__construct 
+     */
     public function testIsPossibleToConstructWithCustomMethod()
     {
         $_SERVER['REQUEST_URI'] = '/documents';
@@ -47,7 +55,9 @@ class RequestTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    /** @covers Respect\Rest\Request::__construct */
+    /** 
+     * @covers Respect\Rest\Request::__construct 
+     */
     public function testIsPossibleToConstructWithCustomUri()
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -68,7 +78,9 @@ class RequestTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    /** @covers Respect\Rest\Request::__construct */
+    /** 
+     * @covers Respect\Rest\Request::__construct 
+     */
     public function testAbsoluteUrisShouldBeParsedToExtractThePathOnConstructor()
     {
         $_SERVER['REQUEST_URI'] = 'http://google.com/search?q=foo';
@@ -91,13 +103,12 @@ class RequestTest extends PHPUnit_Framework_TestCase
         //TODO same behavior for env vars and constructor params regarding parse_url
     }
 
-    /** @covers Respect\Rest\Request::response */
-    public function testResponseIsNullWithoutSettingARoute()
+    /** 
+     * @covers Respect\Rest\Request::response 
+     * @depends testIsPossibleToConstructUsingValuesFromSuperglobals 
+     */
+    public function testResponseIsNullWithoutSettingARoute(Request $request)
     {
-        $_SERVER['REQUEST_URI'] = '/photos';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-
-        $request = new Request;
         $response = $request->response();
 
         $this->assertSame(
@@ -109,13 +120,12 @@ class RequestTest extends PHPUnit_Framework_TestCase
         //TODO Request::response() should check if $this->route instanceof AbstractRoute
     }
 
-    /** @covers Respect\Rest\Request::response */
-    public function testRequestIsAbleToDeliverAResponseWithoutSettingPathParams()
+    /** 
+     * @covers Respect\Rest\Request::response 
+     * @depends testIsPossibleToConstructUsingValuesFromSuperglobals 
+     */
+    public function testRequestIsAbleToDeliverAResponseWithoutSettingPathParams(Request $request)
     {
-        $_SERVER['REQUEST_URI'] = '/notebooks';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-
-        $request = new Request;
         $request->route = $this->getMockForAbstractClass(
             '\Respect\Rest\Routes\AbstractRoute', 
             array('GET', '/notebooks')
@@ -133,13 +143,12 @@ class RequestTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    /** @covers Respect\Rest\Request::response */
-    public function testRequestIsAbleToDeliverAResponseUsingPreviouslySetPathParams()
+    /** 
+     * @covers Respect\Rest\Request::response 
+     * @depends testIsPossibleToConstructUsingValuesFromSuperglobals 
+     */
+    public function testRequestIsAbleToDeliverAResponseUsingPreviouslySetPathParams(Request $request)
     {
-        $_SERVER['REQUEST_URI'] = '/printers';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-
-        $request = new Request;
         $request->params = array('dpi', 'price');
         $request->route = $this->getMockForAbstractClass(
             '\Respect\Rest\Routes\AbstractRoute', 
