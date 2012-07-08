@@ -161,6 +161,9 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $response = $request->response();
     }
 
+    /**
+     * @covers Respect\Rest\Request::forward
+     */
     public function testForwardReplacesRouteAndReturnsResponse()
     {
         $request = $this->getMock(
@@ -194,5 +197,36 @@ class RequestTest extends PHPUnit_Framework_TestCase
             $request->route,
             'After forwarding a route, the forwarded route should be in the route attribute'
         );
+    }
+
+    /**
+     * @covers  Respect\Rest\Request::response
+     * @depends testForwardReplacesRouteAndReturnsResponse 
+     */
+    public function testDeveloperCanForwardRoutesByReturningThemOnTheirImplementation()
+    {
+        $internallyForwardedRoute = $this->getMockForAbstractClass(
+            'Respect\Rest\Routes\AbstractRoute',
+            array('GET', '/candies/cupcakes')
+        );
+        $internallyForwardedRoute->expects($this->once())
+                                    ->method('runTarget')
+                                    ->with('GET', $expectedParams = array())
+                                    ->will($this->returnValue('Delicious Cupcake Internally Forwarded'));
+        $userImplementedRoute = $this->getMockForAbstractClass(
+            'Respect\Rest\Routes\AbstractRoute',
+            array('GET', '/cupcakes')
+        );
+        $userImplementedRoute->expects($this->once())
+                             ->method('runTarget')
+                             ->with('GET', $expectedParams = array())
+                             ->will($this->returnCallback(function() use($internallyForwardedRoute) {
+                                 return $internallyForwardedRoute;
+                             }));
+        $request = new Request('GET', '/cupcakes');
+        $request->route = $userImplementedRoute;
+        $response = $request->response();
+        
+        $this->assertSame('Delicious Cupcake Internally Forwarded', $response);
     }
 }
