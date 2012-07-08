@@ -13,28 +13,55 @@ class RequestTest extends PHPUnit_Framework_TestCase
 
         $request = new Request;
 
-        $this->assertEquals('/users', $request->uri);
-        $this->assertEquals('GET', $request->method);
-    }
-
-    public function testIsPossibleToConstructWithCustomUri()
-    {
-        $_SERVER['REQUEST_URI'] = '/documents';
-
-        $request = new Request('PATCH');
-
-        $this->assertEquals('/documents', $request->uri);
-        $this->assertEquals('PATCH', $request->method);
+        $this->assertEquals(
+            '/users', 
+            $request->uri, 
+            'Should inherit the path from $_SERVER'
+        );
+        $this->assertEquals(
+            'GET', 
+            $request->method,
+            'Should inherit the method from $_SERVER'
+        );
     }
 
     public function testIsPossibleToConstructWithCustomMethod()
     {
+        $_SERVER['REQUEST_URI'] = '/documents';
+        $_SERVER['REQUEST_METHOD'] = 'NOTPATCH';
+
+        $request = new Request('PATCH');
+
+        $this->assertNotEquals(
+            'NOTPATCH', 
+            $request->method,
+            'Should ignore $_SERVER if method was passed on constructor'
+        );
+        $this->assertEquals(
+            'PATCH', 
+            $request->method,
+            'Should use constructor method'
+        );
+    }
+
+    public function testIsPossibleToConstructWithCustomUri()
+    {
         $_SERVER['REQUEST_METHOD'] = 'POST';
+        $_SERVER['REQUEST_URI'] = '/videos';
 
         $request = new Request(null, '/images');
 
-        $this->assertEquals('/images', $request->uri);
-        $this->assertEquals('POST', $request->method);
+        $this->assertNotEquals(
+            '/videos', 
+            $request->uri,
+            'Should ignore $_SERVER if path was passed on constructor'
+        );
+
+        $this->assertEquals(
+            '/images', 
+            $request->uri,
+            'Should use constructor path'
+        );
     }
 
     public function testWhenConstructingThePathShouldBePopulatedFromAbsoluteUri()
@@ -43,7 +70,17 @@ class RequestTest extends PHPUnit_Framework_TestCase
 
         $request = new Request('GET');
 
-        $this->assertEquals('/search', $request->uri);
+        $this->assertNotEquals(
+            'http://google.com/search?q=foo', 
+            $request->uri,
+            'Absolute URI should not be on path' //See TODO below
+        );
+
+        $this->assertEquals(
+            '/search', 
+            $request->uri,
+            'Path should be extracted from absolute URI'
+        );
 
         //TODO change ->uri to ->path, populate other parse_url keys
         //TODO same behavior for env vars and constructor params regarding parse_url
@@ -57,7 +94,11 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $request = new Request;
         $response = $request->response();
 
-        $this->assertSame(null, $response);
+        $this->assertSame(
+            null, 
+            $response,
+            'Response should be null if no route is set'
+        );
 
         //TODO Request::response() should check if $this->route instanceof AbstractRoute
     }
@@ -80,7 +121,8 @@ class RequestTest extends PHPUnit_Framework_TestCase
 
         $this->assertEquals(
             array('Vaio', 'MacBook', 'ThinkPad'),
-            $response
+            $response,
+            'Response should have data returned from runTarget'
         );
     }
 
