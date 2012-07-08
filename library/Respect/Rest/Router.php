@@ -194,6 +194,7 @@ class Router
 
     protected function getMatchedRoutesByRoutines(\SplObjectStorage $matchedByPath)
     {
+        $badRequest = false;
         foreach ($matchedByPath as $route)
             if (0 !== stripos($this->request->method, '__')
                 && ($route->method === $this->request->method
@@ -203,6 +204,8 @@ class Router
                     return $this->configureRequest($this->request, $route, static::cleanUpParams($tempParams));
                 else
                     $badRequest = true;
+
+        return $badRequest ? false : null;
     }
 
     /** Dispatch the current route with a custom Request */
@@ -242,13 +245,13 @@ class Router
 
         $configuredRequest = $this->getMatchedRoutesByRoutines($matchedByPath);
 
-        if ($configuredRequest)
+        if ($configuredRequest instanceof Request)
             return $configuredRequest;
 
-        if (count($matchedByPath) && !isset($badRequest))
+        if (count($matchedByPath) && false !== $configuredRequest)
             header('HTTP/1.1 405');
 
-        if ($matchedByPath && $allowedMethods)
+        if (count($matchedByPath) && $allowedMethods)
             header('Allow: '.implode(', ', $allowedMethods));
 
         $request->route = null;
