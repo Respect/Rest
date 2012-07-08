@@ -188,35 +188,70 @@ class RequestTest extends PHPUnit_Framework_TestCase
      * @dataProvider providerForUserImplementedForwards
      */
     public function testDeveloperCanForwardRoutesByReturningThemOnTheirImplementation(
-        $requestPath, $expectedResponse, $userImplementedRoute)
+        $userImplementedRoute)
     {
-        $request = new Request('GET', $requestPath);
+        $request = new Request('GET', '/cupcakes');
         $request->route = $userImplementedRoute;
         $response = $request->response();
         
-        $this->assertSame($expectedResponse, $response);
+        $this->assertSame('Delicious Cupcake Internally Forwarded', $response);
     }
 
-    protected function providerForUserImplementedForwards()
+    public function providerForUserImplementedForwards()
     {
         $internallyForwardedRoute = $this->getMockForRoute(
             'GET', 
             '/candies/cupcakes', 
             'Delicious Cupcake Internally Forwarded'
         );
-        $routeThatReturnsAnotherRoute = $this->getMockForRoute(
+        $forwardWithTarget = $this->getMockForRoute(
             'GET', 
             '/cupcakes', 
-            function() use($internallyForwardedRoute) {
+            function() use ($internallyForwardedRoute) {
                 return $internallyForwardedRoute;
             }
         );
+        $forwardWithByRoutine = $this->getMockForRoute(
+            'GET',
+            '/cereals',
+            'Nice Cereals'
+        );
+        $byRoutine = $this->getMockForRoutine('ProxyableBy');
+        $byRoutine->expects($this->once())
+                  ->method('by')
+                  ->will($this->returnValue($internallyForwardedRoute));
+        $forwardWithByRoutine->appendRoutine($byRoutine);
         return array(
-            array(
-                '/cupcakes', 
-                'Delicious Cupcake Internally Forwarded', 
-                $routeThatReturnsAnotherRoute
-            )
+            array($forwardWithTarget),
+            array($forwardWithByRoutine)
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Request::response
+     */
+    public function testDeveloperCanAbortRequestReturningFalseOnByRoutine()
+    {
+        $request = new Request('GET', '/protected-area');
+        $route = $this->getMockForRoute('GET', '/protected-area', 'Protected Content!!!');
+        $routine = $this->getMockForRoutine('ProxyableBy');
+        $routine->expects($this->once())
+                ->method('by')
+                ->will($this->returnValue(false));
+        $route->appendRoutine($routine);
+        $request->route = $route;
+
+        $response = $request->response();
+
+        $this->assertNotSame(
+            'Protected Content!!!',
+            $response,
+            'Response should not be the protected content.'
+        );
+        $this->assertSame(
+            false,
+            $response,
+            'Response should false when aborting response.'
         );
     }
 
@@ -229,18 +264,15 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $route = $this->getMockForRoute(
             'GET', 
             '/logs', 
-            'user-deleted-something', 
+            'user-deleted-something', // <-- Stub response, keep that in mind
             'GET', 
             $expectedParams = array()
         );
-        $routine = $this->getMockForRoutine(array(
-            'Respect\Rest\Routines\ProxyableThrough', 
-            'Respect\Rest\Routines\Routinable'
-        ));
+        $routine = $this->getMockForRoutine('ProxyableThrough');
         $routine->expects($this->once())
                 ->method('through')
-                ->with($request, $expectedParams)
                 ->will($this->returnValue(function($thatLogStubReturnedAbove) {
+                    // Remember the stub response?
                     return str_replace('-', ' ', $thatLogStubReturnedAbove);
                 }));
         $route->appendRoutine($routine);
@@ -281,7 +313,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
     }
 
     protected function getMockForRoute($method, $pattern, $target = null, 
-        $targetMethod = 'GET', $tatgetParams = array())
+        $targetMethod = 'GET', $targetParams = array())
     {
         $hasTarget = !is_null($target);
         $mockedMethods = array();
@@ -304,9 +336,9 @@ class RequestTest extends PHPUnit_Framework_TestCase
                 $performAction = $this->returnValue($target);
             }
 
-            $route->expects($this->once())
+            $route->expects($this->any())
                   ->method('runTarget')
-                  ->with($targetMethod, $tatgetParams)
+                  ->with($targetMethod, $targetParams)
                   ->will($performAction);
         }
 
@@ -315,11 +347,15 @@ class RequestTest extends PHPUnit_Framework_TestCase
 
     protected function getMockForRoutine($interfaceList)
     {
-        $interfaceName = is_array($interfaceList) 
-            ? 'GeneratedInterface'.md5(rand()) 
-            : $interfaceList;
+        $interfaceName = 'GeneratedInterface'.md5(rand());
 
-        $interfaceList = implode(',', (array) $interfaceList);
+        $interfaceList = (array) $interfaceList;
+        array_walk(&$interfaceList, function(&$interfaceSuffix) {
+            $interfaceSuffix = "Respect\Rest\Routines\\$interfaceSuffix";
+        });
+        $interfaceList[] = 'Respect\Rest\Routines\Routinable';
+        $interfaceList = array_unique($interfaceList);
+        $interfaceList = implode(',', $interfaceList);
         
         eval("interface $interfaceName extends $interfaceList{}");
         $routine = $this->getMockForAbstractClass($interfaceName);
