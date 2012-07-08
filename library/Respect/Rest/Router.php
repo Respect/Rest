@@ -131,30 +131,32 @@ class Router
         return $this->dispatchRequest(new Request($method, $uri));
     }
 
-    /** Dispatch the current route with a custom Request */
-    public function dispatchRequest(Request $request=null)
+    public function hasDispatchedOverridenMethod() 
     {
-        $this->isAutoDispatched = false;
-        if (!$request)
-            $request = new Request;
-            
-        $this->request = $request;
+        return $this->request                    //Has dispatched 
+            && $this->methodOverriding           //Has method overriting
+            && isset($_REQUEST['_method'])       //Has a parameter that triggers it
+            && $this->request->method == 'POST'; //Only post is allowed for this
+    }
 
-        if ($this->methodOverriding && isset($_REQUEST['_method']) && $request->method == 'POST')
-            $request->method = strtoupper($_REQUEST['_method']);
+    public function isDispatchedToGlobalOptionsMethod()
+    {
+        return $this->request->method === 'OPTIONS' && $this->request->uri === '*';
+    }
 
-        if ($request->method === 'OPTIONS' && $request->uri === '*') {
-            $allowedMethods = array();
+    public function getAllowedMethods(array $routes)
+    {        
+        $allowedMethods = array();
 
-            foreach ($this->routes as $route)
-                $allowedMethods[] = $route->method;
+        foreach ($routes as $route)
+            $allowedMethods[] = $route->method;
 
-            if ($allowedMethods)
-                header('Allow: '.implode(', ', $allowedMethods));
+        return $allowedMethods;
+    }
 
-            return $request;
-        }
-
+    protected function sortRoutes()
+    {
+        
         usort($this->routes, function($a, $b) {
                 $a = $a->pattern;
                 $b = $b->pattern;
@@ -170,43 +172,80 @@ class Router
                     < substr_count($b, AbstractRoute::PARAM_IDENTIFIER) ? -1 : 1;
             }
         );
+    }
 
+    protected function applyVirtualHost()
+    {
         if ($this->virtualHost)
-            $request->uri =
-                preg_replace('#^' . preg_quote($this->virtualHost) . '#', '', $request->uri);
+            $this->request->uri =
+                preg_replace('#^' . preg_quote($this->virtualHost) . '#', '', $this->request->uri);
+    }
 
-        $matchedByPath = array();
-        $allowedMethods = array();
-        $paramsByPath = new \SplObjectStorage;
-
-        foreach ($this->routes as $route)
-            if ($this->matchRoute($request, $route, $params)) {
-
-                $paramsByPath[$route] = $params;
-
-                $matchedByPath[] = $route;
-                $allowedMethods[] = $route->method;
+    protected function getMatchedRoutesByPath()
+    {
+        $matched = new \SplObjectStorage;
+        foreach ($this->routes as $route) {
+            if ($this->matchRoute($this->request, $route, $params)) {
+                $matched[$route] = $params;
             }
+        }
+        return $matched;
+    }
+
+    protected function getMatchedRoutesByRoutines(\SplObjectStorage $matchedByPath)
+    {
+        foreach ($matchedByPath as $route)
+            if (0 !== stripos($this->request->method, '__')
+                && ($route->method === $this->request->method
+                    || $route->method === 'ANY'
+                    || ($route->method === 'GET' && $this->request->method === 'HEAD')))
+                if ($route->matchRoutines($this->request, $tempParams = $matchedByPath[$route]))
+                    return $this->configureRequest($this->request, $route, static::cleanUpParams($tempParams));
+                else
+                    $badRequest = true;
+    }
+
+    /** Dispatch the current route with a custom Request */
+    public function dispatchRequest(Request $request=null)
+    {
+        $this->isAutoDispatched = false;
+        if (!$request)
+            $request = new Request;
+            
+        $this->request = $request;
+
+        if ($this->hasDispatchedOverridenMethod())
+            $request->method = strtoupper($_REQUEST['_method']);
+
+        if ($this->isDispatchedToGlobalOptionsMethod()) {
+            $allowedMethods = $this->getAllowedMethods($this->routes);
+
+            if ($allowedMethods)
+                header('Allow: '.implode(', ', $allowedMethods));
+
+            return $request;
+        }
+
+        $this->applyVirtualHost();
+        $this->sortRoutes();
+
+        $matchedByPath = $this->getMatchedRoutesByPath();
+        $allowedMethods = $this->getAllowedMethods(iterator_to_array($matchedByPath));
 
         if ($request->method === 'OPTIONS' && $allowedMethods) {
             header('Allow: '.implode(', ', $allowedMethods));
             return $request;
         }
 
-        if (!$matchedByPath)
+        if (0 === count($matchedByPath))
             header('HTTP/1.1 404');
 
-        foreach ($matchedByPath as $route)
-            if (0 !== stripos($request->method, '__')
-                && ($route->method === $request->method
-                    || $route->method === 'ANY'
-                    || ($route->method === 'GET' && $request->method === 'HEAD')))
-                if ($route->matchRoutines($request, $tempParams = $paramsByPath[$route]))
-                    return $this->configureRequest($request, $route, static::cleanUpParams($tempParams));
-                else
-                    $badRequest = true;
+        $configuredRequest = $this->getMatchedRoutesByRoutines($matchedByPath);
 
-        if ($matchedByPath && !isset($badRequest))
+        if ($configuredRequest)
+            return $configuredRequest;
+
+        if (count($matchedByPath) && !isset($badRequest))
             header('HTTP/1.1 405');
 
         if ($matchedByPath && $allowedMethods)
