@@ -12,7 +12,7 @@ class ClassName extends AbstractRoute
 {
 
     public $class = '';
-    protected $constructorParams = array();
+    public $constructorParams = array();
     protected $instance = null;
 
     public function __construct($method, $pattern, $class, array $constructorParams=array())

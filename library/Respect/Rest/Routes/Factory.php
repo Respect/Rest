@@ -11,7 +11,7 @@ class Factory extends AbstractRoute
 
     public $class = '';
     protected $instance = null;
-    protected $factory = null;
+    public $factory = null;
 
     /** @var ReflectionMethod */
     protected $reflection;
