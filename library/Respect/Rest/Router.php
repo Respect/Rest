@@ -208,8 +208,7 @@ class Router
         return $badRequest ? false : null;
     }
 
-    /** Dispatch the current route with a custom Request */
-    public function dispatchRequest(Request $request=null)
+    public function isRoutelessDispatch(Request $request = null)
     {
         $this->isAutoDispatched = false;
         if (!$request)
@@ -226,7 +225,15 @@ class Router
             if ($allowedMethods)
                 header('Allow: '.implode(', ', $allowedMethods));
 
-            return $request;
+            return true;
+        }
+    }
+
+    /** Dispatch the current route with a custom Request */
+    public function dispatchRequest(Request $request=null)
+    {
+        if ($this->isRoutelessDispatch($request)) {
+            return $this->request;
         }
 
         $this->applyVirtualHost();
@@ -235,9 +242,9 @@ class Router
         $matchedByPath = $this->getMatchedRoutesByPath();
         $allowedMethods = $this->getAllowedMethods(iterator_to_array($matchedByPath));
 
-        if ($request->method === 'OPTIONS' && $allowedMethods) {
+        if ($this->request->method === 'OPTIONS' && $allowedMethods) {
             header('Allow: '.implode(', ', $allowedMethods));
-            return $request;
+            return $this->request;
         }
 
         if (0 === count($matchedByPath))
@@ -255,7 +262,7 @@ class Router
             header('Allow: '.implode(', ', $allowedMethods));
 
         $request->route = null;
-        return $request;
+        return $this->request;
     }
 
     /** Dispatches and get response with default request parameters */
