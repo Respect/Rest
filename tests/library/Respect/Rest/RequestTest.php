@@ -542,7 +542,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $interfaceName = 'GeneratedInterface'.md5(rand());
 
         $interfaceList = (array) $interfaceList;
-        array_walk(&$interfaceList, function(&$interfaceSuffix) {
+        array_walk($interfaceList, function(&$interfaceSuffix) {
             $interfaceSuffix = "Respect\Rest\Routines\\$interfaceSuffix";
         });
         $interfaceList[] = 'Respect\Rest\Routines\Routinable';
