@@ -292,10 +292,22 @@ class RequestTest extends PHPUnit_Framework_TestCase
      * @dataProvider providerForParamSyncedRoutines
      */
     public function testParamSyncedRoutinesShouldAllReferenceTheSameValuesByTheirNames(
-        $route, array $params)
+        $checkers, array $params)
     {
         $request = new Request('GET', '/version');
         $request->params = $params;
+
+        $route = $this->getMockForRoute(
+            'GET', 
+            '/version', 
+            'MySoftwareName',
+            'GET', 
+            $params
+        );
+        foreach ($checkers as $checker) {
+            $route->appendRoutine($this->getMockForProxyableRoutine($route, 'By', $checker));
+        }
+
         $request->route = $route;
 
         $response = $request->response();
@@ -308,111 +320,101 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $phpUnit = $this;
         $params = array(15, 10, 5);
 
-        $pureSynced = $this->generateParamSyncedChecker(
-            array(
-                function($majorVersion, $minorVersion, $patchVersion) use($phpUnit) {
-                    $phpUnit->assertCount(3, func_get_args());
-                    $phpUnit->assertSame(15, $majorVersion);
-                    $phpUnit->assertSame(10, $minorVersion);
-                    $phpUnit->assertSame(5, $patchVersion);
-                },
-                function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
-                    $phpUnit->assertCount(3, func_get_args());
-                    $phpUnit->assertSame(15, $majorVersion);
-                    $phpUnit->assertSame(10, $minorVersion);
-                    $phpUnit->assertSame(5, $patchVersion);
-                },
-                function($majorVersion) use($phpUnit) {
-                    $phpUnit->assertCount(1, func_get_args());
-                    $phpUnit->assertSame(15, $majorVersion);
-                },
-                function() use($phpUnit) {
-                    $phpUnit->assertCount(0, func_get_args());
-                },
-            ),
-            $pureSyncedParams = array(15, 10, 5)
+        $pureSynced = array(
+            function($majorVersion, $minorVersion, $patchVersion) use($phpUnit) {
+                $phpUnit->assertCount(3, func_get_args());
+                $phpUnit->assertSame(15, $majorVersion);
+                $phpUnit->assertSame(10, $minorVersion);
+                $phpUnit->assertSame(5, $patchVersion);
+            },
+            function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
+                $phpUnit->assertCount(3, func_get_args());
+                $phpUnit->assertSame(15, $majorVersion);
+                $phpUnit->assertSame(10, $minorVersion);
+                $phpUnit->assertSame(5, $patchVersion);
+            },
+            function($majorVersion) use($phpUnit) {
+                $phpUnit->assertCount(1, func_get_args());
+                $phpUnit->assertSame(15, $majorVersion);
+            },
+            function() use($phpUnit) {
+                $phpUnit->assertCount(0, func_get_args());
+            },
         );
 
-        $pureNulls = $this->generateParamSyncedChecker(
-            array(
-                function($majorVersion, $minorVersion, $patchVersion) use($phpUnit) {
-                    $phpUnit->assertCount(3, func_get_args());
-                    $phpUnit->assertSame(null, $majorVersion);
-                    $phpUnit->assertSame(null, $minorVersion);
-                    $phpUnit->assertSame(null, $patchVersion);
-                },
-                function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
-                    $phpUnit->assertCount(3, func_get_args());
-                    $phpUnit->assertSame(null, $majorVersion);
-                    $phpUnit->assertSame(null, $minorVersion);
-                    $phpUnit->assertSame(null, $patchVersion);
-                },
-                function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
-                    $phpUnit->assertCount(3, func_get_args());
-                    $phpUnit->assertSame(null, $majorVersion);
-                    $phpUnit->assertSame(null, $minorVersion);
-                    $phpUnit->assertSame(null, $patchVersion);
-                },
-                function($majorVersion) use($phpUnit) {
-                    $phpUnit->assertCount(1, func_get_args());
-                    $phpUnit->assertSame(null, $majorVersion);
-                },
-                function() use($phpUnit) {
-                    $phpUnit->assertCount(0, func_get_args());
-                },
-            )
+        $pureNulls = array(
+            function($majorVersion, $minorVersion, $patchVersion) use($phpUnit) {
+                $phpUnit->assertCount(3, func_get_args());
+                $phpUnit->assertSame(null, $majorVersion);
+                $phpUnit->assertSame(null, $minorVersion);
+                $phpUnit->assertSame(null, $patchVersion);
+            },
+            function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
+                $phpUnit->assertCount(3, func_get_args());
+                $phpUnit->assertSame(null, $majorVersion);
+                $phpUnit->assertSame(null, $minorVersion);
+                $phpUnit->assertSame(null, $patchVersion);
+            },
+            function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
+                $phpUnit->assertCount(3, func_get_args());
+                $phpUnit->assertSame(null, $majorVersion);
+                $phpUnit->assertSame(null, $minorVersion);
+                $phpUnit->assertSame(null, $patchVersion);
+            },
+            function($majorVersion) use($phpUnit) {
+                $phpUnit->assertCount(1, func_get_args());
+                $phpUnit->assertSame(null, $majorVersion);
+            },
+            function() use($phpUnit) {
+                $phpUnit->assertCount(0, func_get_args());
+            },
         );
 
-        $pureDefaults = $this->generateParamSyncedChecker(
-            array(
-                function($majorVersion=15, $minorVersion=10, $patchVersion=5) use($phpUnit) {
-                    $phpUnit->assertCount(3, func_get_args());
-                    $phpUnit->assertSame(15, $majorVersion);
-                    $phpUnit->assertSame(10, $minorVersion);
-                    $phpUnit->assertSame(5, $patchVersion);
-                },
-                function($patchVersion=5, $minorVersion=10, $majorVersion=15) use($phpUnit) {
-                    $phpUnit->assertCount(3, func_get_args());
-                    $phpUnit->assertSame(15, $majorVersion);
-                    $phpUnit->assertSame(10, $minorVersion);
-                    $phpUnit->assertSame(5, $patchVersion);
-                },
-                function($majorVersion=15) use($phpUnit) {
-                    $phpUnit->assertCount(1, func_get_args());
-                    $phpUnit->assertSame(15, $majorVersion);
-                },
-                function() use($phpUnit) {
-                    $phpUnit->assertCount(0, func_get_args());
-                },
-            )
+        $pureDefaults = array(
+            function($majorVersion=15, $minorVersion=10, $patchVersion=5) use($phpUnit) {
+                $phpUnit->assertCount(3, func_get_args());
+                $phpUnit->assertSame(15, $majorVersion);
+                $phpUnit->assertSame(10, $minorVersion);
+                $phpUnit->assertSame(5, $patchVersion);
+            },
+            function($patchVersion=5, $minorVersion=10, $majorVersion=15) use($phpUnit) {
+                $phpUnit->assertCount(3, func_get_args());
+                $phpUnit->assertSame(15, $majorVersion);
+                $phpUnit->assertSame(10, $minorVersion);
+                $phpUnit->assertSame(5, $patchVersion);
+            },
+            function($majorVersion=15) use($phpUnit) {
+                $phpUnit->assertCount(1, func_get_args());
+                $phpUnit->assertSame(15, $majorVersion);
+            },
+            function() use($phpUnit) {
+                $phpUnit->assertCount(0, func_get_args());
+            },
         );
 
-        $mixed = $this->generateParamSyncedChecker(
-            array(
-                function($majorVersion, $minorVersion, $patchVersion=5) use($phpUnit) {
-                    $phpUnit->assertCount(3, func_get_args());
-                    $phpUnit->assertSame(15, $majorVersion);
-                    $phpUnit->assertSame(10, $minorVersion);
-                    $phpUnit->assertSame(5, $patchVersion);
-                },
-                function($majorVersion=15, $minorVersion, $patchVersion) use($phpUnit) {
-                    $phpUnit->assertCount(3, func_get_args());
-                    $phpUnit->assertSame(15, $majorVersion);
-                    $phpUnit->assertSame(10, $minorVersion);
-                    $phpUnit->assertSame(null, $patchVersion);
-                },
-                function() use($phpUnit) {
-                    $phpUnit->assertCount(0, func_get_args());
-                },
-            ),
-            $mixedParams = array(15, 10)
+        $mixed = array(
+            function($majorVersion, $minorVersion, $patchVersion=5) use($phpUnit) {
+                $phpUnit->assertCount(3, func_get_args());
+                $phpUnit->assertSame(15, $majorVersion);
+                $phpUnit->assertSame(10, $minorVersion);
+                $phpUnit->assertSame(5, $patchVersion);
+            },
+            function($majorVersion=15, $minorVersion, $patchVersion) use($phpUnit) {
+                $phpUnit->assertCount(3, func_get_args());
+                $phpUnit->assertSame(15, $majorVersion);
+                $phpUnit->assertSame(10, $minorVersion);
+                $phpUnit->assertSame(null, $patchVersion);
+            },
+            function() use($phpUnit) {
+                $phpUnit->assertCount(0, func_get_args());
+            },
         );
 
         return array(
-            array($pureSynced, $pureSyncedParams),
+            array($pureSynced, array(15, 10, 5)),
             array($pureNulls, array()),
             array($pureDefaults, array()),
-            array($mixed, $mixedParams)
+            array($mixed, array(15, 10))
         );
     }
 
@@ -421,21 +423,6 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $toString = (string) $request;
 
         $this->assertSame('Some list items', $toString);
-    }
-
-    protected function generateParamSyncedChecker(array $checkers, $params = array())
-    {
-        $route = $this->getMockForRoute(
-            'GET', 
-            '/version', 
-            'MySoftwareName',
-            'GET', 
-            $params
-        );
-        foreach ($checkers as $checker) {
-            $route->appendRoutine($this->getMockForProxyableRoutine($route, 'By', $checker));
-        }
-        return $route;
     }
 
     protected function getMockForProxyableRoutine($route, $name, $implementation)
