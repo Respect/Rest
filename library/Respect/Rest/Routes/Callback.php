@@ -10,7 +10,7 @@ class Callback extends AbstractRoute
 {
 
     protected $callback;
-    protected $arguments;
+    public $arguments;
 
     /** @var ReflectionFunctionAbstract */
     protected $reflection;

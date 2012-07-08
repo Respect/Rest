@@ -56,12 +56,6 @@ namespace Respect\Rest {
             global $header;
             $header = array();
         }
-        function test_cleaning_up_params_should_remove_empty_string_params()
-        {
-            $params = array('foo', '', 'bar');
-            $expected = array('foo', 'bar');
-            $this->assertEquals($expected, Router::cleanUpParams($params));
-        }
         function test_magic_call_should_throw_exception_with_just_one_arg()
         {
             $this->setExpectedException('InvalidArgumentException');

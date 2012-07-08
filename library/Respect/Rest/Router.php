@@ -28,7 +28,7 @@ class Router
     protected $virtualHost = '';
 
     /** Cleans up an return an array of extracted parameters */
-    public static function cleanUpParams($params)
+    protected static function cleanUpParams($params)
     {
         return array_values(
             array_filter(
