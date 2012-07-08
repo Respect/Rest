@@ -126,14 +126,13 @@ class RequestTest extends PHPUnit_Framework_TestCase
      */
     public function testRequestIsAbleToDeliverAResponseWithoutSettingPathParams(Request $request)
     {
-        $request->route = $this->getMockForAbstractClass(
-            '\Respect\Rest\Routes\AbstractRoute', 
-            array('GET', '/notebooks')
+        $request->route = $this->getMockForRoute(
+            'GET', 
+            '/notebooks', 
+            array('Vaio', 'MacBook', 'ThinkPad'), 
+            'GET',
+            array()
         );
-        $request->route->expects($this->once())
-                       ->method('runTarget')
-                       ->with('GET', array())
-                       ->will($this->returnValue(array('Vaio', 'MacBook', 'ThinkPad')));
         $response = $request->response();
 
         $this->assertEquals(
@@ -149,15 +148,14 @@ class RequestTest extends PHPUnit_Framework_TestCase
      */
     public function testRequestIsAbleToDeliverAResponseUsingPreviouslySetPathParams(Request $request)
     {
-        $request->params = array('dpi', 'price');
-        $request->route = $this->getMockForAbstractClass(
-            '\Respect\Rest\Routes\AbstractRoute', 
-            array('GET', '/printers')
+        $request->route = $this->getMockForRoute(
+            'GET', 
+            '/printers', 
+            'Some Printers Response', 
+            'GET',
+            array('dpi', 'price')
         );
-        $request->route->expects($this->once())
-                       ->method('runTarget')
-                       ->with('GET', array('dpi', 'price'))
-                       ->will($this->returnValue(''));
+        $request->params = array('dpi', 'price');
         $response = $request->response();
     }
 
@@ -166,22 +164,9 @@ class RequestTest extends PHPUnit_Framework_TestCase
      */
     public function testForwardReplacesRouteAndReturnsResponse()
     {
-        $request = $this->getMock(
-            'Respect\Rest\Request', 
-            array('response'), 
-            array('GET', '/users/alganet/lists')
-        );
-        $request->expects($this->once())
-                ->method('response')
-                ->will($this->returnValue('Some list items'));
-        $forwardedRoute = $this->getMockForAbstractClass(
-            'Respect\Rest\Routes\AbstractRoute',
-            array('GET', '/lists/12345')
-        );
-        $inactiveRoute = $this->getMockForAbstractClass(
-            'Respect\Rest\Routes\AbstractRoute',
-            array('GET', '/users/alganet/lists')
-        );
+        $request = $this->getMockForRequest('GET', '/users/alganet/lists', 'Some list items');
+        $inactiveRoute  = $this->getMockForRoute('GET', '/users/alganet/lists');
+        $forwardedRoute = $this->getMockForRoute('GET', '/lists/12345');
         $forwardedRoute->expects($this->never())
                        ->method('runTarget');
         $request->route = $inactiveRoute;
@@ -205,24 +190,22 @@ class RequestTest extends PHPUnit_Framework_TestCase
      */
     public function testDeveloperCanForwardRoutesByReturningThemOnTheirImplementation()
     {
-        $internallyForwardedRoute = $this->getMockForAbstractClass(
-            'Respect\Rest\Routes\AbstractRoute',
-            array('GET', '/candies/cupcakes')
+        $internallyForwardedRoute = $this->getMockForRoute(
+            'GET', 
+            '/candies/cupcakes', 
+            'Delicious Cupcake Internally Forwarded', 
+            'GET', 
+            array()
         );
-        $internallyForwardedRoute->expects($this->once())
-                                    ->method('runTarget')
-                                    ->with('GET', $expectedParams = array())
-                                    ->will($this->returnValue('Delicious Cupcake Internally Forwarded'));
-        $userImplementedRoute = $this->getMockForAbstractClass(
-            'Respect\Rest\Routes\AbstractRoute',
-            array('GET', '/cupcakes')
+        $userImplementedRoute = $this->getMockForRoute(
+            'GET', 
+            '/cupcakes', 
+            function() use($internallyForwardedRoute) {
+                return $internallyForwardedRoute;
+            },
+            'GET', 
+            array()
         );
-        $userImplementedRoute->expects($this->once())
-                             ->method('runTarget')
-                             ->with('GET', $expectedParams = array())
-                             ->will($this->returnCallback(function() use($internallyForwardedRoute) {
-                                 return $internallyForwardedRoute;
-                             }));
         $request = new Request('GET', '/cupcakes');
         $request->route = $userImplementedRoute;
         $response = $request->response();
@@ -236,21 +219,17 @@ class RequestTest extends PHPUnit_Framework_TestCase
     public function testDeveloperCanReturnCallablesToProcessOutputAfterTargetRuns()
     {
         $request = new Request('GET', '/logs');
-        $route = $this->getMockForAbstractClass(
-            'Respect\Rest\Routes\AbstractRoute',
-            array('GET', '/logs')
+        $route = $this->getMockForRoute(
+            'GET', 
+            '/logs', 
+            'user-deleted-something', 
+            'GET', 
+            $expectedParams = array()
         );
-        $route->expects($this->once())
-              ->method('runTarget')
-              ->with('GET', $expectedParams = array())
-              ->will($this->returnValue('user-deleted-something'));
-        $interfaceName = 'GeneratedInterface'.md5(rand());
-        eval("interface $interfaceName 
-                extends Respect\Rest\Routines\ProxyableThrough, 
-                        Respect\Rest\Routines\Routinable{}");
-        $routine = $this->getMockForAbstractClass(
-            $interfaceName
-        );
+        $routine = $this->getMockForRoutine(array(
+            'Respect\Rest\Routines\ProxyableThrough', 
+            'Respect\Rest\Routines\Routinable'
+        ));
         $routine->expects($this->once())
                 ->method('through')
                 ->with($request, $expectedParams)
@@ -266,5 +245,78 @@ class RequestTest extends PHPUnit_Framework_TestCase
             $response,
             "We passed a callback that replaced - for spaces, response should be passed to it."
         );
+    }
+
+    protected function getMockForRequest($method, $uri, $response=null)
+    {
+        $hasResponse = !is_null($response);
+        $mockedMethods = array();
+
+        if ($hasResponse) {
+            $mockedMethods[] = 'response';
+        }
+
+        $constructorParams = array($method, $uri);
+
+        $request = $this->getMock(
+            'Respect\Rest\Request', 
+            $mockedMethods, 
+            $constructorParams
+        );
+
+        if ($hasResponse) {
+            $request->expects($this->once())
+                    ->method('response')
+                    ->will($this->returnValue($response));
+        }
+
+        return $request;
+    }
+
+    protected function getMockForRoute($method, $pattern, $target = null, 
+        $targetMethod = 'GET', $tatgetParams = array())
+    {
+        $hasTarget = !is_null($target);
+        $mockedMethods = array();
+
+        if ($hasTarget) {
+            $mockedMethods[] = 'runTarget';
+        }
+
+        $constructorParams = array($method, $pattern);
+
+        $route = $this->getMockForAbstractClass(
+            'Respect\Rest\Routes\AbstractRoute',
+            $constructorParams
+        );
+
+        if ($hasTarget) {
+            if (is_callable($target)){
+                $performAction = $this->returnCallback($target);
+            } else {
+                $performAction = $this->returnValue($target);
+            }
+
+            $route->expects($this->once())
+                  ->method('runTarget')
+                  ->with($targetMethod, $tatgetParams)
+                  ->will($performAction);
+        }
+
+        return $route;
+    }
+
+    protected function getMockForRoutine($interfaceList)
+    {
+        $interfaceName = is_array($interfaceList) 
+            ? 'GeneratedInterface'.md5(rand()) 
+            : $interfaceList;
+
+        $interfaceList = implode(',', (array) $interfaceList);
+        
+        eval("interface $interfaceName extends $interfaceList{}");
+        $routine = $this->getMockForAbstractClass($interfaceName);
+
+        return $routine;
     }
 }
