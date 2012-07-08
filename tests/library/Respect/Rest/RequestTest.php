@@ -4,9 +4,11 @@ namespace Respect\Rest;
 use Exception;
 use PHPUnit_Framework_TestCase;
 
+/** @covers Respect\Rest\Request */
 class RequestTest extends PHPUnit_Framework_TestCase
 {
-    public function testIsPossibleToConstructFromEnv()
+    /** @covers Respect\Rest\Request::__construct */
+    public function testIsPossibleToConstructUsingValuesFromSuperglobals()
     {
         $_SERVER['REQUEST_URI'] = '/users';
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -25,6 +27,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    /** @covers Respect\Rest\Request::__construct */
     public function testIsPossibleToConstructWithCustomMethod()
     {
         $_SERVER['REQUEST_URI'] = '/documents';
@@ -44,6 +47,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    /** @covers Respect\Rest\Request::__construct */
     public function testIsPossibleToConstructWithCustomUri()
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';
@@ -64,7 +68,8 @@ class RequestTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    public function testWhenConstructingThePathShouldBePopulatedFromAbsoluteUri()
+    /** @covers Respect\Rest\Request::__construct */
+    public function testAbsoluteUrisShouldBeParsedToExtractThePathOnConstructor()
     {
         $_SERVER['REQUEST_URI'] = 'http://google.com/search?q=foo';
 
@@ -86,6 +91,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
         //TODO same behavior for env vars and constructor params regarding parse_url
     }
 
+    /** @covers Respect\Rest\Request::response */
     public function testResponseIsNullWithoutSettingARoute()
     {
         $_SERVER['REQUEST_URI'] = '/photos';
@@ -103,7 +109,8 @@ class RequestTest extends PHPUnit_Framework_TestCase
         //TODO Request::response() should check if $this->route instanceof AbstractRoute
     }
 
-    public function testRequestRunsRouteTargetWithoutParams()
+    /** @covers Respect\Rest\Request::response */
+    public function testRequestIsAbleToDeliverAResponseWithoutSettingPathParams()
     {
         $_SERVER['REQUEST_URI'] = '/notebooks';
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -126,7 +133,8 @@ class RequestTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    public function testResponseRunsRouteTargetWithParams()
+    /** @covers Respect\Rest\Request::response */
+    public function testRequestIsAbleToDeliverAResponseUsingPreviouslySetPathParams()
     {
         $_SERVER['REQUEST_URI'] = '/printers';
         $_SERVER['REQUEST_METHOD'] = 'GET';
