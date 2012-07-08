@@ -129,9 +129,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $request->route = $this->getMockForRoute(
             'GET', 
             '/notebooks', 
-            array('Vaio', 'MacBook', 'ThinkPad'), 
-            'GET',
-            array()
+            array('Vaio', 'MacBook', 'ThinkPad')
         );
         $response = $request->response();
 
@@ -193,18 +191,14 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $internallyForwardedRoute = $this->getMockForRoute(
             'GET', 
             '/candies/cupcakes', 
-            'Delicious Cupcake Internally Forwarded', 
-            'GET', 
-            array()
+            'Delicious Cupcake Internally Forwarded'
         );
         $userImplementedRoute = $this->getMockForRoute(
             'GET', 
             '/cupcakes', 
             function() use($internallyForwardedRoute) {
                 return $internallyForwardedRoute;
-            },
-            'GET', 
-            array()
+            }
         );
         $request = new Request('GET', '/cupcakes');
         $request->route = $userImplementedRoute;
