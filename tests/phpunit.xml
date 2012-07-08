@@ -18,8 +18,5 @@
     <testsuite name="Respect\Rest Test Suite">
         <directory>.</directory>
     </testsuite>
-    <logging>
-        <log type="coverage-text" target="php://stdout" showUncoveredFiles="false"/>
-    </logging>
 </phpunit>
 
