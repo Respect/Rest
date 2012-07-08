@@ -5,7 +5,7 @@ namespace Respect\Rest;
 /**
  * @covers Respect\Rest\Request
  */
-class RequestTest extends \PHPUnit_Framework_TestCase
+class LegacyRequestTest extends \PHPUnit_Framework_TestCase
 {
     function setUp() 
     {
