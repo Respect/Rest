@@ -183,28 +183,41 @@ class RequestTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers  Respect\Rest\Request::response
-     * @depends testForwardReplacesRouteAndReturnsResponse 
+     * @covers       Respect\Rest\Request::response
+     * @depends      testForwardReplacesRouteAndReturnsResponse 
+     * @dataProvider providerForUserImplementedForwards
      */
-    public function testDeveloperCanForwardRoutesByReturningThemOnTheirImplementation()
+    public function testDeveloperCanForwardRoutesByReturningThemOnTheirImplementation(
+        $requestPath, $expectedResponse, $userImplementedRoute)
+    {
+        $request = new Request('GET', $requestPath);
+        $request->route = $userImplementedRoute;
+        $response = $request->response();
+        
+        $this->assertSame($expectedResponse, $response);
+    }
+
+    protected function providerForUserImplementedForwards()
     {
         $internallyForwardedRoute = $this->getMockForRoute(
             'GET', 
             '/candies/cupcakes', 
             'Delicious Cupcake Internally Forwarded'
         );
-        $userImplementedRoute = $this->getMockForRoute(
+        $routeThatReturnsAnotherRoute = $this->getMockForRoute(
             'GET', 
             '/cupcakes', 
             function() use($internallyForwardedRoute) {
                 return $internallyForwardedRoute;
             }
         );
-        $request = new Request('GET', '/cupcakes');
-        $request->route = $userImplementedRoute;
-        $response = $request->response();
-        
-        $this->assertSame('Delicious Cupcake Internally Forwarded', $response);
+        return array(
+            array(
+                '/cupcakes', 
+                'Delicious Cupcake Internally Forwarded', 
+                $routeThatReturnsAnotherRoute
+            )
+        );
     }
 
     /**
