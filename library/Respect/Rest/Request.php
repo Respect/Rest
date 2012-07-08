@@ -25,9 +25,15 @@ class Request
 
     public function __construct($method=null, $uri=null)
     {
-        $uri = $uri ? : parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+        if (is_null($method)) {
+            $method = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'GET';
+        }
+        if (is_null($uri)) {
+            $uri = isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : '/';
+        }
+        $uri = parse_url($uri, PHP_URL_PATH);
         $this->uri = rtrim($uri, ' /');
-        $this->method = strtoupper($method ? : $_SERVER['REQUEST_METHOD']);
+        $this->method = strtoupper($method);
     }
 
     public function __toString()
@@ -38,7 +44,7 @@ class Request
     /** Generates and returns the response from the current route */
     public function response()
     {
-        if (!$this->route)
+        if (!$this->route instanceof AbstractRoute)
             return null;
 
         foreach ($this->route->routines as $routine)
