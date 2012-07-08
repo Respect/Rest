@@ -3,6 +3,7 @@ namespace Respect\Rest;
 
 use Exception;
 use PHPUnit_Framework_TestCase;
+use ReflectionFunction;
 
 /** 
  * @covers Respect\Rest\Request 
@@ -286,6 +287,171 @@ class RequestTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    /**
+     * @covers       Respect\Rest\Request::response
+     * @dataProvider providerForParamSyncedRoutines
+     */
+    public function testParamSyncedRoutinesShouldAllReferenceTheSameValuesByTheirNames(
+        $route, array $params)
+    {
+        $request = new Request('GET', '/version');
+        $request->params = $params;
+        $request->route = $route;
+
+        $response = $request->response();
+
+        $this->assertEquals('MySoftwareName', $response);
+    }
+
+    public function providerForParamSyncedRoutines()
+    {
+        $phpUnit = $this;
+        $params = array(15, 10, 5);
+
+        $pureSynced = $this->generateParamSyncedChecker(
+            array(
+                function($majorVersion, $minorVersion, $patchVersion) use($phpUnit) {
+                    $phpUnit->assertCount(3, func_get_args());
+                    $phpUnit->assertSame(15, $majorVersion);
+                    $phpUnit->assertSame(10, $minorVersion);
+                    $phpUnit->assertSame(5, $patchVersion);
+                },
+                function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
+                    $phpUnit->assertCount(3, func_get_args());
+                    $phpUnit->assertSame(15, $majorVersion);
+                    $phpUnit->assertSame(10, $minorVersion);
+                    $phpUnit->assertSame(5, $patchVersion);
+                },
+                function($majorVersion) use($phpUnit) {
+                    $phpUnit->assertCount(1, func_get_args());
+                    $phpUnit->assertSame(15, $majorVersion);
+                },
+                function() use($phpUnit) {
+                    $phpUnit->assertCount(0, func_get_args());
+                },
+            ),
+            $pureSyncedParams = array(15, 10, 5)
+        );
+
+        $pureNulls = $this->generateParamSyncedChecker(
+            array(
+                function($majorVersion, $minorVersion, $patchVersion) use($phpUnit) {
+                    $phpUnit->assertCount(3, func_get_args());
+                    $phpUnit->assertSame(null, $majorVersion);
+                    $phpUnit->assertSame(null, $minorVersion);
+                    $phpUnit->assertSame(null, $patchVersion);
+                },
+                function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
+                    $phpUnit->assertCount(3, func_get_args());
+                    $phpUnit->assertSame(null, $majorVersion);
+                    $phpUnit->assertSame(null, $minorVersion);
+                    $phpUnit->assertSame(null, $patchVersion);
+                },
+                function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
+                    $phpUnit->assertCount(3, func_get_args());
+                    $phpUnit->assertSame(null, $majorVersion);
+                    $phpUnit->assertSame(null, $minorVersion);
+                    $phpUnit->assertSame(null, $patchVersion);
+                },
+                function($majorVersion) use($phpUnit) {
+                    $phpUnit->assertCount(1, func_get_args());
+                    $phpUnit->assertSame(null, $majorVersion);
+                },
+                function() use($phpUnit) {
+                    $phpUnit->assertCount(0, func_get_args());
+                },
+            )
+        );
+
+        $pureDefaults = $this->generateParamSyncedChecker(
+            array(
+                function($majorVersion=15, $minorVersion=10, $patchVersion=5) use($phpUnit) {
+                    $phpUnit->assertCount(3, func_get_args());
+                    $phpUnit->assertSame(15, $majorVersion);
+                    $phpUnit->assertSame(10, $minorVersion);
+                    $phpUnit->assertSame(5, $patchVersion);
+                },
+                function($patchVersion=5, $minorVersion=10, $majorVersion=15) use($phpUnit) {
+                    $phpUnit->assertCount(3, func_get_args());
+                    $phpUnit->assertSame(15, $majorVersion);
+                    $phpUnit->assertSame(10, $minorVersion);
+                    $phpUnit->assertSame(5, $patchVersion);
+                },
+                function($majorVersion=15) use($phpUnit) {
+                    $phpUnit->assertCount(1, func_get_args());
+                    $phpUnit->assertSame(15, $majorVersion);
+                },
+                function() use($phpUnit) {
+                    $phpUnit->assertCount(0, func_get_args());
+                },
+            )
+        );
+
+        $mixed = $this->generateParamSyncedChecker(
+            array(
+                function($majorVersion, $minorVersion, $patchVersion=5) use($phpUnit) {
+                    $phpUnit->assertCount(3, func_get_args());
+                    $phpUnit->assertSame(15, $majorVersion);
+                    $phpUnit->assertSame(10, $minorVersion);
+                    $phpUnit->assertSame(5, $patchVersion);
+                },
+                function($majorVersion=15, $minorVersion, $patchVersion) use($phpUnit) {
+                    $phpUnit->assertCount(3, func_get_args());
+                    $phpUnit->assertSame(15, $majorVersion);
+                    $phpUnit->assertSame(10, $minorVersion);
+                    $phpUnit->assertSame(null, $patchVersion);
+                },
+                function() use($phpUnit) {
+                    $phpUnit->assertCount(0, func_get_args());
+                },
+            ),
+            $mixedParams = array(15, 10)
+        );
+
+        return array(
+            array($pureSynced, $pureSyncedParams),
+            array($pureNulls, array()),
+            array($pureDefaults, array()),
+            array($mixed, $mixedParams)
+        );
+    }
+
+    protected function generateParamSyncedChecker(array $checkers, $params = array())
+    {
+        $route = $this->getMockForRoute(
+            'GET', 
+            '/version', 
+            'MySoftwareName',
+            'GET', 
+            $params
+        );
+        foreach ($checkers as $checker) {
+            $route->appendRoutine($this->getMockForProxyableRoutine($route, 'By', $checker));
+        }
+        return $route;
+    }
+
+    protected function getMockForProxyableRoutine($route, $name, $implementation)
+    {
+        $routine = $this->getMockForRoutine(array("Proxyable$name", "ParamSynced"));
+        $route->expects($this->any())
+          ->method('getReflection')
+          ->with('GET')
+          ->will($this->returnValue(
+            $reflection = new ReflectionFunction($implementation)
+          ));
+        $routine->expects($this->any())
+                ->method('getParameters')
+                ->will($this->returnValue($reflection->getParameters()));
+        $routine->expects($this->any())
+          ->method(strtolower($name))
+          ->will($this->returnCallback(function($request, $params) use ($implementation) {
+              return call_user_func_array($implementation, $params);
+          }));
+
+        return $routine;
+    }
+
     protected function getMockForRequest($method, $uri, $response=null)
     {
         $hasResponse = !is_null($response);
@@ -336,10 +502,16 @@ class RequestTest extends PHPUnit_Framework_TestCase
                 $performAction = $this->returnValue($target);
             }
 
-            $route->expects($this->any())
-                  ->method('runTarget')
-                  ->with($targetMethod, $targetParams)
-                  ->will($performAction);
+            if ($targetParams) {
+                $route->expects($this->any())
+                      ->method('runTarget')
+                      ->with($targetMethod, $targetParams)
+                      ->will($performAction);
+            } else {
+                $route->expects($this->any())
+                      ->method('runTarget')
+                      ->will($performAction);
+            }
         }
 
         return $route;
