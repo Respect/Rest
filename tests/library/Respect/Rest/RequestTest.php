@@ -104,7 +104,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
     }
 
     /** 
-     * @covers Respect\Rest\Request::response 
+     * @covers  Respect\Rest\Request::response 
      * @depends testIsPossibleToConstructUsingValuesFromSuperglobals 
      */
     public function testResponseIsNullWithoutSettingARoute(Request $request)
@@ -121,7 +121,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
     }
 
     /** 
-     * @covers Respect\Rest\Request::response 
+     * @covers  Respect\Rest\Request::response 
      * @depends testIsPossibleToConstructUsingValuesFromSuperglobals 
      */
     public function testRequestIsAbleToDeliverAResponseWithoutSettingPathParams(Request $request)
@@ -144,7 +144,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
     }
 
     /** 
-     * @covers Respect\Rest\Request::response 
+     * @covers  Respect\Rest\Request::response 
      * @depends testIsPossibleToConstructUsingValuesFromSuperglobals 
      */
     public function testRequestIsAbleToDeliverAResponseUsingPreviouslySetPathParams(Request $request)
