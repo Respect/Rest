@@ -160,4 +160,39 @@ class RequestTest extends PHPUnit_Framework_TestCase
                        ->will($this->returnValue(''));
         $response = $request->response();
     }
+
+    public function testForwardReplacesRouteAndReturnsResponse()
+    {
+        $request = $this->getMock(
+            'Respect\Rest\Request', 
+            array('response'), 
+            array('GET', '/users/alganet/lists')
+        );
+        $request->expects($this->once())
+                ->method('response')
+                ->will($this->returnValue('Some list items'));
+        $forwardedRoute = $this->getMockForAbstractClass(
+            'Respect\Rest\Routes\AbstractRoute',
+            array('GET', '/lists/12345')
+        );
+        $inactiveRoute = $this->getMockForAbstractClass(
+            'Respect\Rest\Routes\AbstractRoute',
+            array('GET', '/users/alganet/lists')
+        );
+        $forwardedRoute->expects($this->never())
+                       ->method('runTarget');
+        $request->route = $inactiveRoute;
+        $request->forward($forwardedRoute);
+
+        $this->assertNotSame(
+            $inactiveRoute, 
+            $request->route,
+            'After forwarding a route, the previous one should not be in the route attribute'
+        );
+        $this->assertSame(
+            $forwardedRoute,
+            $request->route,
+            'After forwarding a route, the forwarded route should be in the route attribute'
+        );
+    }
 }

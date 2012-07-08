@@ -100,7 +100,7 @@ class Request
         return null;
     }
 
-    protected function forward(AbstractRoute $route)
+    public function forward(AbstractRoute $route)
     {
         $this->route = $route;
         return $this->response();
