@@ -229,4 +229,42 @@ class RequestTest extends PHPUnit_Framework_TestCase
         
         $this->assertSame('Delicious Cupcake Internally Forwarded', $response);
     }
+
+    /**
+     * @covers Respect\Rest\Request::response
+     */
+    public function testDeveloperCanReturnCallablesToProcessOutputAfterTargetRuns()
+    {
+        $request = new Request('GET', '/logs');
+        $route = $this->getMockForAbstractClass(
+            'Respect\Rest\Routes\AbstractRoute',
+            array('GET', '/logs')
+        );
+        $route->expects($this->once())
+              ->method('runTarget')
+              ->with('GET', $expectedParams = array())
+              ->will($this->returnValue('user-deleted-something'));
+        $interfaceName = 'GeneratedInterface'.md5(rand());
+        eval("interface $interfaceName 
+                extends Respect\Rest\Routines\ProxyableThrough, 
+                        Respect\Rest\Routines\Routinable{}");
+        $routine = $this->getMockForAbstractClass(
+            $interfaceName
+        );
+        $routine->expects($this->once())
+                ->method('through')
+                ->with($request, $expectedParams)
+                ->will($this->returnValue(function($thatLogStubReturnedAbove) {
+                    return str_replace('-', ' ', $thatLogStubReturnedAbove);
+                }));
+        $route->appendRoutine($routine);
+        $request->route = $route;
+        $response = $request->response();
+        
+        $this->assertSame(
+            'user deleted something',
+            $response,
+            "We passed a callback that replaced - for spaces, response should be passed to it."
+        );
+    }
 }
