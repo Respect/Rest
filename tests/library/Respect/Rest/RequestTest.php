@@ -416,6 +416,13 @@ class RequestTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    public function testConvertingToStringCallsResponse() {
+        $request = $this->getMockForRequest('GET', '/users/alganet/lists', 'Some list items');
+        $toString = (string) $request;
+
+        $this->assertSame('Some list items', $toString);
+    }
+
     protected function generateParamSyncedChecker(array $checkers, $params = array())
     {
         $route = $this->getMockForRoute(
