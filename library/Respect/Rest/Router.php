@@ -241,16 +241,10 @@ class Router
         $this->request->route = null;
     }
 
-    /** Dispatch the current route with a custom Request */
-    public function dispatchRequest(Request $request=null)
+    public function routeDispatch()
     {
-        if ($this->isRoutelessDispatch($request)) {
-            return $this->request;
-        }
-
         $this->applyVirtualHost();
         $this->sortRoutes();
-
         $matchedByPath = $this->getMatchedRoutesByPath();
         $allowedMethods = $this->getAllowedMethods(iterator_to_array($matchedByPath));
 
@@ -260,8 +254,17 @@ class Router
             header('HTTP/1.1 404');
         elseif (!$this->getMatchedRoutesByRoutines($matchedByPath) instanceof Request)
             $this->informMethodNotAllowed($allowedMethods);
-
+        
         return $this->request;
+    }
+
+    /** Dispatch the current route with a custom Request */
+    public function dispatchRequest(Request $request=null)
+    {
+        if ($this->isRoutelessDispatch($request)) 
+            return $this->request;
+
+        return $this->routeDispatch();
     }
 
     /** Dispatches and get response with default request parameters */
