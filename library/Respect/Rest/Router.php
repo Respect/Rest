@@ -249,14 +249,10 @@ class Router
 
         if (0 === count($matchedByPath))
             header('HTTP/1.1 404');
-
-        $configuredRequest = $this->getMatchedRoutesByRoutines($matchedByPath);
-
-        if ($configuredRequest instanceof Request)
-            return $configuredRequest;
-
-        if (count($matchedByPath) && false !== $configuredRequest)
+        elseif (count($matchedByPath) && !$this->getMatchedRoutesByRoutines($matchedByPath) instanceof Request)
             header('HTTP/1.1 405');
+        else
+            return $this->request;
 
         if (count($matchedByPath) && $allowedMethods)
             header('Allow: '.implode(', ', $allowedMethods));
