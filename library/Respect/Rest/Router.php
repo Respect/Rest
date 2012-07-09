@@ -229,6 +229,18 @@ class Router
         }
     }
 
+    protected function informMethodNotAllowed(array $allowedMethods)
+    {
+        header('HTTP/1.1 405');
+
+        if (!$allowedMethods) {
+            return;
+        }
+        
+        header('Allow: '.implode(', ', $allowedMethods));
+        $this->request->route = null;
+    }
+
     /** Dispatch the current route with a custom Request */
     public function dispatchRequest(Request $request=null)
     {
@@ -249,15 +261,9 @@ class Router
 
         if (0 === count($matchedByPath))
             header('HTTP/1.1 404');
-        elseif (count($matchedByPath) && !$this->getMatchedRoutesByRoutines($matchedByPath) instanceof Request)
-            header('HTTP/1.1 405');
-        else
-            return $this->request;
+        elseif (!$this->getMatchedRoutesByRoutines($matchedByPath) instanceof Request)
+            $this->informMethodNotAllowed($allowedMethods);
 
-        if (count($matchedByPath) && $allowedMethods)
-            header('Allow: '.implode(', ', $allowedMethods));
-
-        $request->route = null;
         return $this->request;
     }
 
