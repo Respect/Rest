@@ -254,12 +254,9 @@ class Router
         $matchedByPath = $this->getMatchedRoutesByPath();
         $allowedMethods = $this->getAllowedMethods(iterator_to_array($matchedByPath));
 
-        if ($this->request->method === 'OPTIONS' && $allowedMethods) {
+        if ($this->request->method === 'OPTIONS' && $allowedMethods) 
             header('Allow: '.implode(', ', $allowedMethods));
-            return $this->request;
-        }
-
-        if (0 === count($matchedByPath))
+        elseif (0 === count($matchedByPath))
             header('HTTP/1.1 404');
         elseif (!$this->getMatchedRoutesByRoutines($matchedByPath) instanceof Request)
             $this->informMethodNotAllowed($allowedMethods);
