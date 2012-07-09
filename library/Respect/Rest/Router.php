@@ -223,7 +223,7 @@ class Router
             $allowedMethods = $this->getAllowedMethods($this->routes);
 
             if ($allowedMethods)
-                header('Allow: '.implode(', ', $allowedMethods));
+                header('Allow: '.implode(', ', array_unique($allowedMethods)));
 
             return true;
         }
