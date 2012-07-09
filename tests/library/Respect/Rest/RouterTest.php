@@ -8,6 +8,14 @@ use PHPUnit_Framework_TestCase;
  */
 class RouterTest extends PHPUnit_Framework_TestCase
 {
+    public static $status = 200;
+
+    public function setUp()
+    {
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
+    }
+
     /**
      * @covers            Respect\Rest\Router::__call
      * @expectedException InvalidArgumentException
@@ -235,4 +243,146 @@ class RouterTest extends PHPUnit_Framework_TestCase
             'The magic and concrete instances of Routes\Factory should be equivalent'
         );
     }
+
+    /**
+     * @covers Respect\Rest\Router::dispatchRequest
+     * @covers Respect\Rest\Router::isRoutelessDispatch
+     * @covers Respect\Rest\Router::isDispatchedToGlobalOptionsMethod
+     * @covers Respect\Rest\Router::getAllowedMethods
+     */
+    public function testCanToRespondToGlobalOptionsMethodAutomatically()
+    {
+        $router = new Router;
+        $router->get('/asian', 'Asian Food!');
+        $router->post('/eastern', 'Eastern Food!');
+        $router->eat('/mongolian', 'Mongolian Food!');
+        $response = (string) $router->dispatch('OPTIONS', '*')->response();
+
+        $this->assertContains(
+            'Allow: GET, POST, EAT', 
+            xdebug_get_headers(),
+            'There should be a sent Allow header with all methods from all routes'
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::dispatchRequest
+     * @covers Respect\Rest\Router::isRoutelessDispatch
+     * @covers Respect\Rest\Router::hasDispatchedOverridenMethod
+     */
+    public function testDeveloperCanOverridePostMethodWithQueryStringParameter()
+    {
+        $_REQUEST['_method'] = 'PUT';
+
+        $router = new Router;
+        $router->methodOverriding = true;
+        $router->put('/bulbs', 'Some Bulbs Put Response');
+        $router->post('/bulbs', 'Some Bulbs Post Response');
+
+        $result = (string) $router->dispatch('POST', '/bulbs')->response();
+        
+        $this->assertSame(
+            'Some Bulbs Put Response', 
+            $result,
+            'Router should dispatch to PUT (overriden) instead of POST'
+        );
+
+        $this->assertNotSame(
+            'Some Bulbs Post Response', 
+            $result,
+            'Router NOT dispatch to POST when method is overriden'
+        );
+
+        return $router;
+    }
+
+    /**
+     * @covers  Respect\Rest\Router::dispatchRequest
+     * @covers  Respect\Rest\Router::isRoutelessDispatch
+     * @covers  Respect\Rest\Router::hasDispatchedOverridenMethod
+     * @depends testDeveloperCanOverridePostMethodWithQueryStringParameter
+     */
+    public function testDeveloperCanTurnOffMethodOverriding(Router $router)
+    {
+        $_REQUEST['_method'] = 'PUT';
+        $router->methodOverriding = false;
+        $result = (string) $router->dispatch('POST', '/bulbs')->response();
+
+        $this->assertSame(
+            'Some Bulbs Post Response', 
+            $result,
+            'Router should dispatch to POST (not overriden) instead of PUT'
+        );
+
+        $this->assertNotSame(
+            'Some Bulbs Put Response', 
+            $result,
+            'Router NOT dispatch to PUT when method is overriden'
+        );
+    }
+
+    /**
+     * @covers  Respect\Rest\Router::dispatchRequest
+     * @covers  Respect\Rest\Router::routeDispatch
+     * @covers  Respect\Rest\Router::applyVirtualHost
+     */
+    public function testDeveloperCanSetUpAVirtualHostPathOnConstructor()
+    {
+        $router = new Router('/store');
+        $router->get('/products', 'Some Products!');
+        $response = $router->dispatch('GET', '/store/products')->response();
+
+        $this->assertSame(
+            'Some Products!',
+            $response,
+            'Router should match using the virtual host combined URI'
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::__destruct
+     */
+    public function testRouterCanBeAutoDispatchedIfProtocolIsDefined()
+    {
+        $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
+
+        $router = new Router;
+        $router->get('/', 'Hello Respect');
+        unset($router);
+        
+        $this->expectOutputString('Hello Respect');
+    }
+
+    public function testReturns404WhenNoRoutesExist()
+    {
+        $router = new Router;
+        $response = (string) $router->dispatch('GET', '/')->response();
+
+        $this->assertEquals(
+            '404', 
+            static::$status,
+            'There should be a sent 404 status'
+        );
+    }
+
+    public function testReturns404WhenNoRouteMatches()
+    {
+        $router = new Router;
+        $router->get('/foo', 'This exists.');
+        $response = (string) $router->dispatch('GET', '/')->response();
+
+        $this->assertEquals(
+            '404', 
+            static::$status,
+            'There should be a sent 404 status'
+        );
+    }
+
+}
+
+function header($h) {
+    if (0 === strpos($h, 'HTTP/1.1 ')) {
+        RouterTest::$status = substr($h, 9);
+    }
+    return \header($h);
 }
