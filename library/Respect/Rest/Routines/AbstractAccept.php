@@ -83,7 +83,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements Proxya
     public function by(Request $request, $params)
     {
         $unsyncedParams = $request->params;
-        $extensions = array_keys($this->filterKeysContain('.'));
+        $extensions = $this->filterKeysContain('.');
 
         if (empty($extensions) || empty($unsyncedParams))
             return;
