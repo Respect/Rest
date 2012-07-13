@@ -46,7 +46,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target);
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\Callback', 
+            'Respect\Rest\Routes\Callback',
             $callbackRoute,
             'Returned result from a magic constructor in this case should return a Routes\Callback'
         );
@@ -55,7 +55,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
             'When there are no arguments the Routes\Callback should have none as well'
         );
         $this->assertEquals(
-            $callbackRoute, 
+            $callbackRoute,
             $concreteCallbackRoute,
             'The magic and concrete instances of Routes\Callback should be equivalent'
         );
@@ -73,17 +73,17 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target, array('extra'));
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\Callback', 
+            'Respect\Rest\Routes\Callback',
             $callbackRoute,
             'Returned result from a magic constructor in this case should return a Routes\Callback'
         );
         $this->assertContains(
-            'extra', 
+            'extra',
             $callbackRoute->arguments,
             'The "extra" appended to the magic constructor should be present on the arguments list'
         );
         $this->assertEquals(
-            $callbackRoute, 
+            $callbackRoute,
             $concreteCallbackRoute,
             'The magic and concrete instances of Routes\Callback should be equivalent'
         );
@@ -101,12 +101,12 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $concreteInstanceRoute = $router->instanceRoute('GET', '/', $myInstance);
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\Instance', 
+            'Respect\Rest\Routes\Instance',
             $instanceRoute,
             'Returned result from a magic constructor in this case should return a Routes\Instance'
         );
         $this->assertEquals(
-            $instanceRoute, 
+            $instanceRoute,
             $concreteInstanceRoute,
             'The magic and concrete instances of Routes\Instance should be equivalent'
         );
@@ -124,12 +124,12 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $concreteStaticRoute = $router->staticRoute('GET','/', $staticValue);
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\StaticValue', 
+            'Respect\Rest\Routes\StaticValue',
             $staticRoute,
             $reason
         );
         $this->assertEquals(
-            $staticRoute, 
+            $staticRoute,
             $concreteStaticRoute,
             'The magic and concrete instances of Routes\Static should be equivalent'
         );
@@ -155,7 +155,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $nonStaticRoute = $router->get('/', $staticValue);
 
         $this->assertNotInstanceOf(
-            'Respect\Rest\Routes\StaticValue', 
+            'Respect\Rest\Routes\StaticValue',
             $nonStaticRoute,
             $reason
         );
@@ -182,12 +182,12 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $concreteClassRoute = $router->classRoute('GET', '/', $className);
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\ClassName', 
+            'Respect\Rest\Routes\ClassName',
             $classRoute,
             'Returned result from a magic constructor in this case should return a Routes\ClassName'
         );
         $this->assertEquals(
-            $classRoute, 
+            $classRoute,
             $concreteClassRoute,
             'The magic and concrete instances of Routes\ClassName should be equivalent'
         );
@@ -206,17 +206,17 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $concreteClassRoute = $router->classRoute('GET', '/', $className, array('some', 'constructor', 'params'));
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\ClassName', 
+            'Respect\Rest\Routes\ClassName',
             $classRoute,
             'Returned result from a magic constructor in this case should return a Routes\ClassName'
         );
         $this->assertEquals(
-            array('some', 'constructor', 'params'), 
+            array('some', 'constructor', 'params'),
             $classRoute->constructorParams,
             'The constructor params should be available on the instance of Routes\ClassName'
         );
         $this->assertEquals(
-            $classRoute, 
+            $classRoute,
             $concreteClassRoute,
             'The magic and concrete instances of Routes\ClassName should be equivalent'
         );
@@ -233,12 +233,12 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $concreteFactoryRoute = $router->factoryRoute('GET', '/', 'DateTime', array('DateTime', 'createFromFormat'));
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\Factory', 
+            'Respect\Rest\Routes\Factory',
             $factoryRoute,
             'Returned result from a magic constructor in this case should return a Routes\Factory'
         );
         $this->assertEquals(
-            $factoryRoute, 
+            $factoryRoute,
             $concreteFactoryRoute,
             'The magic and concrete instances of Routes\Factory should be equivalent'
         );
@@ -259,7 +259,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $response = (string) $router->dispatch('OPTIONS', '*')->response();
 
         $this->assertContains(
-            'Allow: GET, POST, EAT', 
+            'Allow: GET, POST, EAT',
             xdebug_get_headers(),
             'There should be a sent Allow header with all methods from all routes'
         );
@@ -280,15 +280,15 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $router->post('/bulbs', 'Some Bulbs Post Response');
 
         $result = (string) $router->dispatch('POST', '/bulbs')->response();
-        
+
         $this->assertSame(
-            'Some Bulbs Put Response', 
+            'Some Bulbs Put Response',
             $result,
             'Router should dispatch to PUT (overriden) instead of POST'
         );
 
         $this->assertNotSame(
-            'Some Bulbs Post Response', 
+            'Some Bulbs Post Response',
             $result,
             'Router NOT dispatch to POST when method is overriden'
         );
@@ -309,13 +309,13 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $result = (string) $router->dispatch('POST', '/bulbs')->response();
 
         $this->assertSame(
-            'Some Bulbs Post Response', 
+            'Some Bulbs Post Response',
             $result,
             'Router should dispatch to POST (not overriden) instead of PUT'
         );
 
         $this->assertNotSame(
-            'Some Bulbs Put Response', 
+            'Some Bulbs Put Response',
             $result,
             'Router NOT dispatch to PUT when method is overriden'
         );
@@ -349,7 +349,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $router = new Router;
         $router->get('/', 'Hello Respect');
         unset($router);
-        
+
         $this->expectOutputString('Hello Respect');
     }
 
@@ -359,7 +359,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $response = (string) $router->dispatch('GET', '/')->response();
 
         $this->assertEquals(
-            '404', 
+            '404',
             static::$status,
             'There should be a sent 404 status'
         );
@@ -372,7 +372,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $response = (string) $router->dispatch('GET', '/')->response();
 
         $this->assertEquals(
-            '404', 
+            '404',
             static::$status,
             'There should be a sent 404 status'
         );
@@ -382,8 +382,8 @@ class RouterTest extends PHPUnit_Framework_TestCase
 
 function header($h) {
     $s = debug_backtrace(true);
-    $rt = function($a) {return isset($a['object']) 
-                           && $a['object'] instanceof RouterTest;};
+    $rt = function($a) {return isset($a['object'])
+        && $a['object'] instanceof RouterTest;};
     if (array_filter($s, $rt) && 0 === strpos($h, 'HTTP/1.1 ')) {
         RouterTest::$status = substr($h, 9);
     }
