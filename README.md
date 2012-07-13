@@ -7,6 +7,7 @@ Thin controller for RESTful applications and APIs.
  * Don't try to change PHP, small learning curve.
  * Completely RESTful, the right way to build apps.
 
+
 Installation
 ------------
 
@@ -14,8 +15,11 @@ Packages available on [PEAR](http://respect.li/pear) and [Composer](http://packa
 
 Feature Guide
 -------------
+### Navigation
+[Configuration][] | [Dispatching][] | [Simple Routing][] | [Parameters][] | [Catch-all][] | [Matching][] | [Methods][] | [Controllers][] | [Streams][] | [Static][] | [Forwarding][] | [When][] | [By][] | [Through][] | [Controller Splitting][] | [Conneg][] | [Basic Auth][] | [User-Agent][] | [Content-Type][] | [HTTP Errors][] | [RESTful Extras][] | [Anti-Patterns][] | [Own Routines][]
 
 ### Configuration
+[Top][]
 
 Bootstrapping is easy. Just create an instance of Respect\Rest\Router.
 ```php
@@ -52,6 +56,7 @@ The same goes for folders:
 This assumes that every URL in the project will begin with these namespaces.
 
 ### Dispatching
+[Top][]
 
 The Router is auto-dispatched, which means that you don't have to call anything more than
 declaring routes to run it. If you want to omit this behavior, you can set:
@@ -70,6 +75,7 @@ You can print the output or store in a variable if you want. This allows you to 
 test and integrate the Router into existing applications.
 
 ### Simple Routing
+[Top][]
 
 The Hello World route goes something like this:
 ```php
@@ -91,6 +97,7 @@ Hitting `http://localhost/` (consider your local configuration for this) will pr
 Hitting `http://localhost/hello` will now print "Hello from Path".
 
 ### Using Parameters
+[Top][]
 
 You can declare routes that receives parameters from the URL. For this, every parameter
 is a `/*` on the route path. Considering the previous sample model:
@@ -129,6 +136,7 @@ match it properly, or treat the missing parameter yourself by making them
     does not allow optional parameters: `/posts/*/*/*/comments/*`
 
 ### Catch-all Parameters
+[Top][]
 
 Sometimes you need to catch an undefined number of parameters. You can use
 Routes with catch-all parameters like this:
@@ -149,6 +157,7 @@ Routes with catch-all parameters like this:
     the same pattern.
 
 ### Route Matching
+[Top][]
 
 Things can became very complex quick. We have simple routes, routes with parameters, optional 
 parameters and catch-all parameters. A simple rule to keep in mind is that Respect\Rest
@@ -166,6 +175,7 @@ from the most specific to the most generic. This will improve performance and
 maintainability of the code.
 
 ### Matching any HTTP Method
+[Top][]
 
 Sometimes you need to use a router to proxy requests to some other router or map
 requests to a class. By using the magic method `any`, you can pass any HTTP method to a given
@@ -181,6 +191,7 @@ function.
  2. You can figure out the method using the standard PHP `$_SERVER['REQUEST_METHOD']`
 
 ### Class Controllers
+[Top][]
 
 The `any` method is extremely useful to bind classes to controllers, one of Respect\Rest's most 
 awesome features:
@@ -236,6 +247,7 @@ And you can even use a factory or DI container to build the controller class:
      an instance if you want.
 
 ### Routing Streams
+[Top][]
 
 Sometimes you need to route users to streams. The Router doesn't have to first handle
 large files or wait for streams to finish before serving them.
@@ -255,6 +267,7 @@ directly to a `fopen` handle. Please validate user input parameters before using
 This is for demonstrational purposes only.
 
 ### Routing Static Values
+[Top][]
 
 No surprises here, you can make a route return a plain string:
 ```php
@@ -263,6 +276,7 @@ No surprises here, you can make a route return a plain string:
 ```
 
 ### Forwarding Routes
+[Top][]
 
 Respect\Rest has an internal forwarding mechanism. First you'll need to understand that
 every route declaration returns an instance:
@@ -285,6 +299,7 @@ Illustrative sample above will redirect internally when an user is not privilege
 another route that handle normal users.
 
 ### When Routine (if)
+[Top][]
 
 Respect\Rest uses a different approach to validate route parameters:
 ```php
@@ -322,6 +337,7 @@ We highly recommend that you use a strong validation library when using this. Co
 ```
 
 ### By Routine (before)
+[Top][]
 
 Sometimes you need to run something before a route does its job. This is 
 useful for logging, authentication and similar purposes.
@@ -349,6 +365,7 @@ processed. If you return an instance of another route, an internal forward
 will be performed.
 
 ### Through Routine (after)
+[Top][]
 
 Similar to `->by`, but runs after the route did its job. In the sample
 below we're showing something similar to invalidating a cache after
@@ -386,6 +403,7 @@ The illustrative sample above removes sensitive keys from a settings controller 
 outputing the result.
 
 ### Controller Splitting
+[Top][]
 
 When using routines you are encouraged to separate the controller logic into components. You can 
 reuse them:
@@ -424,6 +442,7 @@ Since there are three routes with the `$user` parameter, `when` will
 verify them all automatically by its name.
 
 ### Content Negotiation
+[Top][]
 
 Respect/Rest currently supports the four distinct types of Accept header content-negotiation: 
 Mimetype, Encoding, Language and Charset. Usage sample:
@@ -466,6 +485,7 @@ When applying conneg routines to multiple routes that can return streams you
 (really) should check for `is_resource()` before doing anything.
 
 ### Basic HTTP Auth
+[Top][]
 
 Support for Basic HTTP Authentication is already implemented as a routine:
 ```php
@@ -483,6 +503,7 @@ headers when unauthenticated. You can also return another route, which will
 act as an internal forward (see the section on forwarding above).
 
 ### Filtering Browsers
+[Top][]
 
 Below is an illustrative sample of how to block requests from mobile devices:
 ```php
@@ -499,6 +520,7 @@ You can pass several items in the array, like any conneg routine. The array
 key is a regular expression matcher without delimiters.
 
 ### Input Content-Type (input data)
+[Top][]
 
 Note that this is not currently implemented.
 
@@ -524,6 +546,7 @@ this data before doing anything:
 ```
 
 ### HTTP Errors
+[Top][]
 
 Respect\Rest currently handle the following errors by default:
 
@@ -534,6 +557,7 @@ Respect\Rest currently handle the following errors by default:
   * 406, when the route path and method matches but content-negotiation doesn't.
 
 ### RESTful Extras
+[Top][]
 
   * A HEAD request automatically works sending all GET headers without body. You can override 
     this behavior declaring custom `head` routes.
@@ -541,11 +565,13 @@ Respect\Rest currently handle the following errors by default:
   * When returning 405, `Allow` headers are also set properly.
 
 ### Anti-Patterns
+[Top][]
 
   * You can set `$r3->methodOverriding = true` to allow `?_method=ANYMETHOD` on the URI to
     override default HTTP methods. This is `false` by default.
 
 ### Your Own Routines
+[Top][]
 
 Routines are classes in the Respect\Rest\Routines namespace, but you can add your
 own routines by instance using:
@@ -568,3 +594,28 @@ which can be implemented:
 
 You can use any combination of the above but also need to implement the Routinable interface.
 
+
+[Top]: #navigation
+[Configuration]: #configuration
+[Dispatching]: #dispatching
+[Simple Routing]: #simple-routing
+[Parameters]: #using-parameters
+[Catch-all]: #catch-all-parameters
+[Matching]: #route-matching
+[Methods]: #matching-any-http-method
+[Controllers]: #class-controllers
+[Streams]: #routing-streams
+[Static]: #routing-static-values
+[Forwarding]: #forwarding-routes
+[When]: #when-routine-if
+[By]: #by-routine-before
+[Through]: #through-routine-after
+[Controller Splitting]: #controller-splitting
+[Conneg]: #content-negotiation
+[Basic Auth]: #basic-http-auth
+[User-Agent]: #filtering-browsers
+[Content-Type]: #input-content-type-input-data
+[HTTP Errors]: #http-errors
+[RESTful Extras]: #restful-extras
+[Anti-Patterns]: #anti-patterns
+[Own Routines]: #your-own-routines
