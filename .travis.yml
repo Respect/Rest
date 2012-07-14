@@ -1,5 +1,5 @@
 language: php
-script: "cd tests;phpunit ."
+script: "cd tests;phpunit library;phpunit legacy"
 
 php:
   - 5.3
