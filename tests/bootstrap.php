@@ -1,30 +1,22 @@
-<?php
+<?php /** a Courtesy of Respect/Foundation */
 
 date_default_timezone_set('UTC');
 
-// get the current include path so we can optimize
 $paths = explode(PATH_SEPARATOR,get_include_path());
+$paths[] = trim(`pear config-get php_dir`);
 
-// See if composec is present then it should be picked up too
+// See if composer is present then it should be picked up too
 if (file_exists(dirname(__DIR__).'/vendor/composer')) {
     $map = require dirname(__DIR__).'/vendor/composer/autoload_namespaces.php';
     foreach ($map as $path)
         $paths[] = $path;
 }
 
-// Who wonts some pear modules lets add those as well
-$paths[] = trim(`pear config-get php_dir`);
-// optimiz - since we use absolute paths means less distance to travel
 natsort($paths);
-// prepend ourselves as the first entry of order
 array_unshift($paths, dirname(__DIR__) .'/library');
-// munge duplicates while resetting the new hierarchy
 set_include_path(implode(PATH_SEPARATOR, array_unique($paths)));
 
-/**
- * Autoloader that implements the PSR-0 spec for interoperability between
- * PHP software.
- */
+/** Autoloader that implements the PSR-0 spec for interoperability between PHP software. */
 spl_autoload_register(
     function($className) {
         static $composerClassmap;
