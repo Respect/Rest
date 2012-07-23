@@ -1,7 +1,5 @@
 <?php
 
-ob_start();
-
 date_default_timezone_set('UTC');
 
 // get the current include path so we can optimize
@@ -49,5 +47,3 @@ spl_autoload_register(
         }
     }
 );
-
-ob_clean();
