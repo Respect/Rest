@@ -2,10 +2,10 @@ language:
   php
 
 before_script:
-  cd tests
+  "cd tests"
 
 script:
-  phpunit library && phpunit legacy
+  "phpunit library && phpunit legacy"
 
 php:
   - 5.3
