@@ -2,10 +2,18 @@ language:
   php
 
 before_script:
+<<<<<<< HEAD
   "cd tests"
 
 script:
   "phpunit library && phpunit legacy"
+=======
+  - cd tests
+
+script:
+  - phpunit library
+  - phpunit legacy
+>>>>>>> 33a0eb969f1aa4a52642faecc08d33431e49d86d
 
 php:
   - 5.3
