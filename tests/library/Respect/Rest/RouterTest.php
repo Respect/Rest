@@ -2,7 +2,6 @@
 namespace Respect\Rest;
 
 use PHPUnit_Framework_TestCase;
-
 /**
  * @covers Respect\Rest\Router
  */
@@ -46,14 +45,16 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target);
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\Callback',
+            'Respect\\Rest\\Routes\\Callback',
             $callbackRoute,
             'Returned result from a magic constructor in this case should return a Routes\Callback'
         );
+
         $this->assertEmpty(
             $callbackRoute->arguments,
             'When there are no arguments the Routes\Callback should have none as well'
         );
+
         $this->assertEquals(
             $callbackRoute,
             $concreteCallbackRoute,
@@ -62,8 +63,8 @@ class RouterTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Respect\Rest\Router::__call
-     * @covers Respect\Rest\Router::callbackRoute
+     * @covers  Respect\Rest\Router::__call
+     * @covers  Respect\Rest\Router::callbackRoute
      * @depends testMagicConstructorCanCreateCallbackRoutes
      */
     public function testMagicConstructorCanCreateCallbackRoutesWithExtraParams()
@@ -73,15 +74,17 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target, array('extra'));
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\Callback',
+            'Respect\\Rest\\Routes\\Callback',
             $callbackRoute,
             'Returned result from a magic constructor in this case should return a Routes\Callback'
         );
+
         $this->assertContains(
             'extra',
             $callbackRoute->arguments,
             'The "extra" appended to the magic constructor should be present on the arguments list'
         );
+
         $this->assertEquals(
             $callbackRoute,
             $concreteCallbackRoute,
@@ -96,15 +99,16 @@ class RouterTest extends PHPUnit_Framework_TestCase
     public function testMagicConstructorCanRouteToPreBuiltInstances()
     {
         $router = new Router;
-        $myInstance = $this->getMockForAbstractClass('Respect\Rest\Routable');
+        $myInstance = $this->getMock('Respect\\Rest\\Routable', array('GET'));
         $instanceRoute = $router->get('/', $myInstance);
         $concreteInstanceRoute = $router->instanceRoute('GET', '/', $myInstance);
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\Instance',
+            'Respect\\Rest\\Routes\\Instance',
             $instanceRoute,
             'Returned result from a magic constructor in this case should return a Routes\Instance'
         );
+
         $this->assertEquals(
             $instanceRoute,
             $concreteInstanceRoute,
@@ -113,21 +117,23 @@ class RouterTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Respect\Rest\Router::__call
-     * @covers Respect\Rest\Router::staticRoute
+     * @covers       Respect\Rest\Router::__call
+     * @covers       Respect\Rest\Router::staticRoute
      * @dataProvider provideForStaticRoutableValues
      */
     public function testMagicConstructorCanRouteToStaticValue($staticValue, $reason)
     {
         $router = new Router;
+        $router->isAutoDispatched = false; // prevent static content from being echoed on dispatch
         $staticRoute = $router->get('/', $staticValue);
         $concreteStaticRoute = $router->staticRoute('GET','/', $staticValue);
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\StaticValue',
+            'Respect\\Rest\\Routes\\StaticValue',
             $staticRoute,
             $reason
         );
+
         $this->assertEquals(
             $staticRoute,
             $concreteStaticRoute,
@@ -145,17 +151,20 @@ class RouterTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @covers Respect\Rest\Router::__call
-     * @covers Respect\Rest\Router::staticRoute
-     * @dataProvider provideForNonStaticRoutableValues
+     * @covers            Respect\Rest\Router::__call
+     * @covers            Respect\Rest\Router::staticRoute
+     * @dataProvider      provideForNonStaticRoutableValues
+     * @expectedException InvalidArgumentException
      */
     public function testMagicConstructorCannotRouteSomeStaticValues($staticValue, $reason)
     {
         $router = new Router;
         $nonStaticRoute = $router->get('/', $staticValue);
 
+        $router->run(); // __toString is not allowed to throw exceptions
+
         $this->assertNotInstanceOf(
-            'Respect\Rest\Routes\StaticValue',
+            'Respect\\Rest\\Routes\\StaticValue',
             $nonStaticRoute,
             $reason
         );
@@ -177,15 +186,16 @@ class RouterTest extends PHPUnit_Framework_TestCase
     {
         $router = new Router;
         $className = 'GeneratedClass'.md5(rand());
-        eval("class $className implements Respect\Rest\Routable{}");
+        $this->getMock('Respect\\Rest\\Routable', array('GET'), array(), $className);
         $classRoute = $router->get('/', $className);
         $concreteClassRoute = $router->classRoute('GET', '/', $className);
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\ClassName',
+            'Respect\\Rest\\Routes\\ClassName',
             $classRoute,
             'Returned result from a magic constructor in this case should return a Routes\ClassName'
         );
+
         $this->assertEquals(
             $classRoute,
             $concreteClassRoute,
@@ -201,20 +211,22 @@ class RouterTest extends PHPUnit_Framework_TestCase
     {
         $router = new Router;
         $className = 'GeneratedClass'.md5(rand());
-        eval("class $className implements Respect\Rest\Routable{}");
+        $this->getMock('Respect\\Rest\\Routable', array('GET'), array(), $className);
         $classRoute = $router->get('/', $className, array('some', 'constructor', 'params'));
         $concreteClassRoute = $router->classRoute('GET', '/', $className, array('some', 'constructor', 'params'));
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\ClassName',
+            'Respect\\Rest\\Routes\\ClassName',
             $classRoute,
             'Returned result from a magic constructor in this case should return a Routes\ClassName'
         );
+
         $this->assertEquals(
             array('some', 'constructor', 'params'),
             $classRoute->constructorParams,
             'The constructor params should be available on the instance of Routes\ClassName'
         );
+
         $this->assertEquals(
             $classRoute,
             $concreteClassRoute,
@@ -229,14 +241,17 @@ class RouterTest extends PHPUnit_Framework_TestCase
     public function testMagicConstructorCanRouteToFactoriesThatReturnInstancesOfAClass()
     {
         $router = new Router;
-        $factoryRoute = $router->get('/', 'DateTime', array('DateTime', 'createFromFormat'));
-        $concreteFactoryRoute = $router->factoryRoute('GET', '/', 'DateTime', array('DateTime', 'createFromFormat'));
+        eval('class MockRoutable implements Respect\Rest\Routable{ public function GET() {} }');
+        eval('class FactoryClass { public static function factoryMethod() { return new MockRoutable(); } }');
+        $factoryRoute = $router->get('/', 'FactoryClass', array('FactoryClass', 'factoryMethod'));
+        $concreteFactoryRoute = $router->factoryRoute('GET', '/', 'FactoryClass', array('FactoryClass', 'factoryMethod'));
 
         $this->assertInstanceOf(
-            'Respect\Rest\Routes\Factory',
+            'Respect\\Rest\\Routes\\Factory',
             $factoryRoute,
             'Returned result from a magic constructor in this case should return a Routes\Factory'
         );
+
         $this->assertEquals(
             $factoryRoute,
             $concreteFactoryRoute,
@@ -274,7 +289,6 @@ class RouterTest extends PHPUnit_Framework_TestCase
     public function testDeveloperCanOverridePostMethodWithQueryStringParameter()
     {
         $_REQUEST['_method'] = 'PUT';
-
         $router = new Router;
         $router->methodOverriding = true;
         $router->put('/bulbs', 'Some Bulbs Put Response');
@@ -346,15 +360,16 @@ class RouterTest extends PHPUnit_Framework_TestCase
     public function testRouterCanBeAutoDispatchedIfProtocolIsDefined()
     {
         $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
-
         $router = new Router;
         $router->get('/', 'Hello Respect');
         unset($router);
 
         $this->expectOutputString('Hello Respect');
     }
+
     /**
-     * @runInSeparateProcess
+     * @covers Respect\Rest\Router::dispatch
+     * @covers Respect\Rest\Router::routeDispatch
      */
     public function testReturns404WhenNoRoutesExist()
     {
@@ -367,8 +382,10 @@ class RouterTest extends PHPUnit_Framework_TestCase
             'There should be a sent 404 status'
         );
     }
+
     /**
-     * @runInSeparateProcess
+     * @covers Respect\Rest\Router::dispatch
+     * @covers Respect\Rest\Router::routeDispatch
      */
     public function testReturns404WhenNoRouteMatches()
     {
@@ -385,12 +402,14 @@ class RouterTest extends PHPUnit_Framework_TestCase
 
 }
 
-function header($h) {
-    $s = debug_backtrace(true);
-    $rt = function($a) {return isset($a['object'])
-        && $a['object'] instanceof RouterTest;};
-    if (array_filter($s, $rt) && 0 === strpos($h, 'HTTP/1.1 ')) {
-        RouterTest::$status = substr($h, 9);
+if (!function_exists(__NAMESPACE__.'\\header')) {
+    function header($h) {
+        $s = debug_backtrace(true);
+        $rt = function($a) {return isset($a['object'])
+            && $a['object'] instanceof RouterTest;};
+        if (array_filter($s, $rt) && 0 === strpos($h, 'HTTP/1.1 ')) {
+            RouterTest::$status = substr($h, 9);
+        }
+        return @\header($h);
     }
-    return \header($h);
 }
