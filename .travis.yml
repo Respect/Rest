@@ -1,5 +1,11 @@
-language: php
-script: "cd tests;phpunit library;phpunit legacy"
+language:
+  php
+
+before_script:
+  cd tests
+
+script:
+  phpunit library && phpunit legacy
 
 php:
   - 5.3
