@@ -955,6 +955,14 @@ if (!function_exists(__NAMESPACE__.'\\header')) {
             return;
 
         $header[$string] = $string;
+        $h = $string;
+        $s = debug_backtrace(true);
+        $rt = function($a) {return isset($a['object'])
+            && $a['object'] instanceof RouterTest;};
+        if (array_filter($s, $rt) && 0 === strpos($h, 'HTTP/1.1 ')) {
+            RouterTest::$status = substr($h, 9);
+        }
+        return @\header($h);
     }
 }
 
