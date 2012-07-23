@@ -1,5 +1,11 @@
-language: php
-script: "cd tests;phpunit --testdox"
+language:
+  php
+
+before_script:
+  "cd tests"
+
+script:
+  "phpunit --testdox"
 
 php:
   - 5.3
