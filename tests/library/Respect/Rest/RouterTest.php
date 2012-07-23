@@ -249,6 +249,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
      * @covers Respect\Rest\Router::isRoutelessDispatch
      * @covers Respect\Rest\Router::isDispatchedToGlobalOptionsMethod
      * @covers Respect\Rest\Router::getAllowedMethods
+     * @runInSeparateProcess
      */
     public function testCanRespondToGlobalOptionsMethodAutomatically()
     {
@@ -352,7 +353,9 @@ class RouterTest extends PHPUnit_Framework_TestCase
 
         $this->expectOutputString('Hello Respect');
     }
-
+    /**
+     * @runInSeparateProcess
+     */
     public function testReturns404WhenNoRoutesExist()
     {
         $router = new Router;
@@ -364,7 +367,9 @@ class RouterTest extends PHPUnit_Framework_TestCase
             'There should be a sent 404 status'
         );
     }
-
+    /**
+     * @runInSeparateProcess
+     */
     public function testReturns404WhenNoRouteMatches()
     {
         $router = new Router;
