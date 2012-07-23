@@ -517,6 +517,7 @@ namespace Respect\Rest {
         function test_do_not_set_automatic_content_type_header_for_extensions($ctype, $ext)
         {
             global $header;
+            $header = array();
             $_SERVER['HTTP_ACCEPT'] = $ctype;
             $r = new Router();
             $r->get('/auto', '')->accept(array($ext=>'json_encode'));
