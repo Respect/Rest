@@ -250,7 +250,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
      * @covers Respect\Rest\Router::isDispatchedToGlobalOptionsMethod
      * @covers Respect\Rest\Router::getAllowedMethods
      */
-    public function testCanToRespondToGlobalOptionsMethodAutomatically()
+    public function testCanRespondToGlobalOptionsMethodAutomatically()
     {
         $router = new Router;
         $router->get('/asian', 'Asian Food!');
