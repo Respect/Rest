@@ -72,7 +72,7 @@ abstract class AbstractRoute
                 'Respect\\Rest\\Routines\\' . ucfirst($method)
         );
 
-        return $this->appendRoutine($routineReflection->newInstanceArgs($arguments));;
+        return $this->appendRoutine($routineReflection->newInstanceArgs($arguments));
     }
 
     /** Appends a pre-built routine to this route */
