@@ -77,5 +77,20 @@ class Param
         return $this->isType(self::COOKIE);
     }
 
+    public function hasGet()
+    {
+        return $this->hasType(self::GET);
+    }
+
+    public function hasPost()
+    {
+        return $this->hasType(self::POST);
+    }
+
+    public function hasCookie()
+    {
+        return $this->hasType(self::COOKIE);
+    }
+
 
 }

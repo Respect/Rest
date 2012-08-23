@@ -77,5 +77,41 @@ class ParamTest extends \PHPUnit_Framework_TestCase
         $param = new Param(Param::POST);
         $this->assertEquals($expected, $param->getValues());
     }
+    
+    public function test_isGet_method()
+    {
+        $param = new Param(Param::GET);
+        $this->assertTrue($param->isGet());        
+    }
+
+    public function test_isPost_method()
+    {
+        $param = new Param(Param::POST);
+        $this->assertTrue($param->isPost());        
+    }
+
+    public function test_isCookie_method()
+    {
+        $param = new Param(Param::COOKIE);
+        $this->assertTrue($param->isCookie());        
+    }
+
+    public function test_hasGet_method()
+    {
+        $param = new Param(Param::GET);
+        $this->assertTrue($param->hasGet());        
+    }
+
+    public function test_hasPost_method()
+    {
+        $param = new Param(Param::POST);
+        $this->assertTrue($param->hasPost());        
+    }
+
+    public function test_hasCookie_method()
+    {
+        $param = new Param(Param::COOKIE);
+        $this->assertTrue($param->hasCookie());        
+    }
 
 }
