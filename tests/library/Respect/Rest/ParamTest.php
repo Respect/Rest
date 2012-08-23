@@ -57,6 +57,7 @@ class ParamTest extends \PHPUnit_Framework_TestCase
 
         $param_1 = new Param(Param::POST);
         $this->assertEquals($expected_1, $param_1->getValue('foo'));
+        $this->assertEquals(2, $param_1->getValue('bar', 2));
 
         $expected_2 = 12345;
         $_REQUEST['GET'] = array('foo' => $expected_2 - 1);
@@ -65,6 +66,7 @@ class ParamTest extends \PHPUnit_Framework_TestCase
 
         $param_2 = new Param(Param::POST);
         $this->assertEquals($expected_2, $param_2->getValue('foo'));
+        $this->assertEquals(3, $param_2->getValue('bar', 3));
     }
 
     public function test_get_values()
