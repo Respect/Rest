@@ -53,16 +53,16 @@ class ParamTest extends \PHPUnit_Framework_TestCase
     public function test_get_value()
     {
         $expected_1 = 3456789;
-        $_REQUEST['POST'] = array('foo' => $expected_1);
+        $_POST = array('foo' => $expected_1);
 
         $param_1 = new Param(Param::POST);
         $this->assertEquals($expected_1, $param_1->getValue('foo'));
         $this->assertEquals(2, $param_1->getValue('bar', 2));
 
         $expected_2 = 12345;
-        $_REQUEST['GET'] = array('foo' => $expected_2 - 1);
-        $_REQUEST['POST'] = array('foo' => $expected_2);
-        $_REQUEST['COOKIE'] = array('foo' => $expected_2 + 1);
+        $_GET = array('foo' => $expected_2 - 1);
+        $_POST = array('foo' => $expected_2);
+        $_COOKIE = array('foo' => $expected_2 + 1);
 
         $param_2 = new Param(Param::POST);
         $this->assertEquals($expected_2, $param_2->getValue('foo'));
@@ -71,12 +71,26 @@ class ParamTest extends \PHPUnit_Framework_TestCase
 
     public function test_get_values()
     {
-        $expected = array('foo' => 9865676);
-        $_REQUEST['GET'] = array('foo' => '$expected - 1');
-        $_REQUEST['POST'] = $expected;
-        $_REQUEST['COOKIE'] = array('foo' => '$expected + 1');
+        $expected = array(
+            'foo'   => 9865676,
+            'bar'   => 'Respect',
+            'baz'   => 'Rest',
+            'bla'   => 'Param',
+        );
+        $_GET = array(
+            'foo'   => 9865676,
+            'bar'   => 'Respect',
+        );
+        $_POST = array(
+            'bar'   => 'Symfony',
+            'baz'   => 'Rest',
+        );
+        $_COOKIE = array(
+            'baz'   => 'HttpKernel',
+            'bla'   => 'Param',
+        );
 
-        $param = new Param(Param::POST);
+        $param = new Param(Param::GET | Param::POST | Param::COOKIE);
         $this->assertEquals($expected, $param->getValues());
     }
 

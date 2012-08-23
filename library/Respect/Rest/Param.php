@@ -10,6 +10,7 @@ class Param
     const COOKIE = 16;
 
     private $type;
+    private $values;
 
     public function __construct($type)
     {
@@ -24,32 +25,39 @@ class Param
             'COOKIE' => self::COOKIE
         );
     }
-    
+
     public function getValue($param, $default = null)
     {
-        foreach (self::getAvailableTypes() as $name => $type) {
-            if (($this->hasType($type) && !isset($_REQUEST[$name][$param]))
-                    || !$this->hasType($type)) {
-                continue;
-            }
-            $default = $_REQUEST[$name][$param];
-            break;
+        $values = $this->getValues();
+        if (isset($values[$param])) {
+            $default = $values[$param];
         }
         
         return $default;
     }
-    
+
     public function getValues()
     {
-        $values = array();
-        foreach (self::getAvailableTypes() as $name => $type) {
-            if (!$this->hasType($type)) {
-                continue;
+        if (null === $this->values) {
+            
+            $this->values = array();
+
+            foreach (self::getAvailableTypes() as $type) {
+                if (!$this->hasType($type)) {
+                    continue;
+                } elseif (self::GET === $type) {
+                    $values = $_GET;
+                } elseif (self::POST === $type) {
+                    $values = $_POST;
+                } elseif (self::COOKIE === $type) {
+                    $values = $_COOKIE;
+                }
+                $this->values += $values;
             }
-            $values += $_REQUEST[$name];
+
         }
         
-        return $values;
+        return $this->values;
     }
 
     private function hasType($type)
