@@ -49,12 +49,12 @@ class ParamTest extends \PHPUnit_Framework_TestCase
         $this->assertFalse($get_cookie_reflection->invoke($get_cookie, Param::COOKIE));
 
     }
-    
+
     public function test_get_value()
     {
         $expected_1 = 3456789;
         $_REQUEST['POST'] = array('foo' => $expected_1);
-        
+
         $param_1 = new Param(Param::POST);
         $this->assertEquals($expected_1, $param_1->getValue('foo'));
 
@@ -62,56 +62,106 @@ class ParamTest extends \PHPUnit_Framework_TestCase
         $_REQUEST['GET'] = array('foo' => $expected_2 - 1);
         $_REQUEST['POST'] = array('foo' => $expected_2);
         $_REQUEST['COOKIE'] = array('foo' => $expected_2 + 1);
-        
+
         $param_2 = new Param(Param::POST);
         $this->assertEquals($expected_2, $param_2->getValue('foo'));
     }
-    
+
     public function test_get_values()
     {
         $expected = array('foo' => 9865676);
         $_REQUEST['GET'] = array('foo' => '$expected - 1');
         $_REQUEST['POST'] = $expected;
         $_REQUEST['COOKIE'] = array('foo' => '$expected + 1');
-        
+
         $param = new Param(Param::POST);
         $this->assertEquals($expected, $param->getValues());
     }
-    
+
     public function test_isGet_method()
     {
         $param = new Param(Param::GET);
-        $this->assertTrue($param->isGet());        
+        $this->assertTrue($param->isGet());
     }
 
     public function test_isPost_method()
     {
         $param = new Param(Param::POST);
-        $this->assertTrue($param->isPost());        
+        $this->assertTrue($param->isPost());
     }
 
     public function test_isCookie_method()
     {
         $param = new Param(Param::COOKIE);
-        $this->assertTrue($param->isCookie());        
+        $this->assertTrue($param->isCookie());
     }
 
     public function test_hasGet_method()
     {
-        $param = new Param(Param::GET);
-        $this->assertTrue($param->hasGet());        
+        $param_1 = new Param(Param::GET);
+        $this->assertTrue($param_1->hasGet());
+
+        $param_2 = new Param(Param::GET | Param::POST);
+        $this->assertTrue($param_2->hasGet());
+
+        $param_3 = new Param(Param::GET | Param::COOKIE);
+        $this->assertTrue($param_3->hasGet());
+
+        $param_4 = new Param(Param::GET | Param::POST | Param::COOKIE);
+        $this->assertTrue($param_4->hasGet());
     }
 
     public function test_hasPost_method()
     {
-        $param = new Param(Param::POST);
-        $this->assertTrue($param->hasPost());        
+        $param_1 = new Param(Param::POST);
+        $this->assertTrue($param_1->hasPost());
+
+        $param_2 = new Param(Param::GET | Param::POST);
+        $this->assertTrue($param_2->hasPost());
+
+        $param_3 = new Param(Param::POST | Param::COOKIE);
+        $this->assertTrue($param_3->hasPost());
+
+        $param_4 = new Param(Param::GET | Param::POST | Param::COOKIE);
+        $this->assertTrue($param_4->hasPost());
     }
 
     public function test_hasCookie_method()
     {
-        $param = new Param(Param::COOKIE);
-        $this->assertTrue($param->hasCookie());        
+        $param_1 = new Param(Param::COOKIE);
+        $this->assertTrue($param_1->hasCookie());
+
+        $param_2 = new Param(Param::COOKIE | Param::POST);
+        $this->assertTrue($param_2->hasCookie());
+
+        $param_3 = new Param(Param::GET | Param::COOKIE);
+        $this->assertTrue($param_3->hasCookie());
+
+        $param_4 = new Param(Param::GET | Param::POST | Param::COOKIE);
+        $this->assertTrue($param_4->hasCookie());
+    }
+    
+    public function test_has_methods()
+    {
+        $param_1 = new Param(Param::GET);
+        $this->assertTrue($param_1->hasGet());
+        $this->assertFalse($param_1->hasPost());
+        $this->assertFalse($param_1->hasCookie());
+
+        $param_2 = new Param(Param::GET | Param::POST);
+        $this->assertTrue($param_2->hasGet());
+        $this->assertTrue($param_2->hasPost());
+        $this->assertFalse($param_2->hasCookie());
+
+        $param_3 = new Param(Param::GET | Param::COOKIE);
+        $this->assertTrue($param_3->hasGet());
+        $this->assertFalse($param_3->hasPost());
+        $this->assertTrue($param_3->hasCookie());
+
+        $param_4 = new Param(Param::GET | Param::POST | Param::COOKIE);
+        $this->assertTrue($param_4->hasGet());
+        $this->assertTrue($param_4->hasPost());
+        $this->assertTrue($param_4->hasCookie());
     }
 
 }
