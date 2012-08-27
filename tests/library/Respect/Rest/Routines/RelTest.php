@@ -67,4 +67,40 @@ class RelTest extends PHPUnit_Framework_TestCase
 			'The related link key should contain the specified rel value'
 		);
 	}
+	public function testNonUniqueMultipleTextRelationPassesThroughData()
+	{
+		$router = new \Respect\Rest\Router;
+		$router->get('/', function() {
+			return array();
+		})->rel(array(
+			'item' => array('/foo', '/bar')
+		))->rel(array(
+			'item' => array('/baz')
+		));
+		$response = $router->dispatch('GET', '/')->response();
+
+		$this->assertCount(
+			3,
+			$response['links']['item'],
+			'The related link key should contain the exact number of related items'
+		);
+
+		$this->assertContains(
+			'/foo',
+			$response['links']['item'],
+			'The related link key should contain the specified rel value'
+		);
+
+		$this->assertContains(
+			'/bar',
+			$response['links']['item'],
+			'The related link key should contain the specified rel value'
+		);
+
+		$this->assertContains(
+			'/baz',
+			$response['links']['item'],
+			'The related link key should contain the specified rel value'
+		);
+	}
 }
