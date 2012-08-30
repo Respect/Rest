@@ -57,6 +57,19 @@ foundation: .title
 	-curl -L https://github.com/c9s/Onion/raw/master/onion > .foundation/onion;chmod +x .foundation/onion
 	@echo "Done."
 
+# Target for Respect/Foundation development and internal use only. This target will not appear on the menus.
+foundation-develop: .title
+	@echo "Updating Makefile"
+	curl -LO https://raw.github.com/Respect/Foundation/develop/Makefile
+	@echo "Creating .foundation folder"
+	-rm -Rf .foundation
+	-mkdir .foundation
+	git clone --depth 1 git://github.com/Respect/Foundation.git .foundation/repo
+	cd .foundation/repo/ && git fetch && git checkout develop && cd -
+	@echo "Downloading Onion"
+	-curl -L https://github.com/c9s/Onion/raw/master/onion > .foundation/onion;chmod +x .foundation/onion
+	@echo "Done."
+
 project-info: .check-foundation
 	@echo "\nProject Information\n"
 	@echo "             php-version:" `$(CONFIG_TOOL) php-version`
@@ -75,10 +88,10 @@ project-info: .check-foundation
 	@echo "       package-stability:" `$(CONFIG_TOOL) package-stability `
 	@echo "\r         project-authors: "`$(CONFIG_TOOL) package-authors ` \
 		| tr ',' '\n' \
-		| awk -F' <' '{ printf "                         %-10-s \t<%15-s \n",$$1,$$2 }' 
+		| awk -F' <' '{ printf "                         %-10-s \t<%15-s \n",$$1,$$2 }'
 	@echo "\r    project-contributors: "`$(CONFIG_TOOL) package-contributors ` \
 		| tr ',' '\n' \
-		| awk -F' <' '{ printf "                         %-10-s \t<%15-s \n",$$1,$$2 }' 
+		| awk -F' <' '{ printf "                         %-10-s \t<%15-s \n",$$1,$$2 }'
 
 	@echo "       package-date-time:" `$(CONFIG_TOOL) package-date-time `
 	@echo "            pear-channel:" `$(CONFIG_TOOL) pear-channel `
@@ -108,7 +121,7 @@ package: .check-foundation package-ini package-xml composer-json
 # Phony target so the test folder don't conflict
 .PHONY: test
 test: .check-foundation
-	@cd `$(CONFIG_TOOL) test-folder`;phpunit .
+	@cd `$(CONFIG_TOOL) test-folder`;phpunit --testdox .
 
 coverage: .check-foundation
 	@cd `$(CONFIG_TOOL) test-folder`;phpunit  --coverage-html=reports/coverage --coverage-text .
@@ -194,4 +207,4 @@ release: test package packagecommit pear pear-push tag
 	@echo "Release done. Pushing to GitHub"
 	@git push
 	@git push --tags
-	@echo "Done. " `$(CONFIG_TOOL) package-name`-`$(CONFIG_TOOL) package-version` 
+	@echo "Done. " `$(CONFIG_TOOL) package-name`-`$(CONFIG_TOOL) package-version`
