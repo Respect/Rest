@@ -130,11 +130,11 @@
     <email>w.v.mendes.s@gmail.com</email>
     <active>yes</active>
   </lead>
-  <date>2012-09-17</date>
-  <time>02:13:21</time>
+  <date>2012-09-16</date>
+  <time>23:16:41</time>
   <version>
-    <release>0.5.0</release>
-    <api>0.5.0</api>
+    <release>0.5.1</release>
+    <api>0.5.1</api>
   </version>
   <stability>
     <release>alpha</release>
@@ -145,56 +145,6 @@
   <contents>
     <dir name="/">
       <file name="tests/phpunit.xml" role="test" md5sum="f23391c43625dcd7da738bdbea277126"/>
-      <file name="tests/reports/coverage/Routes_Exception.php.html" role="test" md5sum="bc23553f42603ae37d3e31bf600bde97"/>
-      <file name="tests/reports/coverage/Routines_Rel.php.html" role="test" md5sum="1253e3671155a3954467c582ae127105"/>
-      <file name="tests/reports/coverage/Routines_ProxyableBy.php.html" role="test" md5sum="9bc1986f3966aa93578fd53690bfd7eb"/>
-      <file name="tests/reports/coverage/Routes_Factory.php.html" role="test" md5sum="b05d3d548d77f147e6d66a591cce7a0c"/>
-      <file name="tests/reports/coverage/Routines_IgnorableFileExtension.php.html" role="test" md5sum="52d3ee5ae867bcb203055cd2579bb595"/>
-      <file name="tests/reports/coverage/Routines_ParamSynced.php.html" role="test" md5sum="2dfb6b76573eab2ca05c4033154b68c1"/>
-      <file name="tests/reports/coverage/glass.png" role="test" md5sum="d0bcded9081d6a0efda48c495867da73"/>
-      <file name="tests/reports/coverage/style.css" role="test" md5sum="6720298ca22a5214a2e9f8fdb279fbd3"/>
-      <file name="tests/reports/coverage/Routes_AbstractRoute.php.html" role="test" md5sum="f135135a68d9c81460e08fd4d15d6c9f"/>
-      <file name="tests/reports/coverage/Routines_When.php.html" role="test" md5sum="e958ecbe7ff83c13e48329f133222563"/>
-      <file name="tests/reports/coverage/Routes_ClassName.php.html" role="test" md5sum="85c4574891a5376ec23dfc1dc419e9f4"/>
-      <file name="tests/reports/coverage/Routines_Through.php.html" role="test" md5sum="ff6176fac1751f215770942d8163653d"/>
-      <file name="tests/reports/coverage/Routines_AbstractCallbackMediator.php.html" role="test" md5sum="b46f7bef36417302b1589d7600bdb227"/>
-      <file name="tests/reports/coverage/Routines_LastModified.php.html" role="test" md5sum="0f5e28f797d0f4717ed80b9822f45166"/>
-      <file name="tests/reports/coverage/index.html" role="test" md5sum="205dd004f9bebafa8761d13e4493f77c"/>
-      <file name="tests/reports/coverage/Router.php.html" role="test" md5sum="3e83aa947843259c5f46aca7b426ef90"/>
-      <file name="tests/reports/coverage/Routines_AbstractAccept.php.html" role="test" md5sum="8a1252d63a98c867483153fd609c8459"/>
-      <file name="tests/reports/coverage/Routines_ProxyableThrough.php.html" role="test" md5sum="fa4dc234154e799ebf78b84e1ad98328"/>
-      <file name="tests/reports/coverage/Routines_Accept.php.html" role="test" md5sum="8c459a54e9b106a457cb7234eb0c096e"/>
-      <file name="tests/reports/coverage/Routines_Unique.php.html" role="test" md5sum="94dc704a4b70fc07efdb1636151d3d54"/>
-      <file name="tests/reports/coverage/Routines_AcceptLanguage.php.html" role="test" md5sum="edd96dd1c004d8b8bc67d3896930192f"/>
-      <file name="tests/reports/coverage/container-min.js" role="test" md5sum="5511b676a4961a0dfb52e1f64ce65a7a"/>
-      <file name="tests/reports/coverage/highcharts.js" role="test" md5sum="08cdf43b4ba8ce789f86a30a09071ca8"/>
-      <file name="tests/reports/coverage/Routes.dashboard.html" role="test" md5sum="5cbaefc6883bf70d6eeb443a39d50c9c"/>
-      <file name="tests/reports/coverage/Routes_Instance.php.html" role="test" md5sum="b0105436faf6dc80395d1f6f0944d807"/>
-      <file name="tests/reports/coverage/jquery.min.js" role="test" md5sum="0efa3b9aa0f509043308e7c6e23538f8"/>
-      <file name="tests/reports/coverage/Routines_AcceptEncoding.php.html" role="test" md5sum="e17f939404ddafc13ab11ac314a7ef0e"/>
-      <file name="tests/reports/coverage/file.png" role="test" md5sum="6983bd4ac09f5135eb128cbdf0ceadfe"/>
-      <file name="tests/reports/coverage/Routes_Error.php.html" role="test" md5sum="c77d845fd64f2384c531a7628650795b"/>
-      <file name="tests/reports/coverage/container.css" role="test" md5sum="495d2ec9631eb89063bdd9d70bd731dc"/>
-      <file name="tests/reports/coverage/Routes_StaticValue.php.html" role="test" md5sum="c7b1f3b8fd4ff1ab315007855b3a9b3e"/>
-      <file name="tests/reports/coverage/Routines_Routinable.php.html" role="test" md5sum="f5efcdecde75fc8a78332a576be702b8"/>
-      <file name="tests/reports/coverage/directory.png" role="test" md5sum="0c2ea106ded3a3b443ad39e3eddcd7a6"/>
-      <file name="tests/reports/coverage/Request.php.html" role="test" md5sum="c53bf2f89e52677a1772e870b21721d7"/>
-      <file name="tests/reports/coverage/close12_1.gif" role="test" md5sum="770d9c592b4300457ae025448c4c6816"/>
-      <file name="tests/reports/coverage/Routines_AbstractRoutine.php.html" role="test" md5sum="bc51e03bd4b0b522b6709fb19c8ffc40"/>
-      <file name="tests/reports/coverage/Routines_ProxyableWhen.php.html" role="test" md5sum="b65dd05b5dad36e3695ce2bdba610cbe"/>
-      <file name="tests/reports/coverage/Routines_AbstractSyncedRoutine.php.html" role="test" md5sum="9cbcb2b40b970b5261e288b0cec653cf"/>
-      <file name="tests/reports/coverage/Routes_Callback.php.html" role="test" md5sum="ada65439597ab53398dbd83c90763726"/>
-      <file name="tests/reports/coverage/yahoo-dom-event.js" role="test" md5sum="366eac96e298168d2c923fcb556fa259"/>
-      <file name="tests/reports/coverage/Routines_AbstractCallbackList.php.html" role="test" md5sum="0ee699bb2bfaf67b0c7e6e0f5d6dbdeb"/>
-      <file name="tests/reports/coverage/Routines_AuthBasic.php.html" role="test" md5sum="34f3025eb30c564de0bce21e55a874da"/>
-      <file name="tests/reports/coverage/Routines_ContentType.php.html" role="test" md5sum="22ebdcd5d1a87c9e45a517372a3ad009"/>
-      <file name="tests/reports/coverage/Routines.dashboard.html" role="test" md5sum="1658ad21d628d9220309858ef6c15106"/>
-      <file name="tests/reports/coverage/Routines_UserAgent.php.html" role="test" md5sum="3d743891b8270fbb8f6d902b122564e8"/>
-      <file name="tests/reports/coverage/Routines.html" role="test" md5sum="06d1c1b5be023911789c3069e2229167"/>
-      <file name="tests/reports/coverage/index.dashboard.html" role="test" md5sum="697d557c40f18c4c1a32c08cd9f9edfe"/>
-      <file name="tests/reports/coverage/Routines_By.php.html" role="test" md5sum="0b5c769cc26a148e6c783a45a8dfbd90"/>
-      <file name="tests/reports/coverage/Routines_AcceptCharset.php.html" role="test" md5sum="b02aad2752d9e4f5db27d0c5c2b0633f"/>
-      <file name="tests/reports/coverage/Routes.html" role="test" md5sum="6c38edc4516a5e5812d4d94b786646eb"/>
       <file name="tests/bootstrap.php" role="test" md5sum="05c1148d866258f623b99d2740e439e7"/>
       <file name="tests/library/Respect/Rest/RequestTest.php" role="test" md5sum="b89da58b4526ada8536ec6f2795cfff0"/>
       <file name="tests/library/Respect/Rest/Routines/WhenTest.php" role="test" md5sum="8b463c2c4116caa7ae8e4fbebec000a9"/>
@@ -273,56 +223,6 @@
   <phprelease>
     <filelist>
       <install name="tests/phpunit.xml" as="phpunit.xml"/>
-      <install name="tests/reports/coverage/Routes_Exception.php.html" as="reports/coverage/Routes_Exception.php.html"/>
-      <install name="tests/reports/coverage/Routines_Rel.php.html" as="reports/coverage/Routines_Rel.php.html"/>
-      <install name="tests/reports/coverage/Routines_ProxyableBy.php.html" as="reports/coverage/Routines_ProxyableBy.php.html"/>
-      <install name="tests/reports/coverage/Routes_Factory.php.html" as="reports/coverage/Routes_Factory.php.html"/>
-      <install name="tests/reports/coverage/Routines_IgnorableFileExtension.php.html" as="reports/coverage/Routines_IgnorableFileExtension.php.html"/>
-      <install name="tests/reports/coverage/Routines_ParamSynced.php.html" as="reports/coverage/Routines_ParamSynced.php.html"/>
-      <install name="tests/reports/coverage/glass.png" as="reports/coverage/glass.png"/>
-      <install name="tests/reports/coverage/style.css" as="reports/coverage/style.css"/>
-      <install name="tests/reports/coverage/Routes_AbstractRoute.php.html" as="reports/coverage/Routes_AbstractRoute.php.html"/>
-      <install name="tests/reports/coverage/Routines_When.php.html" as="reports/coverage/Routines_When.php.html"/>
-      <install name="tests/reports/coverage/Routes_ClassName.php.html" as="reports/coverage/Routes_ClassName.php.html"/>
-      <install name="tests/reports/coverage/Routines_Through.php.html" as="reports/coverage/Routines_Through.php.html"/>
-      <install name="tests/reports/coverage/Routines_AbstractCallbackMediator.php.html" as="reports/coverage/Routines_AbstractCallbackMediator.php.html"/>
-      <install name="tests/reports/coverage/Routines_LastModified.php.html" as="reports/coverage/Routines_LastModified.php.html"/>
-      <install name="tests/reports/coverage/index.html" as="reports/coverage/index.html"/>
-      <install name="tests/reports/coverage/Router.php.html" as="reports/coverage/Router.php.html"/>
-      <install name="tests/reports/coverage/Routines_AbstractAccept.php.html" as="reports/coverage/Routines_AbstractAccept.php.html"/>
-      <install name="tests/reports/coverage/Routines_ProxyableThrough.php.html" as="reports/coverage/Routines_ProxyableThrough.php.html"/>
-      <install name="tests/reports/coverage/Routines_Accept.php.html" as="reports/coverage/Routines_Accept.php.html"/>
-      <install name="tests/reports/coverage/Routines_Unique.php.html" as="reports/coverage/Routines_Unique.php.html"/>
-      <install name="tests/reports/coverage/Routines_AcceptLanguage.php.html" as="reports/coverage/Routines_AcceptLanguage.php.html"/>
-      <install name="tests/reports/coverage/container-min.js" as="reports/coverage/container-min.js"/>
-      <install name="tests/reports/coverage/highcharts.js" as="reports/coverage/highcharts.js"/>
-      <install name="tests/reports/coverage/Routes.dashboard.html" as="reports/coverage/Routes.dashboard.html"/>
-      <install name="tests/reports/coverage/Routes_Instance.php.html" as="reports/coverage/Routes_Instance.php.html"/>
-      <install name="tests/reports/coverage/jquery.min.js" as="reports/coverage/jquery.min.js"/>
-      <install name="tests/reports/coverage/Routines_AcceptEncoding.php.html" as="reports/coverage/Routines_AcceptEncoding.php.html"/>
-      <install name="tests/reports/coverage/file.png" as="reports/coverage/file.png"/>
-      <install name="tests/reports/coverage/Routes_Error.php.html" as="reports/coverage/Routes_Error.php.html"/>
-      <install name="tests/reports/coverage/container.css" as="reports/coverage/container.css"/>
-      <install name="tests/reports/coverage/Routes_StaticValue.php.html" as="reports/coverage/Routes_StaticValue.php.html"/>
-      <install name="tests/reports/coverage/Routines_Routinable.php.html" as="reports/coverage/Routines_Routinable.php.html"/>
-      <install name="tests/reports/coverage/directory.png" as="reports/coverage/directory.png"/>
-      <install name="tests/reports/coverage/Request.php.html" as="reports/coverage/Request.php.html"/>
-      <install name="tests/reports/coverage/close12_1.gif" as="reports/coverage/close12_1.gif"/>
-      <install name="tests/reports/coverage/Routines_AbstractRoutine.php.html" as="reports/coverage/Routines_AbstractRoutine.php.html"/>
-      <install name="tests/reports/coverage/Routines_ProxyableWhen.php.html" as="reports/coverage/Routines_ProxyableWhen.php.html"/>
-      <install name="tests/reports/coverage/Routines_AbstractSyncedRoutine.php.html" as="reports/coverage/Routines_AbstractSyncedRoutine.php.html"/>
-      <install name="tests/reports/coverage/Routes_Callback.php.html" as="reports/coverage/Routes_Callback.php.html"/>
-      <install name="tests/reports/coverage/yahoo-dom-event.js" as="reports/coverage/yahoo-dom-event.js"/>
-      <install name="tests/reports/coverage/Routines_AbstractCallbackList.php.html" as="reports/coverage/Routines_AbstractCallbackList.php.html"/>
-      <install name="tests/reports/coverage/Routines_AuthBasic.php.html" as="reports/coverage/Routines_AuthBasic.php.html"/>
-      <install name="tests/reports/coverage/Routines_ContentType.php.html" as="reports/coverage/Routines_ContentType.php.html"/>
-      <install name="tests/reports/coverage/Routines.dashboard.html" as="reports/coverage/Routines.dashboard.html"/>
-      <install name="tests/reports/coverage/Routines_UserAgent.php.html" as="reports/coverage/Routines_UserAgent.php.html"/>
-      <install name="tests/reports/coverage/Routines.html" as="reports/coverage/Routines.html"/>
-      <install name="tests/reports/coverage/index.dashboard.html" as="reports/coverage/index.dashboard.html"/>
-      <install name="tests/reports/coverage/Routines_By.php.html" as="reports/coverage/Routines_By.php.html"/>
-      <install name="tests/reports/coverage/Routines_AcceptCharset.php.html" as="reports/coverage/Routines_AcceptCharset.php.html"/>
-      <install name="tests/reports/coverage/Routes.html" as="reports/coverage/Routes.html"/>
       <install name="tests/bootstrap.php" as="bootstrap.php"/>
       <install name="tests/library/Respect/Rest/RequestTest.php" as="library/Respect/Rest/RequestTest.php"/>
       <install name="tests/library/Respect/Rest/Routines/WhenTest.php" as="library/Respect/Rest/Routines/WhenTest.php"/>
