@@ -41,12 +41,22 @@ class Request
         return $this->response();
     }
 
-    /** Generates and returns the response from the current route */
-    public function response()
+    protected function prepareForErrorForwards()
     {
-        if (!$this->route instanceof AbstractRoute)
-            return null;
+        $errorHandler = null;
+        foreach ($this->route->sideRoutes as $sideRoute) {
+            if ($sideRoute instanceof Routes\Error) {
+                $errorHandler = set_error_handler(function() use ($sideRoute) {
+                    $sideRoute->errors[] = func_get_args();
+                }) ?: false;
+                break;
+            }
+        }
+        return $errorHandler;
+    }
 
+    protected function processPreRoutines()
+    {
         foreach ($this->route->routines as $routine)
             if (!$routine instanceof ProxyableBy)
                 continue;
@@ -54,12 +64,10 @@ class Request
                     return false;
             elseif ($result instanceof AbstractRoute)
                     return $this->forward($result);
+    }
 
-        $response = $this->route->runTarget($this->method, $this->params);
-
-        if ($response instanceof AbstractRoute)
-            return $this->forward($response);
-
+    protected function processPosRoutines($response)
+    {
         $proxyResults = array();
 
         foreach ($this->route->routines as $routine)
@@ -73,6 +81,70 @@ class Request
                     $response = call_user_func_array($proxyCallback, array($response)); //$proxyCallback($response);
 
         return $response;
+    }
+
+    protected function forwardErrors($errorHandler)
+    {
+        if (isset($errorHandler)) {
+            if (!$errorHandler) {
+                restore_error_handler();
+            } else {
+                set_error_handler($errorHandler);
+            }
+        }
+
+        foreach ($this->route->sideRoutes as $sideRoute) {
+            if ($sideRoute instanceof Routes\Error
+                && $sideRoute->errors) {
+                return $this->forward($sideRoute);
+            }
+        }
+    }
+
+    protected function catchExceptions($e)
+    {
+        foreach ($this->route->sideRoutes as $sideRoute) {
+            if ($eClass = get_class($e) === $sideRoute->class
+                || $sideRoute->class === 'Exception'
+                || $sideRoute->class === '\Exception') {
+                $sideRoute->exception = $e;
+                return $this->forward($sideRoute);
+            }
+        }
+    }
+
+    /** Generates and returns the response from the current route */
+    public function response()
+    {
+        try {
+            if (!$this->route instanceof AbstractRoute)
+                return null;
+
+            $errorHandler = $this->prepareForErrorForwards();
+
+            $result = $this->processPreRoutines();
+            if (!is_null($result)) {
+                return $result;
+            }
+
+            $response = $this->route->runTarget($this->method, $this->params);
+            if ($response instanceof AbstractRoute) {
+                return $this->forward($response);
+            }
+            $response = $this->processPosRoutines($response);
+            
+            $result = $this->forwardErrors($errorHandler);
+            if (!is_null($result)) {
+                return $result;
+            }
+
+            return $response;
+        } catch (\Exception $e) {
+            if (!$caught = $this->catchExceptions($e)) {
+                throw $e;
+            }
+            return $caught;
+        }
     }
 
     /** Calls a routine on the current route and returns its result */

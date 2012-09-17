@@ -25,6 +25,7 @@ class Router
     public $methodOverriding = false;
     protected $globalRoutines = array();
     protected $routes = array();
+    protected $sideRoutes = array();
     protected $virtualHost = '';
 
     /** Cleans up an return an array of extracted parameters */
@@ -104,6 +105,16 @@ class Router
     public function appendRoute(AbstractRoute $route)
     {
         $this->routes[] = $route;
+        $route->sideRoutes = &$this->sideRoutes;
+
+        foreach ($this->globalRoutines as $routine)
+            $route->appendRoutine($routine);
+    }
+
+    /** Appends a pre-built side route to the dispatcher */
+    public function appendSideRoute(AbstractRoute $route)
+    {
+        $this->sideRoutes[] = $route;
 
         foreach ($this->globalRoutines as $routine)
             $route->appendRoutine($routine);
@@ -129,6 +140,20 @@ class Router
     public function dispatch($method=null, $uri=null)
     {
         return $this->dispatchRequest(new Request($method, $uri));
+    }
+
+    public function exceptionRoute($className, $path=null)
+    {
+        $route = new Routes\Exception($className, $path);
+        $this->appendSideRoute($route);
+        return $route;
+    }
+
+    public function errorRoute($callback)
+    {
+        $route = new Routes\Error($callback);
+        $this->appendSideRoute($route);
+        return $route;
     }
 
     public function hasDispatchedOverridenMethod() 

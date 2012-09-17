@@ -51,6 +51,7 @@ abstract class AbstractRoute
     public $regexForMatch = '';
     public $regexForReplace = '';
     public $routines = array();
+    public $sideRoutes = array();
 
     /** Returns the RelfectionFunctionAbstract object for the passed method */
     abstract public function getReflection($method);
