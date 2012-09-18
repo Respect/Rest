@@ -16,7 +16,7 @@ Packages available on [PEAR](http://respect.li/pear) and [Composer](http://packa
 Feature Guide
 -------------
 ### Navigation
-[Configuration][] | [Dispatching][] | [Simple Routing][] | [Parameters][] | [Catch-all][] | [Matching][] | [Methods][] | [Controllers][] | [Streams][] | [Static][] | [Forwarding][] | [When][] | [By][] | [Through][] | [Controller Splitting][] | [Conneg][] | [Basic Auth][] | [User-Agent][] | [Content-Type][] | [HTTP Errors][] | [RESTful Extras][] | [Anti-Patterns][] | [Own Routines][] [Error Handling][]
+[Configuration][] | [Dispatching][] | [Simple Routing][] | [Parameters][] | [Catch-all][] | [Matching][] | [Methods][] | [Controllers][] | [Streams][] | [Static][] | [Forwarding][] | [When][] | [By][] | [Through][] | [Controller Splitting][] | [Conneg][] | [Basic Auth][] | [User-Agent][] | [Content-Type][] | [HTTP Errors][] | [RESTful Extras][] | [Anti-Patterns][] | [Own Routines][] | [Error Handling][]
 
 ### Configuration
 [Top][]
@@ -594,6 +594,29 @@ which can be implemented:
 
 You can use any combination of the above but also need to implement the Routinable interface.
 
+### Error Handling
+[Top][]
+
+Respect\Rest provides two special ways to handle errors. The first one is using Exception
+Routes:
+
+```php
+<?php
+    $r3->exceptionRoute('InvalidArgumentException', function (InvalidArgumentException $e) {
+        return 'Sorry, this error happened: '.$e->getMessage();
+    });
+```
+
+Whenever an uncaught exception appears on any route, it will be caught and forwarded to
+this side route. Similarly, there is a route for PHP errors:
+
+
+```php
+<?php
+    $r3->errorRoute(function (array $err) {
+        return 'Sorry, this errors happened: '.var_dump($err);
+    });
+```
 
 [Top]: #navigation
 [Configuration]: #configuration
@@ -619,28 +642,4 @@ You can use any combination of the above but also need to implement the Routinab
 [RESTful Extras]: #restful-extras
 [Anti-Patterns]: #anti-patterns
 [Own Routines]: #your-own-routines
-
-### Error Handling
-[Top][]
-
-Respect\Rest provides two special ways to handle errors. The first one is using Exception
-Routes:
-
-```php
-<?php
-    $r3->exceptionRoute('InvalidArgumentException', function (InvalidArgumentException $e) {
-        return 'Sorry, this error happened: '.$e->getMessage();
-    });
-```
-
-Whenever an uncaught exception appears on any route, it will be caught and forwarded to
-this side route. Similarly, there is a route for PHP errors:
-
-
-```php
-<?php
-    $r3->errorRoute(function (array $err) {
-        return 'Sorry, this errors happened: '.var_dump($err);
-    });
-```
-
+[Error Handling]: #error-handling
