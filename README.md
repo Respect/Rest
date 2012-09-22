@@ -1,6 +1,6 @@
 Respect\Rest [![Build Status](https://secure.travis-ci.org/Respect/Rest.png)](http://travis-ci.org/Respect/Rest)
 ============
- 
+
 Thin controller for RESTful applications and APIs.
 
  * Very thin and lightweight.
@@ -23,7 +23,6 @@ Feature Guide
 
 Bootstrapping is easy. Just create an instance of Respect\Rest\Router.
 ```php
-<?php
     use Respect\Rest\Router;
 
     $r3 = new Router;
@@ -34,7 +33,6 @@ you're running this from the domain root (http://example.com/ without any subfol
 
 If you want to use it from a subfolder, you can pass the virtual root to the Router:
 ```php
-<?php
     $r3 = new Router('/myapp');
 ```
 
@@ -43,13 +41,11 @@ This will instruct the router to work from http://example.com/myapp/.
 You can also use the Router without a `.htaccess` file. This uses the CGI `PATH_INFO` variable,
 and can be declared as:
 ```php
-<?php
     $r3 = new Router('/index.php/');
 ```
 
 The same goes for folders:
 ```php
-<?php
     $r3 = new Router('/myapp/index.php/');
 ```
 
@@ -61,13 +57,11 @@ This assumes that every URL in the project will begin with these namespaces.
 The Router is auto-dispatched, which means that you don't have to call anything more than
 declaring routes to run it. If you want to omit this behavior, you can set:
 ```php
-<?php
     $r3->isAutoDispatched = false;
 ```
 
 You can then dispatch it yourself at the end of the proccess:
 ```php
-<?php
     print $r3->run();
 ```
 
@@ -79,7 +73,6 @@ test and integrate the Router into existing applications.
 
 The Hello World route goes something like this:
 ```php
-<?php
     $r3->get('/', function() {
         return 'Hello World';
     });
@@ -88,7 +81,6 @@ The Hello World route goes something like this:
 Hitting `http://localhost/` (consider your local configuration for this) will print
 "Hello World" in the browser. You can declare as many routes as you want:
 ```php
-<?php
     $r3->get('/hello', function() {
         return 'Hello from Path';
     });
@@ -102,7 +94,6 @@ Hitting `http://localhost/hello` will now print "Hello from Path".
 You can declare routes that receives parameters from the URL. For this, every parameter
 is a `/*` on the route path. Considering the previous sample model:
 ```php
-<?php
     $r3->get('/users/*', function($screenName) {
         echo "User {$screenName}";
     });
@@ -113,7 +104,6 @@ now print "User alganet" (or the username of your choosing).
 
 Multiple parameters can be defined:
 ```php
-<?php
     $r3->get('/users/*/lists/*', function($user, $list) {
         return "List {$list} from user {$user}.";
     });
@@ -125,9 +115,8 @@ parameter. You can declare a second `->get('/posts'`, now the Router will
 match it properly, or treat the missing parameter yourself by making them
 `null`able on the passed function:
 ```php
-<?php
     $r3->get('/posts/*/*/*', function($year,$month=null,$day=null) {
-        //list posts, month and day are optional
+        /** list posts, month and day are optional */
     });
 ```
 
@@ -141,7 +130,6 @@ match it properly, or treat the missing parameter yourself by making them
 Sometimes you need to catch an undefined number of parameters. You can use
 Routes with catch-all parameters like this:
 ```php
-<?php
     $r3->get('/users/*/documents/**', function($user, $documentPath) {
         return readfile(PATH_STORAGE. implode('/', $documentPath));
     });
@@ -181,9 +169,8 @@ Sometimes you need to use a router to proxy requests to some other router or map
 requests to a class. By using the magic method `any`, you can pass any HTTP method to a given
 function.
 ```php
-<?php
     $r3->any('/users/*', function($userName) {
-        //do anything
+        /** do anything */
     });
 ```
 
@@ -196,7 +183,6 @@ function.
 The `any` method is extremely useful to bind classes to controllers, one of Respect\Rest's most 
 awesome features:
 ```php
-<?php
     use Respect\Rest\Routable;
 
     class MyArticle implements Routable {
@@ -219,7 +205,6 @@ awesome features:
 
 Passing constructor arguments to the class is also possible:
 ```php
-<?php
     $r3->any('/images/*', 'ImageController', array($myImageHandler, $myDb));
 ```
 
@@ -228,7 +213,6 @@ Passing constructor arguments to the class is also possible:
 
 You can also instantiate the class yourself if you want:
 ```php
-<?php
     $r3->any('/downloads/*', $myDownloadManager);
 ```
 
@@ -237,7 +221,6 @@ You can also instantiate the class yourself if you want:
 
 And you can even use a factory or DI container to build the controller class:
 ```php
-<?php
     $r3->any('/downloads/*', 'MyControllerClass', array('Factory', 'getController'));
 ```
 
@@ -252,7 +235,6 @@ And you can even use a factory or DI container to build the controller class:
 Sometimes you need to route users to streams. The Router doesn't have to first handle
 large files or wait for streams to finish before serving them.
 ```php
-<?php
     $r3->get('/images/*/hi-res', function($imageName) {
         header('Content-type: image/jpg');
         return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
@@ -271,7 +253,6 @@ This is for demonstrational purposes only.
 
 No surprises here, you can make a route return a plain string:
 ```php
-<?php
     $r3->get('/greetings', 'Hello!');
 ```
 
@@ -281,13 +262,11 @@ No surprises here, you can make a route return a plain string:
 Respect\Rest has an internal forwarding mechanism. First you'll need to understand that
 every route declaration returns an instance:
 ```php
-<?php
     $usersRoute = $r3->any('/users', 'UsersController');
 ```
 
 Then you can `use` and `return` this route in another one:
 ```php
-<?php
     $r3->any('/premium', function($user) use ($db, $usersRoute) {
         if (!$db->userPremium($user)) {
           return $usersRoute;
@@ -303,9 +282,8 @@ another route that handle normal users.
 
 Respect\Rest uses a different approach to validate route parameters:
 ```php
-<?php
     $r3->get('/documents/*', function($documentId) {
-        //do something
+        /** do something */
     })->when(function($documentId) {
         return is_numeric($documentId) && $documentId > 0;
     });
@@ -325,12 +303,11 @@ not just data types such as `int` or `string`.
 We highly recommend that you use a strong validation library when using this. Consider
 [Respect\Validation](http://github.com/Respect/Validation).
 ```php
-<?php
     $r3->get('/images/*/hi-res', function($imageName) {
         header('Content-type: image/jpg');
         return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
     })->when(function($imageName) {
-        // Using Respect Validation alias to `V`
+        /** Using Respect Validation alias to `V` */
         return V::alphanum(".")->length(5,155)
                 ->noWhitespace()->validate($imageName);
     });
@@ -342,9 +319,8 @@ We highly recommend that you use a strong validation library when using this. Co
 Sometimes you need to run something before a route does its job. This is 
 useful for logging, authentication and similar purposes.
 ```php
-<?php
     $r3->get('/artists/*/albums/*', function($artistName, $albumName) {
-        //do something
+        /** do something */
     })->by(function($albumName) use ($myLogger) {
         $myLogger->logAlbumVisit($albumName);
     });
@@ -371,9 +347,8 @@ Similar to `->by`, but runs after the route did its job. In the sample
 below we're showing something similar to invalidating a cache after
 saving some new information.
 ```php
-<?php
     $r3->post('/artists/*/albums/*', function($artistName, $albumName) {
-        //save some artist info
+        /** save some artist info */
     })->through(function() use($myCache) {
         $myCache->clear($artistName, $albumName);
     });
@@ -388,7 +363,6 @@ Sample above allows you to do something based on the route parameters, but when
 procesing something after the route has run, its desirable to process its output
 as well. This can be achieved with a nested closure:
 ```php
-<?php
     $r3->any('/settings', 'SetingsController')->through(function(){
         return function($data) {
             if (isset($settings['admin_user'])) {
@@ -408,7 +382,6 @@ outputing the result.
 When using routines you are encouraged to separate the controller logic into components. You can 
 reuse them:
 ```php
-<?php
     $logRoutine = function() use ($myLogger, $r3) {
         $myLogger->logVisit($r3->request->path);
     };
@@ -419,13 +392,11 @@ reuse them:
 
 A simple way of applying routines to every route on the router is:
 ```php
-<?php
     $r3->always('By', $logRoutine);
 ```
 
 You can use the param sync to take advantage of this:
 ```php
-<?php
     $r3->always('When', function($user=null) {
         if ($user) {
           return strlen($user) > 3;
@@ -447,7 +418,6 @@ verify them all automatically by its name.
 Respect/Rest currently supports the four distinct types of Accept header content-negotiation: 
 Mimetype, Encoding, Language and Charset. Usage sample:
 ```php
-<?php
     $r3->get('/about', function() {
         return array('v' => 2.0);
     })->acceptLanguage(array(
@@ -470,13 +440,12 @@ Please note that when returning streams, conneg routines are also called.
 You may take advantage of this when processing streams. The hardcore example
 below serves text, using the deflate encoding, directly to the browser:
 ```php
-<?php
     $r3->get('/text/*', function($filename) {
       return fopen('data/'.$filename, 'r+');
     })->acceptEncoding(array(
         'deflate' => function($stream) {
             stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
-            return $stream; //now deflated on demand 
+            return $stream; /** now deflated on demand */
         }
     ));
 ```
@@ -489,7 +458,6 @@ When applying conneg routines to multiple routes that can return streams you
 
 Support for Basic HTTP Authentication is already implemented as a routine:
 ```php
-<?php
     $r3->get('/home', 'HomeController')->authBasic('My Realm', function($user, $pass) {
         return $user === 'admin' && $user === 'p4ss';
     }); 
@@ -507,11 +475,10 @@ act as an internal forward (see the section on forwarding above).
 
 Below is an illustrative sample of how to block requests from mobile devices:
 ```php
-<?php
     $r3->get('/videos/*', 'VideosController')->userAgent(array(
         'iphone|android' => function(){
             header('HTTP/1.1 403 Forbidden');
-            return false; //do not process the route.
+            return false; /** do not process the route. */
         }
     ));
 ```
@@ -528,7 +495,6 @@ By default, HTML forms send POST data as `multipart/form-data`, but API clients
 may send any other format. PUT requests often send other mime types. You can pre-process
 this data before doing anything:
 ```php
-<?php
     $r3->post('/timeline', function() {
         return file_get_contents('php://input');
     })->contentType(array(
@@ -576,7 +542,6 @@ Respect\Rest currently handle the following errors by default:
 Routines are classes in the Respect\Rest\Routines namespace, but you can add your
 own routines by instance using:
 ```php
-<?php
     $r3->get('/greetings', 'Hello World')->appendRoutine(new MyRoutine);
 ```
 
@@ -601,7 +566,6 @@ Respect\Rest provides two special ways to handle errors. The first one is using 
 Routes:
 
 ```php
-<?php
     $r3->exceptionRoute('InvalidArgumentException', function (InvalidArgumentException $e) {
         return 'Sorry, this error happened: '.$e->getMessage();
     });
@@ -612,7 +576,6 @@ this side route. Similarly, there is a route for PHP errors:
 
 
 ```php
-<?php
     $r3->errorRoute(function (array $err) {
         return 'Sorry, this errors happened: '.var_dump($err);
     });
