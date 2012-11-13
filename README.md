@@ -1,3 +1,4 @@
+<script type="text/javascript" src="http://www.ohloh.net/p/604580/widgets/project_factoids_stats.js"></script>
 Respect\Rest [![Build Status](https://secure.travis-ci.org/Respect/Rest.png)](http://travis-ci.org/Respect/Rest)
 ============
 
