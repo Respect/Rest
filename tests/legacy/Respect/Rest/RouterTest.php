@@ -122,12 +122,6 @@ namespace Respect\Rest {
             $response = ob_get_clean();
             $this->assertEquals('ok', $response);
         }
-        function test_converting_router_to_string_should_dispatch_and_run_it()
-        {
-            $this->router->get('/**', function(){ return 'ok'; });
-            $response = (string) $this->router;
-            $this->assertEquals('ok', $response);
-        }
         function test_dispatch_non_existing_route()
         {
             global $header;
