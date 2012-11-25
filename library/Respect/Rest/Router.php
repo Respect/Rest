@@ -78,12 +78,7 @@ class Router
         if (!$this->isAutoDispatched || !isset($_SERVER['SERVER_PROTOCOL']))
             return;
 
-        echo $this;
-    }
-
-    public function __toString()
-    {
-        return $this->run();
+        echo $this->run();
     }
 
     /** Applies a routine to every route */
