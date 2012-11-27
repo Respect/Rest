@@ -101,6 +101,7 @@ class Router
     {
         $this->routes[] = $route;
         $route->sideRoutes = &$this->sideRoutes;
+        $route->virtualHost = $this->virtualHost;
 
         foreach ($this->globalRoutines as $routine)
             $route->appendRoutine($routine);

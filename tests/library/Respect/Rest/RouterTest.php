@@ -474,6 +474,18 @@ class RouterTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    public function testCreateUriShouldBeAwareOfVirtualHost()
+    {
+        $router = new Router('/my/virtual/host');
+        $catsRoute = $router->any('/cats/*', 'Meow');
+        $virtualHostUri = $catsRoute->createUri('mittens');
+        $this->assertEquals(
+            '/my/virtual/host/cats/mittens',
+            $virtualHostUri,
+            'Virtual host should be prepended to the path on createUri()'
+        );
+    }
+
 }
 
 if (!function_exists(__NAMESPACE__.'\\header')) {

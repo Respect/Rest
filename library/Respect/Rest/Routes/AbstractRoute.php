@@ -52,6 +52,7 @@ abstract class AbstractRoute
     public $regexForReplace = '';
     public $routines = array();
     public $sideRoutes = array();
+    public $virtualHost = null;
 
     /** Returns the RelfectionFunctionAbstract object for the passed method */
     abstract public function getReflection($method);
@@ -89,7 +90,7 @@ abstract class AbstractRoute
     {
         $params = func_get_args();
         array_unshift($params, $this->regexForReplace);
-        return call_user_func_array(
+        return rtrim($this->virtualHost, '/') . call_user_func_array(
                 'sprintf', $params
         );
     }
