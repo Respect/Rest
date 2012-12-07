@@ -61,6 +61,9 @@ declaring routes to run it. If you want to omit this behavior, you can set:
     $r3->isAutoDispatched = false;
 ```
 
+Note that you need the following step in order to see uncaught Exceptions in your application
+output. Standard error output on logs is untouched.
+
 You can then dispatch it yourself at the end of the proccess:
 ```php
     print $r3->run();

@@ -81,6 +81,11 @@ class Router
         echo $this->run();
     }
 
+    public function __toString()
+    {
+        return (string) $this->run();
+    }
+
     /** Applies a routine to every route */
     public function always($routineName, $routineParameters)
     {
