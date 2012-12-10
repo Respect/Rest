@@ -12,8 +12,6 @@ class RequestTest extends PHPUnit_Framework_TestCase
 {
     /** 
      * @covers  Respect\Rest\Request::__construct
-     * @example $request = new Respect\Rest\Request;
-     * @example $router  = new Respect\Rest\Router;
      */
     public function testIsPossibleToConstructUsingValuesFromSuperglobals()
     {
@@ -38,7 +36,6 @@ class RequestTest extends PHPUnit_Framework_TestCase
 
     /** 
      * @covers  Respect\Rest\Request::__construct
-     * @example $request = new Respect\Rest\Request('POST');
      */
     public function testIsPossibleToConstructWithCustomMethod()
     {
@@ -61,7 +58,6 @@ class RequestTest extends PHPUnit_Framework_TestCase
 
     /** 
      * @covers  Respect\Rest\Request::__construct
-     * @example $request = new Respect\Rest\Request(null, '/images');
      */
     public function testIsPossibleToConstructWithCustomUri()
     {
@@ -85,7 +81,6 @@ class RequestTest extends PHPUnit_Framework_TestCase
 
     /** 
      * @covers      Respect\Rest\Request::__construct
-     * @exampletodo $request = new Respect\Rest\Request(null, 'http://example.com/images');
      */
     public function testAbsoluteUrisShouldBeParsedToExtractThePathOnConstructor()
     {
@@ -112,10 +107,6 @@ class RequestTest extends PHPUnit_Framework_TestCase
     /** 
      * @covers  Respect\Rest\Request::response 
      * @depends testIsPossibleToConstructUsingValuesFromSuperglobals 
-     * @example $request = new Request;
-     *          $response = $request->response(); //null
-     * @example $router  = new Respect\Rest\Router;
-     *          $response = $router->run(); //null
      */
     public function testResponseIsNullWithoutSettingARoute(Request $request)
     {
@@ -153,22 +144,6 @@ class RequestTest extends PHPUnit_Framework_TestCase
     /** 
      * @covers  Respect\Rest\Request::response 
      * @depends testIsPossibleToConstructUsingValuesFromSuperglobals 
-     * @example $request = new Request('GET', '/printers');
-     *          $route = new Respect\Rest\Routes\Callback(
-     *             'GET', 
-     *             '/printers', 
-     *              function($dpi, $price) {
-     *                  return "Dots Per Inch: $dpi, Price: $price";
-     *              }
-     *          );
-     *          $request->route = $route;
-     *          $request->params('120', '45');
-     *          $response = $request->response(); //Dots per Inch: 12, Price: 45
-     * @exampletodo $router = new Router; //http://example.com/printers/12/45
-     *              $router->get('/printers/{dpi}/{price}', function($dpi, $price) {
-     *                  return "Dots Per Inch: $dpi, Price: $price";
-     *              });
-     *              $response = $request->response(); //Dots per Inch: 12, Price: 45
      */
     public function testRequestIsAbleToDeliverAResponseUsingPreviouslySetPathParams(Request $request)
     {

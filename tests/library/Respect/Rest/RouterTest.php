@@ -400,6 +400,9 @@ class RouterTest extends PHPUnit_Framework_TestCase
         );
     }
 
+    /**
+     * @covers Respect\Rest\Router::appendRoute
+     */
     public function testNamesRoutesUsingAttributes()
     {
         $router = new Router;
@@ -418,62 +421,10 @@ class RouterTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    public function testMagicConstuctorCanCreateRoutesToExceptions()
-    {
-        $router = new Router;
-        $called = false;
-        $phpUnit = $this;
-        $router->exceptionRoute('RuntimeException', function ($e) use (&$called, $phpUnit) {
-            $called = true;
-            $phpUnit->assertEquals(
-                'Oops',
-                $e->getMessage(),
-                'The exception message should be available in the exception route'
-            );
-            return 'There has been a runtime error.';
-        });
-        $router->get('/', function () {
-            throw new \RuntimeException('Oops');
-        });
-        $response = (string) $router->dispatch('GET', '/')->response();
-
-        $this->assertTrue($called, 'The exception route must have been called');
-
-        $this->assertEquals(
-            'There has been a runtime error.',
-            $response,
-            'An exception should be caught by the router and forwarded'
-        );
-    }
-
-    public function testMagicConstuctorCanCreateRoutesToErrors()
-    {
-        $router = new Router;
-        $called = false;
-        $phpUnit = $this;
-        $router->errorRoute(function ($err) use (&$called, $phpUnit) {
-            $called = true;
-            $phpUnit->assertContains(
-                'Oops',
-                $err[0],
-                'The error message should be available in the error route'
-            );
-            return 'There has been an error.';
-        });
-        $router->get('/', function () {
-            trigger_error('Oops', E_USER_WARNING);
-        });
-        $response = (string) $router->dispatch('GET', '/')->response();
-
-        $this->assertTrue($called, 'The error route must have been called');
-
-        $this->assertEquals(
-            'There has been an error.',
-            $response,
-            'An error should be caught by the router and forwarded'
-        );
-    }
-
+    /**
+     * @covers Respect\Rest\Router::applyVirtualHost
+     * @covers Respect\Rest\Router::appendRoute
+     */
     public function testCreateUriShouldBeAwareOfVirtualHost()
     {
         $router = new Router('/my/virtual/host');
