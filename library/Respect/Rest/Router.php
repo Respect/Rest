@@ -305,6 +305,12 @@ class Router
         return $route;
     }
 
+    /**
+     * Checks if router overrides the method with _method hack
+     *
+     * @return bool true if the router overrides current request method, false
+     *                   otherwise
+     */
     public function hasDispatchedOverridenMethod()
     {
         return $this->request                    //Has dispatched
@@ -313,12 +319,24 @@ class Router
             && $this->request->method == 'POST'; //Only post is allowed for this
     }
 
+    /**
+     * Checks if request is a global OPTIONS (OPTIONS * HTTP/1.1)
+     *
+     * @return bool true if the request is a global options, false otherwise
+     */
     public function isDispatchedToGlobalOptionsMethod()
     {
         return $this->request->method === 'OPTIONS'
             && $this->request->uri === '*';
     }
 
+    /**
+     * Iterates over a list of routes and return the allowed methods for them
+     *
+     * @param array $routes an array of AbstractRoute
+     *
+     * @return array an array of unique allowed methods
+     */
     public function getAllowedMethods(array $routes)
     {
         $allowedMethods = array();
@@ -327,28 +345,61 @@ class Router
             $allowedMethods[] = $route->method;
         }
 
-        return $allowedMethods;
+        return array_unique($allowedMethods);
     }
 
-    protected function comparePatternSimilarity($a, $b)
+    /**
+     * Compares two patterns and returns the first one according to
+     * similarity or presence of catch-all pattern
+     *
+     * @param string $patternA some pattern
+     * @param string $patternB some pattern
+     *
+     * @return bool true if $patternA is before $patternB
+     */
+    protected static function comparePatternSimilarity($patternA, $patternB)
     {
-        return 0 === stripos($a, $b)
-            || $a === AbstractRoute::CATCHALL_IDENTIFIER;
+        return 0 === stripos($patternA, $patternB)
+            || $patternA === AbstractRoute::CATCHALL_IDENTIFIER;
     }
 
-    protected function compareOcurrences($a, $b, $needle)
+
+    /**
+     * Compares two patterns and returns the first one according to
+     * similarity or ocurrences of a subpattern
+     *
+     * @param string $patternA   some pattern
+     * @param string $patternB   some pattern
+     * @param string $subpattern pattern needle
+     *
+     * @return bool true if $patternA is before $patternB
+     */
+    protected static function compareOcurrences($patternA, $patternB, $subpattern)
     {
-        return substr_count($a, $needle) < substr_count($b, $needle);
+        return substr_count($patternA, $subpattern)
+            < substr_count($patternB, $subpattern);
     }
 
-    protected function compareRoutePatterns($a, $b, $subpattern)
+    /**
+     * Compares two patterns and returns the first one according to
+     * similarity, patterns or ocurrences of a subpattern
+     *
+     * @param string $patternA   some pattern
+     * @param string $patternB   some pattern
+     * @param string $subpattern pattern needle
+     *
+     * @return bool true if $patternA is before $patternB
+     */
+    protected static function compareRoutePatterns($patternA, $patternB, $subpattern)
     {
-        return $this->comparePatternSimilarity($a, $b)
-            || $this->compareOcurrences($a, $b, $subpattern);
+        return static::comparePatternSimilarity($patternA, $patternB)
+            || static::compareOcurrences($patternA, $patternB, $subpattern);
     }
 
+    /** Sorts current routes according to path and parameters */
     protected function sortRoutes()
     {
+        $router = $this;
 
         usort($this->routes, function($a, $b) {
                 $a = $a->pattern;
@@ -356,11 +407,11 @@ class Router
                 $pi = AbstractRoute::PARAM_IDENTIFIER;
 
                 //Compare similarity and ocurrences of "/"
-                if ($this->compareRoutePatterns($a, $b, '/')) {
+                if (static::compareRoutePatterns($a, $b, '/')) {
                     return 1;
 
                 //Compare similarity and ocurrences of /*
-                } elseif ($this->compareRoutePatterns($a, $b, $pi)) {
+                } elseif (static::compareRoutePatterns($a, $b, $pi)) {
                     return -1;
 
                 //Hard fallback for consistency
@@ -371,6 +422,7 @@ class Router
         );
     }
 
+    /** Appliesthe virtualHost prefix on the current request */
     protected function applyVirtualHost()
     {
         if ($this->virtualHost) {
@@ -382,6 +434,11 @@ class Router
         }
     }
 
+    /**
+     * Return routes matched by path
+     *
+     * @return SplObjectStorage a list of routes matched by path
+     */
     protected function getMatchedRoutesByPath()
     {
         $matched = new \SplObjectStorage;
@@ -395,6 +452,14 @@ class Router
         return $matched;
     }
 
+    /**
+     * Checks if a route matches a method
+     *
+     * @param AbstractRoute $route      A route instance
+     * @param string        $methodName Name of the method to match
+     *
+     * @return bool true if route matches
+     */
     protected function matchesMethod(AbstractRoute $route, $methodName)
     {
         return 0 !== stripos($methodName, '__')
@@ -406,6 +471,13 @@ class Router
             );
     }
 
+    /**
+     * Checks if a route matches its routines
+     *
+     * @param SplObjectStorage $matchedByPath A list of routes matched by path
+     *
+     * @return bool true if route matches its routines
+     */
     protected function routineMatch(\SplObjectStorage $matchedByPath)
     {
         $badRequest = false;
@@ -428,6 +500,13 @@ class Router
         return $badRequest ? false : null;
     }
 
+    /**
+     * Checks if a request doesn't apply for routes at all
+     *
+     * @param Request $request A request
+     *
+     * @return bool true if the request doesn't apply for routes
+     */
     public function isRoutelessDispatch(Request $request = null)
     {
         $this->isAutoDispatched = false;
