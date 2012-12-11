@@ -42,7 +42,9 @@ class Router
      */
     protected $globalRoutines = array();
 
-    /** @var array An array of main routes for this router */
+    /**
+     * @var array An array of main routes for this router
+     */
     protected $routes = array();
 
     /**
@@ -51,7 +53,9 @@ class Router
      */
     protected $sideRoutes = array();
 
-    /** @var string The prefix for every requested URI starting with a slash */
+    /**
+     * @var string The prefix for every requested URI starting with a slash
+     */
     protected $virtualHost = '';
 
     /**
@@ -77,6 +81,53 @@ class Router
     }
 
     /**
+     * Compares two patterns and returns the first one according to
+     * similarity or ocurrences of a subpattern
+     *
+     * @param string $patternA   some pattern
+     * @param string $patternB   some pattern
+     * @param string $sub        pattern needle
+     *
+     * @return bool true if $patternA is before $patternB
+     */
+    protected static function compareOcurrences($patternA, $patternB, $sub)
+    {
+        return substr_count($patternA, $sub)
+            < substr_count($patternB, $sub);
+    }
+
+    /**
+     * Compares two patterns and returns the first one according to
+     * similarity or presence of catch-all pattern
+     *
+     * @param string $patternA some pattern
+     * @param string $patternB some pattern
+     *
+     * @return bool true if $patternA is before $patternB
+     */
+    protected static function comparePatternSimilarity($patternA, $patternB)
+    {
+        return 0 === stripos($patternA, $patternB)
+            || $patternA === AbstractRoute::CATCHALL_IDENTIFIER;
+    }
+
+    /**
+     * Compares two patterns and returns the first one according to
+     * similarity, patterns or ocurrences of a subpattern
+     *
+     * @param string $patternA   some pattern
+     * @param string $patternB   some pattern
+     * @param string $sub        pattern needle
+     *
+     * @return bool true if $patternA is before $patternB
+     */
+    protected static function compareRoutePatterns($patternA, $patternB, $sub)
+    {
+        return static::comparePatternSimilarity($patternA, $patternB)
+            || static::compareOcurrences($patternA, $patternB, $sub);
+    }
+
+    /**
      * Builds and appends many kinds of routes magically.
      *
      * @param string $method The HTTP method for the new route
@@ -98,7 +149,12 @@ class Router
             if (!isset($args[2])) {
                 return $this->callbackRoute($method, $path, $routeTarget);
             } else {
-                return $this->callbackRoute($method, $path, $routeTarget, $args[2]);
+                return $this->callbackRoute(
+                    $method,
+                    $path,
+                    $routeTarget,
+                    $args[2]
+                );
             }
 
         //direct instances
@@ -125,11 +181,21 @@ class Router
 
              //classnames as factories
             } elseif (is_callable($args[2])) {
-                return $this->factoryRoute($method, $path, $routeTarget, $args[2]);
+                return $this->factoryRoute(
+                    $method,
+                    $path,
+                    $routeTarget,
+                    $args[2]
+                );
 
             //classnames with constructor arguments
             } else {
-                return $this->classRoute($method, $path, $routeTarget, $args[2]);
+                return $this->classRoute(
+                    $method,
+                    $path,
+                    $routeTarget,
+                    $args[2]
+                );
             }
         }
     }
@@ -276,6 +342,22 @@ class Router
     }
 
     /**
+     * Dispatch the current route with a custom Request
+     *
+     * @param Request $request Some request
+     *
+     * @return mixed Whatever the dispatched route returns
+     */
+    public function dispatchRequest(Request $request=null)
+    {
+        if ($this->isRoutelessDispatch($request)) {
+            return $this->request;
+        }
+
+        return $this->routeDispatch();
+    }
+
+    /**
      * Creates and returns a side-route for catching exceptions
      *
      * @param string $className The name of the exception class you want to
@@ -306,28 +388,21 @@ class Router
     }
 
     /**
-     * Checks if router overrides the method with _method hack
+     * Creates and returns an factory-based route
      *
-     * @return bool true if the router overrides current request method, false
-     *                   otherwise
+     * @param string $method     The HTTP metod (GET, POST, etc)
+     * @param string $path       The URI Path (/foo/bar...)
+     * @param string $className  The class name of the factored instance
+     * @param string $factory    Any callable
+     *
+     * @return Respect\Rest\Routes\Factory The route created
      */
-    public function hasDispatchedOverridenMethod()
+    public function factoryRoute($method, $path, $className, $factory)
     {
-        return $this->request                    //Has dispatched
-            && $this->methodOverriding           //Has method overriting
-            && isset($_REQUEST['_method'])       //Has a hacky parameter
-            && $this->request->method == 'POST'; //Only post is allowed for this
-    }
+        $route = new Routes\Factory($method, $path, $className, $factory);
+        $this->appendRoute($route);
 
-    /**
-     * Checks if request is a global OPTIONS (OPTIONS * HTTP/1.1)
-     *
-     * @return bool true if the request is a global options, false otherwise
-     */
-    public function isDispatchedToGlobalOptionsMethod()
-    {
-        return $this->request->method === 'OPTIONS'
-            && $this->request->uri === '*';
+        return $route;
     }
 
     /**
@@ -349,155 +424,45 @@ class Router
     }
 
     /**
-     * Compares two patterns and returns the first one according to
-     * similarity or presence of catch-all pattern
+     * Checks if router overrides the method with _method hack
      *
-     * @param string $patternA some pattern
-     * @param string $patternB some pattern
-     *
-     * @return bool true if $patternA is before $patternB
+     * @return bool true if the router overrides current request method, false
+     *                   otherwise
      */
-    protected static function comparePatternSimilarity($patternA, $patternB)
+    public function hasDispatchedOverridenMethod()
     {
-        return 0 === stripos($patternA, $patternB)
-            || $patternA === AbstractRoute::CATCHALL_IDENTIFIER;
-    }
-
-
-    /**
-     * Compares two patterns and returns the first one according to
-     * similarity or ocurrences of a subpattern
-     *
-     * @param string $patternA   some pattern
-     * @param string $patternB   some pattern
-     * @param string $subpattern pattern needle
-     *
-     * @return bool true if $patternA is before $patternB
-     */
-    protected static function compareOcurrences($patternA, $patternB, $subpattern)
-    {
-        return substr_count($patternA, $subpattern)
-            < substr_count($patternB, $subpattern);
+        return $this->request                    //Has dispatched
+            && $this->methodOverriding           //Has method overriting
+            && isset($_REQUEST['_method'])       //Has a hacky parameter
+            && $this->request->method == 'POST'; //Only post is allowed for this
     }
 
     /**
-     * Compares two patterns and returns the first one according to
-     * similarity, patterns or ocurrences of a subpattern
+     * Creates and returns an instance-based route
      *
-     * @param string $patternA   some pattern
-     * @param string $patternB   some pattern
-     * @param string $subpattern pattern needle
+     * @param string $method     The HTTP metod (GET, POST, etc)
+     * @param string $path       The URI Path (/foo/bar...)
+     * @param string $intance    An instance of Routinable
      *
-     * @return bool true if $patternA is before $patternB
+     * @return Respect\Rest\Routes\Instance The route created
      */
-    protected static function compareRoutePatterns($patternA, $patternB, $subpattern)
+    public function instanceRoute($method, $path, $instance)
     {
-        return static::comparePatternSimilarity($patternA, $patternB)
-            || static::compareOcurrences($patternA, $patternB, $subpattern);
-    }
+        $route = new Routes\Instance($method, $path, $instance);
+        $this->appendRoute($route);
 
-    /** Sorts current routes according to path and parameters */
-    protected function sortRoutes()
-    {
-        $router = $this;
-
-        usort($this->routes, function($a, $b) {
-                $a = $a->pattern;
-                $b = $b->pattern;
-                $pi = AbstractRoute::PARAM_IDENTIFIER;
-
-                //Compare similarity and ocurrences of "/"
-                if (static::compareRoutePatterns($a, $b, '/')) {
-                    return 1;
-
-                //Compare similarity and ocurrences of /*
-                } elseif (static::compareRoutePatterns($a, $b, $pi)) {
-                    return -1;
-
-                //Hard fallback for consistency
-                } else {
-                    return 1;
-                }
-            }
-        );
-    }
-
-    /** Appliesthe virtualHost prefix on the current request */
-    protected function applyVirtualHost()
-    {
-        if ($this->virtualHost) {
-            $this->request->uri = preg_replace(
-                '#^' . preg_quote($this->virtualHost) . '#',
-                '',
-                $this->request->uri
-            );
-        }
+        return $route;
     }
 
     /**
-     * Return routes matched by path
+     * Checks if request is a global OPTIONS (OPTIONS * HTTP/1.1)
      *
-     * @return SplObjectStorage a list of routes matched by path
+     * @return bool true if the request is a global options, false otherwise
      */
-    protected function getMatchedRoutesByPath()
+    public function isDispatchedToGlobalOptionsMethod()
     {
-        $matched = new \SplObjectStorage;
-
-        foreach ($this->routes as $route) {
-            if ($this->matchRoute($this->request, $route, $params)) {
-                $matched[$route] = $params;
-            }
-        }
-
-        return $matched;
-    }
-
-    /**
-     * Checks if a route matches a method
-     *
-     * @param AbstractRoute $route      A route instance
-     * @param string        $methodName Name of the method to match
-     *
-     * @return bool true if route matches
-     */
-    protected function matchesMethod(AbstractRoute $route, $methodName)
-    {
-        return 0 !== stripos($methodName, '__')
-            && ($route->method === $this->request->method
-                || $route->method === 'ANY'
-                || ($route->method === 'GET'
-                    && $this->request->method === 'HEAD'
-                )
-            );
-    }
-
-    /**
-     * Checks if a route matches its routines
-     *
-     * @param SplObjectStorage $matchedByPath A list of routes matched by path
-     *
-     * @return bool true if route matches its routines
-     */
-    protected function routineMatch(\SplObjectStorage $matchedByPath)
-    {
-        $badRequest = false;
-
-        foreach ($matchedByPath as $route) {
-            if ($this->matchesMethod($route, $this->request->method)) {
-                $tempParams = $matchedByPath[$route];
-                if ($route->matchRoutines($this->request, $tempParams)) {
-                    return $this->configureRequest(
-                        $this->request,
-                        $route,
-                        static::cleanUpParams($tempParams)
-                    );
-                } else {
-                    $badRequest = true;
-                }
-            }
-        }
-
-        return $badRequest ? false : null;
+        return $this->request->method === 'OPTIONS'
+            && $this->request->uri === '*';
     }
 
     /**
@@ -532,28 +497,20 @@ class Router
         }
     }
 
-    protected function informMethodNotAllowed(array $allowedMethods)
-    {
-        header('HTTP/1.1 405');
-
-        if (!$allowedMethods) {
-            return;
-        }
-
-        header('Allow: '.implode(', ', $allowedMethods));
-        $this->request->route = null;
-    }
-
+    /**
+     * Performs the main route dispatching mechanism
+     */
     public function routeDispatch()
     {
         $this->applyVirtualHost();
-        $this->sortRoutes();
+        $this->sortRoutesByComplexity();
 
         $matchedByPath  = $this->getMatchedRoutesByPath();
         $allowedMethods = $this->getAllowedMethods(
             iterator_to_array($matchedByPath)
         );
 
+        //OPTIONS? Let's inform the allowd methods
         if ($this->request->method === 'OPTIONS' && $allowedMethods) {
             header('Allow: '.implode(', ', $allowedMethods));
         } elseif (0 === count($matchedByPath)) {
@@ -565,17 +522,13 @@ class Router
         return $this->request;
     }
 
-    /** Dispatch the current route with a custom Request */
-    public function dispatchRequest(Request $request=null)
-    {
-        if ($this->isRoutelessDispatch($request)) {
-            return $this->request;
-        }
-
-        return $this->routeDispatch();
-    }
-
-    /** Dispatches and get response with default request parameters */
+    /**
+     * Dispatches and get response with default request parameters
+     *
+     * @param Request $request Some request
+     *
+     * @return string the response string
+     */
     public function run(Request $request=null)
     {
         $route = $this->dispatchRequest($request);
@@ -598,34 +551,45 @@ class Router
 
     }
 
-    /** Creates and returns an factory-based route */
-    public function factoryRoute($method, $path, $className, $factory)
+    /**
+     * Creates and returns a static route
+     *
+     * @param string $method      The HTTP metod (GET, POST, etc)
+     * @param string $path        The URI Path (/foo/bar...)
+     * @param string $staticValue Some static value to be printed
+     *
+     * @return Respect\Rest\Routes\StaticValue The route created
+     */
+    public function staticRoute($method, $path, $staticValue)
     {
-        $route = new Routes\Factory($method, $path, $className, $factory);
+        $route = new Routes\StaticValue($method, $path, $staticValue);
         $this->appendRoute($route);
 
         return $route;
     }
 
-    /** Creates and returns an instance-based route */
-    public function instanceRoute($method, $path, $instance)
-    {
-        $route = new Routes\Instance($method, $path, $instance);
-        $this->appendRoute($route);
 
-        return $route;
+    /** Appliesthe virtualHost prefix on the current request */
+    protected function applyVirtualHost()
+    {
+        if ($this->virtualHost) {
+            $this->request->uri = preg_replace(
+                '#^' . preg_quote($this->virtualHost) . '#',
+                '',
+                $this->request->uri
+            );
+        }
     }
 
-    /** Creates and returns a static route */
-    public function staticRoute($method, $path, $instance)
-    {
-        $route = new Routes\StaticValue($method, $path, $instance);
-        $this->appendRoute($route);
-
-        return $route;
-    }
-
-    /** Configures a request for a specific route with specific parameters */
+    /**
+     * Configures a request for a specific route with specific parameters
+     *
+     * @param Request       $request Some request
+     * @param AbstractRoute $route   Some route
+     * @param array         $param   A list of URI params
+     *
+     * @return Request a configured Request instance
+     */
     protected function configureRequest(
         Request $request,
         AbstractRoute $route,
@@ -636,7 +600,85 @@ class Router
         return $request;
     }
 
-    /** Returns true if the passed route matches the passed request */
+    /**
+     * Return routes matched by path
+     *
+     * @return SplObjectStorage a list of routes matched by path
+     */
+    protected function getMatchedRoutesByPath()
+    {
+        $matched = new \SplObjectStorage;
+
+        foreach ($this->routes as $route) {
+            if ($this->matchRoute($this->request, $route, $params)) {
+                $matched[$route] = $params;
+            }
+        }
+
+        return $matched;
+    }
+
+    /**
+     * Sends an Allow header with allowed methods from a list
+     *
+     * @param array $allowedMehods A list of allowed methods
+     *
+     * @return null sends an Allow header.
+     */
+    protected function informAllowedMethods(array $allowedMethods)
+    {
+        header('Allow: '.implode(', ', $allowedMethods));
+    }
+
+    /**
+     * Informs the PHP environment of a not allowed method alongside
+     * its allowed methods for that path
+     *
+     * @param array $allowedMehods A list of allowed methods
+     *
+     * @return null sends HTTP Status Line and Allow header.
+     */
+    protected function informMethodNotAllowed(array $allowedMethods)
+    {
+        header('HTTP/1.1 405');
+
+        if (!$allowedMethods) {
+            return;
+        }
+
+        $this->informAllowedMethods($allowedMethods);
+        $this->request->route = null;
+    }
+
+
+    /**
+     * Checks if a route matches a method
+     *
+     * @param AbstractRoute $route      A route instance
+     * @param string        $methodName Name of the method to match
+     *
+     * @return bool true if route matches
+     */
+    protected function matchesMethod(AbstractRoute $route, $methodName)
+    {
+        return 0 !== stripos($methodName, '__')
+            && ($route->method === $this->request->method
+                || $route->method === 'ANY'
+                || ($route->method === 'GET'
+                    && $this->request->method === 'HEAD'
+                )
+            );
+    }
+
+    /**
+     * Returns true if the passed route matches the passed request
+     *
+     * @param Request       $request Some request
+     * @param AbstractRoute $route   Some route
+     * @param array         $params  A list of URI params
+     *
+     * @return bool true if the route matches the request with that params
+     */
     protected function matchRoute(
         Request $request,
         AbstractRoute $route,
@@ -648,4 +690,57 @@ class Router
         }
     }
 
+
+    /**
+     * Checks if a route matches its routines
+     *
+     * @param SplObjectStorage $matchedByPath A list of routes matched by path
+     *
+     * @return bool true if route matches its routines
+     */
+    protected function routineMatch(\SplObjectStorage $matchedByPath)
+    {
+        $badRequest = false;
+
+        foreach ($matchedByPath as $route) {
+            if ($this->matchesMethod($route, $this->request->method)) {
+                $tempParams = $matchedByPath[$route];
+                if ($route->matchRoutines($this->request, $tempParams)) {
+                    return $this->configureRequest(
+                        $this->request,
+                        $route,
+                        static::cleanUpParams($tempParams)
+                    );
+                } else {
+                    $badRequest = true;
+                }
+            }
+        }
+
+        return $badRequest ? false : null;
+    }
+
+    /** Sorts current routes according to path and parameters */
+    protected function sortRoutesByComplexity()
+    {
+        usort($this->routes, function($a, $b) {
+                $a = $a->pattern;
+                $b = $b->pattern;
+                $pi = AbstractRoute::PARAM_IDENTIFIER;
+
+                //Compare similarity and ocurrences of "/"
+                if (Router::compareRoutePatterns($a, $b, '/')) {
+                    return 1;
+
+                //Compare similarity and ocurrences of /*
+                } elseif (Router::compareRoutePatterns($a, $b, $pi)) {
+                    return -1;
+
+                //Hard fallback for consistency
+                } else {
+                    return 1;
+                }
+            }
+        );
+    }
 }

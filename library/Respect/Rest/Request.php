@@ -163,7 +163,8 @@ class Request
      * Restores the previous error handler if present then check error routes
      * for logged errors, forwarding them or returning null silently
      *
-     * @param  mixed $errorHandler Some error handler (internal or external to Respect)
+     * @param  mixed $errorHandler Some error handler (internal or external to
+     * Respect)
      *
      * @return mixed A route forwarding or a silent null
      */
