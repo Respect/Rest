@@ -58,6 +58,54 @@ class Router
      */
     protected $virtualHost = '';
 
+
+    /**
+     * Compares two patterns and returns the first one according to
+     * similarity or ocurrences of a subpattern
+     *
+     * @param string $patternA   some pattern
+     * @param string $patternB   some pattern
+     * @param string $sub        pattern needle
+     *
+     * @return bool true if $patternA is before $patternB
+     */
+    public static function compareOcurrences($patternA, $patternB, $sub)
+    {
+        return substr_count($patternA, $sub)
+            < substr_count($patternB, $sub);
+    }
+
+    /**
+     * Compares two patterns and returns the first one according to
+     * similarity or presence of catch-all pattern
+     *
+     * @param string $patternA some pattern
+     * @param string $patternB some pattern
+     *
+     * @return bool true if $patternA is before $patternB
+     */
+    public static function comparePatternSimilarity($patternA, $patternB)
+    {
+        return 0 === stripos($patternA, $patternB)
+            || $patternA === AbstractRoute::CATCHALL_IDENTIFIER;
+    }
+
+    /**
+     * Compares two patterns and returns the first one according to
+     * similarity, patterns or ocurrences of a subpattern
+     *
+     * @param string $patternA   some pattern
+     * @param string $patternB   some pattern
+     * @param string $sub        pattern needle
+     *
+     * @return bool true if $patternA is before $patternB
+     */
+    public static function compareRoutePatterns($patternA, $patternB, $sub)
+    {
+        return static::comparePatternSimilarity($patternA, $patternB)
+            || static::compareOcurrences($patternA, $patternB, $sub);
+    }
+
     /**
      * Cleans up an return an array of extracted parameters
      *
@@ -78,53 +126,6 @@ class Router
                 }
             )
         );
-    }
-
-    /**
-     * Compares two patterns and returns the first one according to
-     * similarity or ocurrences of a subpattern
-     *
-     * @param string $patternA   some pattern
-     * @param string $patternB   some pattern
-     * @param string $sub        pattern needle
-     *
-     * @return bool true if $patternA is before $patternB
-     */
-    protected static function compareOcurrences($patternA, $patternB, $sub)
-    {
-        return substr_count($patternA, $sub)
-            < substr_count($patternB, $sub);
-    }
-
-    /**
-     * Compares two patterns and returns the first one according to
-     * similarity or presence of catch-all pattern
-     *
-     * @param string $patternA some pattern
-     * @param string $patternB some pattern
-     *
-     * @return bool true if $patternA is before $patternB
-     */
-    protected static function comparePatternSimilarity($patternA, $patternB)
-    {
-        return 0 === stripos($patternA, $patternB)
-            || $patternA === AbstractRoute::CATCHALL_IDENTIFIER;
-    }
-
-    /**
-     * Compares two patterns and returns the first one according to
-     * similarity, patterns or ocurrences of a subpattern
-     *
-     * @param string $patternA   some pattern
-     * @param string $patternB   some pattern
-     * @param string $sub        pattern needle
-     *
-     * @return bool true if $patternA is before $patternB
-     */
-    protected static function compareRoutePatterns($patternA, $patternB, $sub)
-    {
-        return static::comparePatternSimilarity($patternA, $patternB)
-            || static::compareOcurrences($patternA, $patternB, $sub);
     }
 
     /**
@@ -723,21 +724,17 @@ class Router
     /** Sorts current routes according to path and parameters */
     protected function sortRoutesByComplexity()
     {
-        $router = $this;
-        $routerClass = get_called_class();
-        $comparator = array($router, "$routerClass::compareRoutePatterns");
-
-        usort($this->routes, function($a, $b) use (&$comparator) {
+        usort($this->routes, function($a, $b) {
                 $a = $a->pattern;
                 $b = $b->pattern;
                 $pi = AbstractRoute::PARAM_IDENTIFIER;
 
                 //Compare similarity and ocurrences of "/"
-                if (call_user_func($comparator, $a, $b, '/')) {
+                if (Router::compareRoutePatterns($a, $b, '/')) {
                     return 1;
 
                 //Compare similarity and ocurrences of /*
-                } elseif (call_user_func($comparator, $a, $b, $pi)) {
+                } elseif (Router::compareRoutePatterns($a, $b, $pi)) {
                     return -1;
 
                 //Hard fallback for consistency
