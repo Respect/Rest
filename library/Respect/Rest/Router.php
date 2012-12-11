@@ -723,17 +723,21 @@ class Router
     /** Sorts current routes according to path and parameters */
     protected function sortRoutesByComplexity()
     {
-        usort($this->routes, function($a, $b) {
+        $router = $this;
+        $routerClass = get_called_class();
+        $comparator = array($router, "$routerClass::compareRoutePatterns");
+
+        usort($this->routes, function($a, $b) use ($comparator) {
                 $a = $a->pattern;
                 $b = $b->pattern;
                 $pi = AbstractRoute::PARAM_IDENTIFIER;
 
                 //Compare similarity and ocurrences of "/"
-                if (Router::compareRoutePatterns($a, $b, '/')) {
+                if (call_user_func($comparator, $a, $b, '/')) {
                     return 1;
 
                 //Compare similarity and ocurrences of /*
-                } elseif (Router::compareRoutePatterns($a, $b, $pi)) {
+                } elseif (call_user_func($comparator, $a, $b, $pi)) {
                     return -1;
 
                 //Hard fallback for consistency
