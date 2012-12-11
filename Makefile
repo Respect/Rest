@@ -121,7 +121,7 @@ package: .check-foundation package-ini package-xml composer-json
 # Phony target so the test folder don't conflict
 .PHONY: test
 test: .check-foundation
-	@cd `$(CONFIG_TOOL) test-folder`;phpunit --testdox .
+	@cd `$(CONFIG_TOOL) test-folder`;phpunit .
 
 coverage: .check-foundation
 	@cd `$(CONFIG_TOOL) test-folder`;phpunit  --coverage-html=reports/coverage --coverage-text .
