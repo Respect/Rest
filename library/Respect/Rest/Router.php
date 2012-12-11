@@ -11,125 +11,250 @@ use Respect\Rest\Routes;
 use Respect\Rest\Routes\AbstractRoute;
 
 /**
+ * A router that contains many instances of routes.
+ *
  * @method \Respect\Rest\Routes\AbstractRoute get(string $path, $routeTarget)
  * @method \Respect\Rest\Routes\AbstractRoute post(string $path, $routeTarget)
  * @method \Respect\Rest\Routes\AbstractRoute put(string $path, $routeTarget)
- * @method \Respect\Rest\Routes\AbstractRoute head(string $path, $routeTarget)
  * @method \Respect\Rest\Routes\AbstractRoute delete(string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute head(string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute options(string $path, $routeTarget)
  * @method \Respect\Rest\Routes\AbstractRoute any(string $path, $routeTarget)
  */
 class Router
 {
 
+    /**
+     * @var bool true if this router dispatches itself when destroyed, false
+     * otherwise
+     */
     public $isAutoDispatched = true;
+
+    /**
+     * @var bool true if this router accepts _method HTTP hacks for PUT and
+     * DELETE via POST
+     */
     public $methodOverriding = false;
+
+    /**
+     * @var array An array of routines that must be applied to every route
+     * instance
+     */
     protected $globalRoutines = array();
+
+    /** @var array An array of main routes for this router */
     protected $routes = array();
+
+    /**
+     * @var array An array of side routes (errors, exceptions, etc) for this
+     * router
+     */
     protected $sideRoutes = array();
+
+    /** @var string The prefix for every requested URI starting with a slash */
     protected $virtualHost = '';
 
-    /** Cleans up an return an array of extracted parameters */
-    protected static function cleanUpParams($params)
+    /**
+     * Cleans up an return an array of extracted parameters
+     *
+     * @param array $params an array of params
+     *
+     * @return array only the non-empty params
+     */
+    protected static function cleanUpParams(array $params)
     {
+        //using array_values to reset array keys
         return array_values(
             array_filter(
-                $params, function($param) {
-                   return $param !== '';
+                $params,
+                function($param) {
+
+                    //remove any empty string param
+                    return $param !== '';
                 }
             )
         );
     }
 
+    /**
+     * Builds and appends many kinds of routes magically.
+     *
+     * @param string $method The HTTP method for the new route
+     */
     public function __call($method, $args)
     {
-        if (count($args) < 2)
-            throw new InvalidArgumentException('Any route binding must at least 2 arguments');
+        if (count($args) < 2) {
+            throw new InvalidArgumentException(
+                'Any route binding must at least 2 arguments'
+            );
+        }
 
         list ($path, $routeTarget) = $args;
 
-        if (is_callable($routeTarget)) //closures, func names, callbacks
-            if (!isset($args[2])) //raw callback
+        //closures, func names, callbacks
+        if (is_callable($routeTarget)) {
+
+            //raw callback
+            if (!isset($args[2])) {
                 return $this->callbackRoute($method, $path, $routeTarget);
-            else
+            } else {
                 return $this->callbackRoute($method, $path, $routeTarget, $args[2]);
-        elseif ($routeTarget instanceof Routable) //direct instances
+            }
+
+        //direct instances
+        } elseif ($routeTarget instanceof Routable) {
             return $this->instanceRoute($method, $path, $routeTarget);
-        elseif (!is_string($routeTarget)) //static returns the argument itself
+
+        //static returns the argument itself
+        } elseif (!is_string($routeTarget)) {
             return $this->staticRoute($method, $path, $routeTarget);
-        elseif (is_string($routeTarget)
-                && !(class_exists($routeTarget) || interface_exists($routeTarget)))
+
+        //static returns the argument itself
+        } elseif (
+            is_string($routeTarget)
+            && !(class_exists($routeTarget) || interface_exists($routeTarget))
+        ) {
             return $this->staticRoute($method, $path, $routeTarget);
-        else
-            if (!isset($args[2])) //raw classnames
+
+        //classes
+        } else {
+
+            //raw classnames
+            if (!isset($args[2])) {
                 return $this->classRoute($method, $path, $routeTarget);
-            elseif (is_callable($args[2])) //classnames as factories
+
+             //classnames as factories
+            } elseif (is_callable($args[2])) {
                 return $this->factoryRoute($method, $path, $routeTarget, $args[2]);
-            else //classnames with constructor arguments
+
+            //classnames with constructor arguments
+            } else {
                 return $this->classRoute($method, $path, $routeTarget, $args[2]);
+            }
+        }
     }
 
+    /**
+     * @param mixed $virtualHost null for no virtual host or a string prefix
+     *                           for every URI
+     */
     public function __construct($virtualHost=null)
     {
         $this->virtualHost = $virtualHost;
     }
 
+    /** If $this->autoDispatched, dispatches the app */
     public function __destruct()
     {
-        if (!$this->isAutoDispatched || !isset($_SERVER['SERVER_PROTOCOL']))
+        if (!$this->isAutoDispatched || !isset($_SERVER['SERVER_PROTOCOL'])) {
             return;
+        }
 
         echo $this->run();
     }
 
+    /** Runs the router and returns its output */
     public function __toString()
     {
         return (string) $this->run();
     }
 
-    /** Applies a routine to every route */
-    public function always($routineName, $routineParameters)
+    /**
+     * Applies a routine to every route
+     *
+     * @param string $routineName a name of some routine (Accept, When, etc)
+     * @param array  $param1      some param
+     * @param array  $param2      some param
+     * @param array  $etc         This function accepts infinite params
+     *                            that will be passed to the routine instance
+     *
+     * @return Router the router itself.
+     */
+    public function always($routineName, $param1=null, $param2=null, $etc=null)
     {
-        $routineParameters = func_get_args();
-        $routineName = array_shift($routineParameters);
-        $routineClass = new ReflectionClass('Respect\\Rest\\Routines\\' . $routineName);
-        $routineInstance = $routineClass->newInstanceArgs($routineParameters);
+        $params                 = func_get_args();
+        $routineName            = array_shift($params);
+        $routineClassName       = 'Respect\\Rest\\Routines\\' . $routineName;
+        $routineClass           = new ReflectionClass($routineClassName);
+        $routineInstance        = $routineClass->newInstanceArgs($params);
         $this->globalRoutines[] = $routineInstance;
 
-        foreach ($this->routes as $route)
+        foreach ($this->routes as $route) {
             $route->appendRoutine($routineInstance);
+        }
 
         return $this;
     }
 
-    /** Appends a pre-built route to the dispatcher */
+    /**
+     * Appends a pre-built route to the dispatcher
+     *
+     * @param AbstractRoute $route Any route
+     *
+     * @return Router the router itself
+     */
     public function appendRoute(AbstractRoute $route)
     {
-        $this->routes[] = $route;
-        $route->sideRoutes = &$this->sideRoutes;
+        $this->routes[]     = $route;
+        $route->sideRoutes  = &$this->sideRoutes;
         $route->virtualHost = $this->virtualHost;
 
-        foreach ($this->globalRoutines as $routine)
+        foreach ($this->globalRoutines as $routine) {
             $route->appendRoutine($routine);
+        }
+
+        return $this;
     }
 
-    /** Appends a pre-built side route to the dispatcher */
+    /**
+     * Appends a pre-built side route to the dispatcher
+     *
+     * @param AbstractRoute $route Any route
+     *
+     * @return Router the router itself
+     */
     public function appendSideRoute(AbstractRoute $route)
     {
         $this->sideRoutes[] = $route;
 
-        foreach ($this->globalRoutines as $routine)
+        foreach ($this->globalRoutines as $routine) {
             $route->appendRoutine($routine);
+        }
+
+        return $this;
     }
 
-    /** Creates and returns a callback-based route */
-    public function callbackRoute($method, $path, $callback, array $arguments = array())
-    {
+    /**
+     * Creates and returns a callback-based route
+     *
+     * @param string   $method    The HTTP method
+     * @param string   $path      The URI pattern for this route
+     * @param callable $callback  Any callback for this route
+     * @param array    $arguments Additional arguments for the callback
+     *
+     * @return Respect\Rest\Routes\Callback The route instance
+     */
+    public function callbackRoute(
+        $method,
+        $path,
+        $callback,
+        array $arguments = array()
+    ) {
         $route = new Routes\Callback($method, $path, $callback, $arguments);
         $this->appendRoute($route);
         return $route;
     }
 
-    /** Creates and returns a class-based route */
+    /**
+     * Creates and returns a class-based route
+     *
+     * @param string   $method    The HTTP method
+     * @param string   $path      The URI pattern for this route
+     * @param string   $class     Some class name
+     * @param array    $arguments The class constructor arguments
+     *
+     * @return Respect\Rest\Routes\ClassName The route instance
+     */
     public function classRoute($method, $path, $class, array $arguments=array())
     {
         $route = new Routes\ClassName($method, $path, $class, $arguments);
@@ -137,19 +262,42 @@ class Router
         return $route;
     }
 
-    /** Dispatch the current route with a standard Request */
+    /**
+     * Dispatches the router
+     *
+     * @param mixed $method null to infer it or an HTTP method (GET, POST, etc)
+     * @param mixed $uri    null to infer it or a request URI path (/foo/bar)
+     *
+     * @return mixed Whatever you returned from your model
+     */
     public function dispatch($method=null, $uri=null)
     {
         return $this->dispatchRequest(new Request($method, $uri));
     }
 
-    public function exceptionRoute($className, $path=null)
+    /**
+     * Creates and returns a side-route for catching exceptions
+     *
+     * @param string $className The name of the exception class you want to
+     *                          catch. 'Exception' will catch them all.
+     * @param string $callback  The function to run when an exception is cautght
+     *
+     * @return Respect\Rest\Routes\Exception
+     */
+    public function exceptionRoute($className, $callback=null)
     {
-        $route = new Routes\Exception($className, $path);
+        $route = new Routes\Exception($className, $callback);
         $this->appendSideRoute($route);
         return $route;
     }
 
+    /**
+     * Creates and returns a side-route for catching errors
+     *
+     * @param string $callback The function to run when an error is cautght
+     *
+     * @return Respect\Rest\Routes\Error
+     */
     public function errorRoute($callback)
     {
         $route = new Routes\Error($callback);
@@ -157,79 +305,125 @@ class Router
         return $route;
     }
 
-    public function hasDispatchedOverridenMethod() 
+    public function hasDispatchedOverridenMethod()
     {
-        return $this->request                    //Has dispatched 
+        return $this->request                    //Has dispatched
             && $this->methodOverriding           //Has method overriting
-            && isset($_REQUEST['_method'])       //Has a parameter that triggers it
+            && isset($_REQUEST['_method'])       //Has a hacky parameter
             && $this->request->method == 'POST'; //Only post is allowed for this
     }
 
     public function isDispatchedToGlobalOptionsMethod()
     {
-        return $this->request->method === 'OPTIONS' && $this->request->uri === '*';
+        return $this->request->method === 'OPTIONS'
+            && $this->request->uri === '*';
     }
 
     public function getAllowedMethods(array $routes)
-    {        
+    {
         $allowedMethods = array();
 
-        foreach ($routes as $route)
+        foreach ($routes as $route) {
             $allowedMethods[] = $route->method;
+        }
 
         return $allowedMethods;
     }
 
+    protected function comparePatternSimilarity($a, $b)
+    {
+        return 0 === stripos($a, $b)
+            || $a === AbstractRoute::CATCHALL_IDENTIFIER;
+    }
+
+    protected function compareOcurrences($a, $b, $needle)
+    {
+        return substr_count($a, $needle) < substr_count($b, $needle);
+    }
+
+    protected function compareRoutePatterns($a, $b, $subpattern)
+    {
+        return $this->comparePatternSimilarity($a, $b)
+            || $this->compareOcurrences($a, $b, $subpattern);
+    }
+
     protected function sortRoutes()
     {
-        
+
         usort($this->routes, function($a, $b) {
                 $a = $a->pattern;
                 $b = $b->pattern;
+                $pi = AbstractRoute::PARAM_IDENTIFIER;
 
-                if (0 === stripos($a, $b) || $a == AbstractRoute::CATCHALL_IDENTIFIER)
+                //Compare similarity and ocurrences of "/"
+                if ($this->compareRoutePatterns($a, $b, '/')) {
                     return 1;
-                elseif (0 === stripos($b, $a) || $b == AbstractRoute::CATCHALL_IDENTIFIER)
+
+                //Compare similarity and ocurrences of /*
+                } elseif ($this->compareRoutePatterns($a, $b, $pi)) {
                     return -1;
-                elseif (substr_count($a, '/') < substr_count($b, '/'))
-                    return 1;
 
-                return substr_count($a, AbstractRoute::PARAM_IDENTIFIER)
-                    < substr_count($b, AbstractRoute::PARAM_IDENTIFIER) ? -1 : 1;
+                //Hard fallback for consistency
+                } else {
+                    return 1;
+                }
             }
         );
     }
 
     protected function applyVirtualHost()
     {
-        if ($this->virtualHost)
-            $this->request->uri =
-                preg_replace('#^' . preg_quote($this->virtualHost) . '#', '', $this->request->uri);
+        if ($this->virtualHost) {
+            $this->request->uri = preg_replace(
+                '#^' . preg_quote($this->virtualHost) . '#',
+                '',
+                $this->request->uri
+            );
+        }
     }
 
     protected function getMatchedRoutesByPath()
     {
         $matched = new \SplObjectStorage;
+
         foreach ($this->routes as $route) {
             if ($this->matchRoute($this->request, $route, $params)) {
                 $matched[$route] = $params;
             }
         }
+
         return $matched;
     }
 
-    protected function getMatchedRoutesByRoutines(\SplObjectStorage $matchedByPath)
+    protected function matchesMethod(AbstractRoute $route, $methodName)
+    {
+        return 0 !== stripos($methodName, '__')
+            && ($route->method === $this->request->method
+                || $route->method === 'ANY'
+                || ($route->method === 'GET'
+                    && $this->request->method === 'HEAD'
+                )
+            );
+    }
+
+    protected function routineMatch(\SplObjectStorage $matchedByPath)
     {
         $badRequest = false;
-        foreach ($matchedByPath as $route)
-            if (0 !== stripos($this->request->method, '__')
-                && ($route->method === $this->request->method
-                    || $route->method === 'ANY'
-                    || ($route->method === 'GET' && $this->request->method === 'HEAD')))
-                if ($route->matchRoutines($this->request, $tempParams = $matchedByPath[$route]))
-                    return $this->configureRequest($this->request, $route, static::cleanUpParams($tempParams));
-                else
+
+        foreach ($matchedByPath as $route) {
+            if ($this->matchesMethod($route, $this->request->method)) {
+                $tempParams = $matchedByPath[$route];
+                if ($route->matchRoutines($this->request, $tempParams)) {
+                    return $this->configureRequest(
+                        $this->request,
+                        $route,
+                        static::cleanUpParams($tempParams)
+                    );
+                } else {
                     $badRequest = true;
+                }
+            }
+        }
 
         return $badRequest ? false : null;
     }
@@ -237,19 +431,23 @@ class Router
     public function isRoutelessDispatch(Request $request = null)
     {
         $this->isAutoDispatched = false;
-        if (!$request)
+
+        if (!$request) {
             $request = new Request;
-            
+        }
+
         $this->request = $request;
 
-        if ($this->hasDispatchedOverridenMethod())
+        if ($this->hasDispatchedOverridenMethod()) {
             $request->method = strtoupper($_REQUEST['_method']);
+        }
 
         if ($this->isDispatchedToGlobalOptionsMethod()) {
             $allowedMethods = $this->getAllowedMethods($this->routes);
 
-            if ($allowedMethods)
+            if ($allowedMethods) {
                 header('Allow: '.implode(', ', array_unique($allowedMethods)));
+            }
 
             return true;
         }
@@ -262,7 +460,7 @@ class Router
         if (!$allowedMethods) {
             return;
         }
-        
+
         header('Allow: '.implode(', ', $allowedMethods));
         $this->request->route = null;
     }
@@ -271,24 +469,29 @@ class Router
     {
         $this->applyVirtualHost();
         $this->sortRoutes();
-        $matchedByPath = $this->getMatchedRoutesByPath();
-        $allowedMethods = $this->getAllowedMethods(iterator_to_array($matchedByPath));
 
-        if ($this->request->method === 'OPTIONS' && $allowedMethods) 
+        $matchedByPath  = $this->getMatchedRoutesByPath();
+        $allowedMethods = $this->getAllowedMethods(
+            iterator_to_array($matchedByPath)
+        );
+
+        if ($this->request->method === 'OPTIONS' && $allowedMethods) {
             header('Allow: '.implode(', ', $allowedMethods));
-        elseif (0 === count($matchedByPath))
+        } elseif (0 === count($matchedByPath)) {
             header('HTTP/1.1 404');
-        elseif (!$this->getMatchedRoutesByRoutines($matchedByPath) instanceof Request)
+        } elseif (!$this->routineMatch($matchedByPath) instanceof Request) {
             $this->informMethodNotAllowed($allowedMethods);
-        
+        }
+
         return $this->request;
     }
 
     /** Dispatch the current route with a custom Request */
     public function dispatchRequest(Request $request=null)
     {
-        if ($this->isRoutelessDispatch($request)) 
+        if ($this->isRoutelessDispatch($request)) {
             return $this->request;
+        }
 
         return $this->routeDispatch();
     }
@@ -297,14 +500,21 @@ class Router
     public function run(Request $request=null)
     {
         $route = $this->dispatchRequest($request);
-        if (!$route || (isset($request->method) && $request->method === 'HEAD'))
+        if (
+            !$route
+            || (isset($request->method)
+                && $request->method === 'HEAD')
+        ) {
             return null;
+        }
 
         $response = $route->response();
+
         if (is_resource($response)) {
             fpassthru($response);
             return '';
         }
+
         return (string) $response;
 
     }
@@ -314,6 +524,7 @@ class Router
     {
         $route = new Routes\Factory($method, $path, $className, $factory);
         $this->appendRoute($route);
+
         return $route;
     }
 
@@ -322,6 +533,7 @@ class Router
     {
         $route = new Routes\Instance($method, $path, $instance);
         $this->appendRoute($route);
+
         return $route;
     }
 
@@ -330,20 +542,27 @@ class Router
     {
         $route = new Routes\StaticValue($method, $path, $instance);
         $this->appendRoute($route);
+
         return $route;
     }
 
     /** Configures a request for a specific route with specific parameters */
-    protected function configureRequest(Request $request, AbstractRoute $route, array $params=array())
-    {
+    protected function configureRequest(
+        Request $request,
+        AbstractRoute $route,
+        array $params=array()
+    ) {
         $request->route = $route;
         $request->params = $params;
         return $request;
     }
 
     /** Returns true if the passed route matches the passed request */
-    protected function matchRoute(Request $request, AbstractRoute $route, &$params=array())
-    {
+    protected function matchRoute(
+        Request $request,
+        AbstractRoute $route,
+        &$params=array()
+    ) {
         if ($route->match($request, $params)) {
             $request->route = $route;
             return true;
