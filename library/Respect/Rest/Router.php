@@ -727,7 +727,7 @@ class Router
         $routerClass = get_called_class();
         $comparator = array($router, "$routerClass::compareRoutePatterns");
 
-        usort($this->routes, function($a, $b) use ($comparator) {
+        usort($this->routes, function($a, $b) use (&$comparator) {
                 $a = $a->pattern;
                 $b = $b->pattern;
                 $pi = AbstractRoute::PARAM_IDENTIFIER;
