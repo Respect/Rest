@@ -20,7 +20,11 @@ class Request
     /** @var string The HTTP method (commonly GET, POST, PUT, DELETE, HEAD) */
     public $method = '';
 
-    /** @var array A numeric array containing valid URL parameters */
+    /** 
+     * @var array A numeric array containing valid URL parameters. For a route
+     * path like /users/*, a Request for /users/alganet should have an array
+     * equivalent to ['alganet']
+     */
     public $params = array();
 
     /** @var AbstractRoute A route matched for this request */

@@ -56,16 +56,26 @@ abstract class AbstractRoute
 
     /** @var string The HTTP method for this route (GET, POST, ANY, etc) */
     public $method = '';
-    /** @var string The minimalistic pattern for route paths for this route */
+    /** @var string The pattern for this route (like /users/*) */
     public $pattern = '';
-    /** @var string The generated regex for the route pattern */
+    /** @var string The generated regex to match the route pattern */
     public $regexForMatch = '';
-    /** @var string The generated regex for creating URIs from parameters */
+    /** 
+     * @var string The generated regex for creating URIs from parameters 
+     * @see Respect\Rest\AbstractRoute::createURI
+     */
     public $regexForReplace = '';
-    /** @var array A list of routines appended to this route */
+    /** 
+     * @var array A list of routines appended to this route 
+     * @see Respect\Rest\Routines\AbstractRoutine
+     */
     public $routines = array();
-    /** @var array A list of side routes to be used */
+    /**
+     * @var array A list of side routes to be used
+     * @see Respect\Rest\Routes\AbstractRoute
+     */
     public $sideRoutes = array();
+    
     /** @var array A virtualhost applied to this route (deprecated) */
     public $virtualHost = null;
 
@@ -140,6 +150,8 @@ abstract class AbstractRoute
      * @param mixed $param1 Some parameter
      * @param mixed $etc    This route accepts as many parameters you can pass
      *
+     * @see Respect\Rest\Request::$params
+     *
      * @return string the created URI
      */
     public function createUri($param1=null, $etc=null)
@@ -157,6 +169,8 @@ abstract class AbstractRoute
      * @param Request $request The request you want to process
      * @param array   $params  Parameters for the processed request
      * @see   Respect\Rest\Routines\ProxyableWhen
+     *
+     * @see Respect\Rest\Request::$params
      *
      * @return bool always true \,,/
      */
@@ -183,6 +197,8 @@ abstract class AbstractRoute
      *
      * @param Request $request The request you want to process
      * @param array   $params  Parameters for the processed request
+     *
+     * @see Respect\Rest\Request::$params
      *
      * @return bool as true as xkcd (always true)
      */

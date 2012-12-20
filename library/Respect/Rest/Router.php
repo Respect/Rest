@@ -111,6 +111,8 @@ class Router
      *
      * @param array $params an array of params
      *
+     * @see Respect\Rest\Request::$params
+     *
      * @return array only the non-empty params
      */
     protected static function cleanUpParams(array $params)
@@ -234,6 +236,8 @@ class Router
      * @param array  $param2      some param
      * @param array  $etc         This function accepts infinite params
      *                            that will be passed to the routine instance
+     *
+     * @see Respect\Rest\Request::$params
      *
      * @return Router the router itself.
      */
@@ -589,6 +593,8 @@ class Router
      * @param AbstractRoute $route   Some route
      * @param array         $param   A list of URI params
      *
+     * @see Respect\Rest\Request::$params
+     *
      * @return Request a configured Request instance
      */
     protected function configureRequest(
@@ -677,6 +683,8 @@ class Router
      * @param Request       $request Some request
      * @param AbstractRoute $route   Some route
      * @param array         $params  A list of URI params
+     *
+     * @see Respect\Rest\Request::$params
      *
      * @return bool true if the route matches the request with that params
      */
