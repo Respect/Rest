@@ -3,23 +3,14 @@ namespace Respect\Rest\Routes;
 
 use ReflectionClass;
 
-class Error extends AbstractRoute
+class Error extends Callback
 {
     public $callback;
     public $errors = array();
 
     public function __construct($callback)
     {
-        $this->callback = $callback;
-        parent::__construct('ANY', '^$');
-    }
-
-    public function getReflection($method)
-    {
-        if (empty($this->reflection))
-            $this->reflection = new ReflectionClass('stdClass');
-
-        return $this->reflection;
+        parent::__construct('ANY', '^$', $callback);
     }
 
     public function runTarget($method, &$params)

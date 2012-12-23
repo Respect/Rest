@@ -24,8 +24,12 @@ class Callback extends AbstractRoute
      * @param callable $callback  The callback this route holds
      * @param array    $arguments Additional arguments for this callback
      */
-    public function __construct($method, $pattern, $callback, array $arguments=array())
-    {
+    public function __construct(
+        $method, 
+        $pattern, 
+        $callback, 
+        array $arguments=array()
+    ) {
         $this->callback = $callback;
         $this->arguments = $arguments;
         parent::__construct($method, $pattern);
@@ -38,10 +42,11 @@ class Callback extends AbstractRoute
      */
     public function getCallbackReflection()
     {
-        if (is_array($this->callback))
+        if (is_array($this->callback)) {
             return new ReflectionMethod($this->callback[0], $this->callback[1]);
-        else
+        } else {
             return new ReflectionFunction($this->callback);
+        }
     }
 
     /**
@@ -54,8 +59,9 @@ class Callback extends AbstractRoute
      */
     public function getReflection($method)
     {
-        if (empty($this->reflection))
+        if (empty($this->reflection)) {
             $this->reflection = $this->getCallbackReflection();
+        }
 
         return $this->reflection;
     }
@@ -72,7 +78,10 @@ class Callback extends AbstractRoute
      */
     public function runTarget($method, &$params)
     {
-        return call_user_func_array($this->callback, array_merge($params, $this->arguments));
+        return call_user_func_array(
+            $this->callback, 
+            array_merge($params, $this->arguments)
+        );
     }
 
 }

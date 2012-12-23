@@ -3,7 +3,7 @@ namespace Respect\Rest\Routes;
 
 use ReflectionClass;
 
-class Exception extends AbstractRoute
+class Exception extends Callback
 {
     public $class;
     public $callback;
@@ -12,16 +12,7 @@ class Exception extends AbstractRoute
     public function __construct($class, $callback)
     {
         $this->class = $class;
-        $this->callback = $callback;
-        parent::__construct('ANY', '^$');
-    }
-
-    public function getReflection($method)
-    {
-        if (empty($this->reflection))
-            $this->reflection = new ReflectionClass('stdClass');
-
-        return $this->reflection;
+        parent::__construct('ANY', '^$', $callback);
     }
 
     public function runTarget($method, &$params)
