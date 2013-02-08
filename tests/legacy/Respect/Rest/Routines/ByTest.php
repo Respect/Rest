@@ -1,7 +1,8 @@
 <?php
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
+use Respect\Rest\Request,
+    Respect\Rest\Router;
 
 /**
  * @covers Respect\Rest\Routines\By
@@ -9,11 +10,6 @@ use Respect\Rest\Request;
  */
 class ByTest extends \PHPUnit_Framework_TestCase
 {
-    /**
-     * @var By
-     */
-    protected $object;
-
     /**
      * Sets up the fixture, for example, opens a network connection.
      * This method is called before a test is executed.
@@ -37,12 +33,26 @@ class ByTest extends \PHPUnit_Framework_TestCase
     /**
      * @covers Respect\Rest\Routines\By::by
      */
-    public function testBy()
+    public function test_by_with_an_anonymous_function()
     {
-        $request = @new Request();
-        $params = array();
-        $alias = &$this->object;
-        $this->assertEquals('from by callback',
-                $alias->by($request, $params));
+        $request = new Request();
+        $params  = array();
+        $routine = new By(function() { return 'from by callback'; });
+        $this->assertEquals('from by callback', $routine->by($request, $params));
+    }
+
+    /**
+     * @covers Respect\Rest\Routines\By
+     */
+    public function test_by_on_a_route()
+    {
+        $router = new Router();
+        $router->get('/', function() { return 'route'; })
+               ->by(function() { return 'by'; });
+        // By does not affect the output of the route.
+        $this->assertEquals(
+            $expected = 'route',
+            (string) $router->dispatch('GET', '/')
+        );
     }
 }

@@ -20,4 +20,9 @@ abstract class AbstractRoutine implements Routinable
         $this->callback = $callback;
     }
 
+    protected function getCallback()
+    {
+        return $this->callback;
+    }
+
 }
