@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest\Routines;
 
+use Stubs\Routines\ByClassWithInvoke;
+
 /**
  * @covers Respect\Rest\Routines\ParamSynced
  * @author Nick Lombard <github@jigsoft.co.za>
@@ -59,7 +61,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit_Framework_TestCase
                          ->setMethods(array('getCallback'))
                          ->disableOriginalConstructor()
                          ->getMock();
-        $stub->expects($this->once())
+        $stub->expects($this->any())
              ->method('getCallback')
              ->will($this->returnValue($callback));
 
@@ -85,7 +87,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit_Framework_TestCase
                          ->setMethods(array('getCallback'))
                          ->disableOriginalConstructor()
                          ->getMock();
-        $stub->expects($this->once())
+        $stub->expects($this->any())
              ->method('getCallback')
              ->will($this->returnValue($callback));
 
@@ -96,6 +98,32 @@ class AbstractSyncedRoutineTest extends \PHPUnit_Framework_TestCase
         $this->assertCount(
             $expected = 1,
             $result
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Routines\AbstractSyncedRoutine
+     * @covers Respect\Rest\Routines\AbstractRoutine
+     */
+    public function  test_getParameters_with_callable_instance()
+    {
+        $stub     = new ByClassWithInvoke;
+        $this->assertTrue(
+            is_callable($stub),
+            'Callable instance does not pass the is_callable test.'
+        );
+        $class    = 'Respect\Rest\Routines\AbstractSyncedRoutine';
+        $callback = function($name) { return 'Hello '.$name; };
+        $routine  = $this->getMockBuilder($class)
+                         ->setMethods(array('getCallback'))
+                         ->disableOriginalConstructor()
+                         ->getMock();
+        $routine->expects($this->any())
+                ->method('getCallback')
+                ->will($this->returnValue($stub));
+        $this->assertCount(
+            $expected = 0,
+            $result   = $routine->getParameters()
         );
     }
 }

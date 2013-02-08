@@ -291,6 +291,11 @@ Respect\Rest uses a different approach to validate route parameters:
     })->when(function($documentId) {
         return is_numeric($documentId) && $documentId > 0;
     });
+    // Routines can also be called using class and method names.
+    $r3->get('/documents/*', function($documentId) {
+        /** do something */
+    })->when('SomeClass_name', 'someMethod_name');
+    // You can also pass any instance that implements the __invoke() magic method to any routine.
 ```
 
   1. This will match the route only if the callback on *when* is matched.
