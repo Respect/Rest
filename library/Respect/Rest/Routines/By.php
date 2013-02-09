@@ -10,7 +10,7 @@ class By extends AbstractSyncedRoutine implements ProxyableBy
 
     public function by(Request $request, $params)
     {
-        return call_user_func_array($this->callback, $params);
+        return $this->execute($request, $params);
     }
 
 }

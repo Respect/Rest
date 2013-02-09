@@ -44,6 +44,7 @@ class ByTest extends \PHPUnit_Framework_TestCase
 
     /**
      * @covers Respect\Rest\Routines\By
+     * @covers Respect\Rest\Routines\AbstractSyncedRoutine
      */
     public function test_by_on_a_route()
     {
@@ -57,6 +58,26 @@ class ByTest extends \PHPUnit_Framework_TestCase
         );
     }
 
+    /**
+     * @covers Respect\Rest\Routines\By
+     * @covers Respect\Rest\Routines\AbstractSyncedRoutine
+     */
+    public function test_by_on_a_route_with_classname()
+    {
+        $router = new Router();
+        $router->get('/', function() { return 'route'; })
+               ->by('Stubs\Routines\ByClassWithInvoke');
+        // By does not affect the output of the route.
+        $this->assertEquals(
+            $expected = 'route',
+            (string) $router->dispatch('GET', '/')
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Routines\By
+     * @covers Respect\Rest\Routines\AbstractSyncedRoutine
+     */
     public function test_by_with_a_callable_class_on_a_route()
     {
         $router  = new Router;

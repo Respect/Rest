@@ -10,7 +10,7 @@ class When extends AbstractSyncedRoutine implements ProxyableWhen
 
     public function when(Request $request, $params)
     {
-        $valid = call_user_func_array($this->callback, $params);
+        $valid = $this->execute($request, $params);
 
         if (!$valid)
             header('HTTP/1.1 400');
