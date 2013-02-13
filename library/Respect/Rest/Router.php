@@ -225,7 +225,14 @@ class Router
     /** Runs the router and returns its output */
     public function __toString()
     {
-        return (string) $this->run();
+        $string = '';
+        try {
+            $string = (string) $this->run();
+        } catch (\Exception $exception) {
+            trigger_error($exception->getMessage(), E_USER_ERROR);
+        }
+
+        return $string;
     }
 
     /**
