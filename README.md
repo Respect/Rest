@@ -463,7 +463,7 @@ When applying conneg routines to multiple routes that can return streams you
 Support for Basic HTTP Authentication is already implemented as a routine:
 ```php
     $r3->get('/home', 'HomeController')->authBasic('My Realm', function($user, $pass) {
-        return $user === 'admin' && $user === 'p4ss';
+        return $user === 'admin' && $pass === 'p4ss';
     }); 
 ```
 
