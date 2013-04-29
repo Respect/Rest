@@ -145,6 +145,14 @@ class Router
 
         list ($path, $routeTarget) = $args;
 
+         // Support multiple route definitions as array of paths
+        if (is_array($path)) {
+            $lastPath = array_pop($path);
+            foreach ($path as $p)
+                 $this->$method($p, $routeTarget);
+             return $this->$method($lastPath, $routeTarget);
+        }
+       
         //closures, func names, callbacks
         if (is_callable($routeTarget)) {
 
