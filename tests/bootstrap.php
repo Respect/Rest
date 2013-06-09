@@ -12,6 +12,7 @@ if (file_exists(dirname(__DIR__).'/vendor/composer')) {
         $paths[] = $path;
 }
 
+$paths[] = realpath(__DIR__.DIRECTORY_SEPARATOR.'src');
 natsort($paths);
 array_unshift($paths, dirname(__DIR__) .'/library');
 set_include_path(implode(PATH_SEPARATOR, array_unique($paths)));
