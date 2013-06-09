@@ -1,6 +1,10 @@
 <?php
 namespace Respect\Rest\Routines {
-use Respect\Rest\Request;
+
+use Respect\Rest\Request,
+    Respect\Rest\Router;
+use Stubs\Routines\WhenAlwaysTrue;
+
 /**
  * @covers Respect\Rest\Routines\When
  * @author Nick Lombard <github@jigsoft.co.za>
@@ -52,6 +56,25 @@ class WhenTest extends \PHPUnit_Framework_TestCase
 
         $this->assertFalse($alias->when($request, $params));
         $this->assertArrayHasKey('HTTP/1.1 400', $header);
+    }
+
+    public function test_when_with_a_callable_class_within_a_route()
+    {
+        $router  = new Router;
+        $routine = new WhenAlwaysTrue;
+        $router->get('/', function() { return 'route'; })
+               ->by($routine);
+        // By does not affect the output of the route.
+        $this->assertEquals(
+            $expected = 'route',
+            (string) $router->dispatch('GET', '/')
+        );
+        $this->assertAttributeEquals(
+            $expected = true,
+            'invoked',
+            $routine,
+            'Routine was not invoked!'
+        );
     }
 }
 
