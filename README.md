@@ -166,6 +166,16 @@ Respect\Rest sort routes automatically, but it is highly recommended to declare 
 from the most specific to the most generic. This will improve performance and
 maintainability of the code.
 
+### Multiple Routes
+[Top][]
+
+You may want to have multiple routes perform the same action. Pluralization is the most common reason for this. This can be done like so:
+```php
+    $r3->get(array('/user/*', '/users/*'), function($userName) {
+        return 'Hello '. $userName;
+    });
+```
+
 ### Matching any HTTP Method
 [Top][]
 
