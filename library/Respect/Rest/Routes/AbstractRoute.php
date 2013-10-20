@@ -159,7 +159,9 @@ abstract class AbstractRoute
         $params = func_get_args();
         array_unshift($params, $this->regexForReplace);
 
-        return rtrim($this->virtualHost, '/') .
+        $params = preg_replace('#(?<!^)/? *$#', '', $params);
+        
+        return rtrim($this->virtualHost, ' /') .
             call_user_func_array('sprintf', $params);
     }
 
@@ -248,14 +250,17 @@ abstract class AbstractRoute
      */
     protected function createRegexPatterns($pattern)
     {
-        $pattern = rtrim($pattern, ' /');
-        $extra = $this->extractCatchAllPattern($pattern);
+    	$extra = $this->extractCatchAllPattern($pattern);
+    	
         $matchPattern = str_replace(
             static::QUOTED_PARAM_IDENTIFIER,
             static::REGEX_SINGLE_PARAM,
-            preg_quote($pattern),
+            preg_quote(rtrim($pattern, ' /')),
             $paramCount
         );
+        
+        $pattern = rtrim($pattern);
+        
         $replacePattern = str_replace(
             static::PARAM_IDENTIFIER,
             '/%s',
