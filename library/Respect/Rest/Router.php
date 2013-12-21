@@ -13,13 +13,13 @@ use Respect\Rest\Routes\AbstractRoute;
 /**
  * A router that contains many instances of routes.
  *
- * @method \Respect\Rest\Routes\AbstractRoute get(string $path, $routeTarget)
- * @method \Respect\Rest\Routes\AbstractRoute post(string $path, $routeTarget)
- * @method \Respect\Rest\Routes\AbstractRoute put(string $path, $routeTarget)
- * @method \Respect\Rest\Routes\AbstractRoute delete(string $path, $routeTarget)
- * @method \Respect\Rest\Routes\AbstractRoute head(string $path, $routeTarget)
- * @method \Respect\Rest\Routes\AbstractRoute options(string $path, $routeTarget)
- * @method \Respect\Rest\Routes\AbstractRoute any(string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute get(\string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute post(\string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute put(\string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute delete(\string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute head(\string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute options(\string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute any(\string $path, $routeTarget)
  */
 class Router
 {
