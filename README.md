@@ -1,5 +1,4 @@
-<script type="text/javascript" src="http://www.ohloh.net/p/604580/widgets/project_factoids_stats.js"></script>
-Respect\Rest [![Build Status](https://secure.travis-ci.org/Respect/Rest.png)](http://travis-ci.org/Respect/Rest)
+Respect\Rest [![Build Status](https://secure.travis-ci.org/Respect/Rest.png)](http://travis-ci.org/Respect/Rest) [![Latest Stable Version](https://poser.pugx.org/respect/rest/v/stable.png)](https://packagist.org/packages/respect/rest) [![Total Downloads](https://poser.pugx.org/respect/rest/downloads.png)](https://packagist.org/packages/respect/rest) [![Latest Unstable Version](https://poser.pugx.org/respect/rest/v/unstable.png)](https://packagist.org/packages/respect/rest) [![License](https://poser.pugx.org/respect/rest/license.png)](https://packagist.org/packages/respect/rest)
 ============
 
 Thin controller for RESTful applications and APIs.
