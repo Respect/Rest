@@ -103,10 +103,15 @@ class ClassName extends AbstractRoute
             $this->instance = $this->createInstance();
         }
 
-        return call_user_func_array(
-            array($this->instance, $method), 
-            $params
-        );
+		if(method_exists($this->instance, $method ) ){
+			return call_user_func_array(
+				array($this->instance, $method), $params
+			);
+		} else {
+			return call_user_func_array(
+				array($this->instance, 'notimplemented'), $params
+			);
+		}
     }
 
 }
