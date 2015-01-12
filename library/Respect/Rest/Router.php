@@ -1,13 +1,16 @@
 <?php
+/*
+ * This file is part of the Respect\Rest package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Respect\Rest;
 
 use Exception;
 use ReflectionClass;
-use ReflectionMethod;
-use RuntimeException;
 use InvalidArgumentException;
-use Respect\Rest\Routes;
 use Respect\Rest\Routes\AbstractRoute;
 
 /**
@@ -23,7 +26,6 @@ use Respect\Rest\Routes\AbstractRoute;
  */
 class Router
 {
-
     /**
      * @var bool true if this router dispatches itself when destroyed, false
      * otherwise
@@ -58,14 +60,13 @@ class Router
      */
     protected $virtualHost = '';
 
-
     /**
      * Compares two patterns and returns the first one according to
      * similarity or ocurrences of a subpattern
      *
-     * @param string $patternA   some pattern
-     * @param string $patternB   some pattern
-     * @param string $sub        pattern needle
+     * @param string $patternA some pattern
+     * @param string $patternB some pattern
+     * @param string $sub      pattern needle
      *
      * @return bool true if $patternA is before $patternB
      */
@@ -94,9 +95,9 @@ class Router
      * Compares two patterns and returns the first one according to
      * similarity, patterns or ocurrences of a subpattern
      *
-     * @param string $patternA   some pattern
-     * @param string $patternB   some pattern
-     * @param string $sub        pattern needle
+     * @param string $patternA some pattern
+     * @param string $patternB some pattern
+     * @param string $sub      pattern needle
      *
      * @return bool true if $patternA is before $patternB
      */
@@ -121,7 +122,7 @@ class Router
         return array_values(
             array_filter(
                 $params,
-                function($param) {
+                function ($param) {
 
                     //remove any empty string param
                     return $param !== '';
@@ -143,19 +144,20 @@ class Router
             );
         }
 
-        list ($path, $routeTarget) = $args;
+        list($path, $routeTarget) = $args;
 
          // Support multiple route definitions as array of paths
         if (is_array($path)) {
             $lastPath = array_pop($path);
-            foreach ($path as $p)
-                 $this->$method($p, $routeTarget);
-             return $this->$method($lastPath, $routeTarget);
+            foreach ($path as $p) {
+                $this->$method($p, $routeTarget);
+            }
+
+            return $this->$method($lastPath, $routeTarget);
         }
-       
+
         //closures, func names, callbacks
         if (is_callable($routeTarget)) {
-
             //raw callback
             if (!isset($args[2])) {
                 return $this->callbackRoute($method, $path, $routeTarget);
@@ -185,7 +187,6 @@ class Router
 
         //classes
         } else {
-
             //raw classnames
             if (!isset($args[2])) {
                 return $this->classRoute($method, $path, $routeTarget);
@@ -215,7 +216,7 @@ class Router
      * @param mixed $virtualHost null for no virtual host or a string prefix
      *                           for every URI
      */
-    public function __construct($virtualHost=null)
+    public function __construct($virtualHost = null)
     {
         $this->virtualHost = $virtualHost;
     }
@@ -256,11 +257,11 @@ class Router
      *
      * @return Router the router itself.
      */
-    public function always($routineName, $param1=null, $param2=null, $etc=null)
+    public function always($routineName, $param1 = null, $param2 = null, $etc = null)
     {
         $params                 = func_get_args();
         $routineName            = array_shift($params);
-        $routineClassName       = 'Respect\\Rest\\Routines\\' . $routineName;
+        $routineClassName       = 'Respect\\Rest\\Routines\\'.$routineName;
         $routineClass           = new ReflectionClass($routineClassName);
         $routineInstance        = $routineClass->newInstanceArgs($params);
         $this->globalRoutines[] = $routineInstance;
@@ -328,23 +329,25 @@ class Router
     ) {
         $route = new Routes\Callback($method, $path, $callback, $arguments);
         $this->appendRoute($route);
+
         return $route;
     }
 
     /**
      * Creates and returns a class-based route
      *
-     * @param string   $method    The HTTP method
-     * @param string   $path      The URI pattern for this route
-     * @param string   $class     Some class name
-     * @param array    $arguments The class constructor arguments
+     * @param string $method    The HTTP method
+     * @param string $path      The URI pattern for this route
+     * @param string $class     Some class name
+     * @param array  $arguments The class constructor arguments
      *
      * @return Respect\Rest\Routes\ClassName The route instance
      */
-    public function classRoute($method, $path, $class, array $arguments=array())
+    public function classRoute($method, $path, $class, array $arguments = array())
     {
         $route = new Routes\ClassName($method, $path, $class, $arguments);
         $this->appendRoute($route);
+
         return $route;
     }
 
@@ -356,7 +359,7 @@ class Router
      *
      * @return mixed Whatever you returned from your model
      */
-    public function dispatch($method=null, $uri=null)
+    public function dispatch($method = null, $uri = null)
     {
         return $this->dispatchRequest(new Request($method, $uri));
     }
@@ -368,7 +371,7 @@ class Router
      *
      * @return mixed Whatever the dispatched route returns
      */
-    public function dispatchRequest(Request $request=null)
+    public function dispatchRequest(Request $request = null)
     {
         if ($this->isRoutelessDispatch($request)) {
             return $this->request;
@@ -386,10 +389,11 @@ class Router
      *
      * @return Respect\Rest\Routes\Exception
      */
-    public function exceptionRoute($className, $callback=null)
+    public function exceptionRoute($className, $callback = null)
     {
         $route = new Routes\Exception($className, $callback);
         $this->appendSideRoute($route);
+
         return $route;
     }
 
@@ -404,16 +408,17 @@ class Router
     {
         $route = new Routes\Error($callback);
         $this->appendSideRoute($route);
+
         return $route;
     }
 
     /**
      * Creates and returns an factory-based route
      *
-     * @param string $method     The HTTP metod (GET, POST, etc)
-     * @param string $path       The URI Path (/foo/bar...)
-     * @param string $className  The class name of the factored instance
-     * @param string $factory    Any callable
+     * @param string $method    The HTTP metod (GET, POST, etc)
+     * @param string $path      The URI Path (/foo/bar...)
+     * @param string $className The class name of the factored instance
+     * @param string $factory   Any callable
      *
      * @return Respect\Rest\Routes\Factory The route created
      */
@@ -447,7 +452,7 @@ class Router
      * Checks if router overrides the method with _method hack
      *
      * @return bool true if the router overrides current request method, false
-     *                   otherwise
+     *              otherwise
      */
     public function hasDispatchedOverridenMethod()
     {
@@ -460,9 +465,9 @@ class Router
     /**
      * Creates and returns an instance-based route
      *
-     * @param string $method     The HTTP metod (GET, POST, etc)
-     * @param string $path       The URI Path (/foo/bar...)
-     * @param string $intance    An instance of Routinable
+     * @param string $method  The HTTP metod (GET, POST, etc)
+     * @param string $path    The URI Path (/foo/bar...)
+     * @param string $intance An instance of Routinable
      *
      * @return Respect\Rest\Routes\Instance The route created
      */
@@ -497,7 +502,7 @@ class Router
         $this->isAutoDispatched = false;
 
         if (!$request) {
-            $request = new Request;
+            $request = new Request();
         }
 
         $this->request = $request;
@@ -549,7 +554,7 @@ class Router
      *
      * @return string the response string
      */
-    public function run(Request $request=null)
+    public function run(Request $request = null)
     {
         $route = $this->dispatchRequest($request);
         if (
@@ -557,18 +562,18 @@ class Router
             || (isset($request->method)
                 && $request->method === 'HEAD')
         ) {
-            return null;
+            return;
         }
 
         $response = $route->response();
 
         if (is_resource($response)) {
             fpassthru($response);
+
             return '';
         }
 
         return (string) $response;
-
     }
 
     /**
@@ -588,13 +593,12 @@ class Router
         return $route;
     }
 
-
     /** Appliesthe virtualHost prefix on the current request */
     protected function applyVirtualHost()
     {
         if ($this->virtualHost) {
             $this->request->uri = preg_replace(
-                '#^' . preg_quote($this->virtualHost) . '#',
+                '#^'.preg_quote($this->virtualHost).'#',
                 '',
                 $this->request->uri
             );
@@ -615,10 +619,11 @@ class Router
     protected function configureRequest(
         Request $request,
         AbstractRoute $route,
-        array $params=array()
+        array $params = array()
     ) {
         $request->route = $route;
         $request->params = $params;
+
         return $request;
     }
 
@@ -629,7 +634,7 @@ class Router
      */
     protected function getMatchedRoutesByPath()
     {
-        $matched = new \SplObjectStorage;
+        $matched = new \SplObjectStorage();
 
         foreach ($this->routes as $route) {
             if ($this->matchRoute($this->request, $route, $params)) {
@@ -672,7 +677,6 @@ class Router
         $this->request->route = null;
     }
 
-
     /**
      * Checks if a route matches a method
      *
@@ -706,14 +710,14 @@ class Router
     protected function matchRoute(
         Request $request,
         AbstractRoute $route,
-        &$params=array()
+        &$params = array()
     ) {
         if ($route->match($request, $params)) {
             $request->route = $route;
+
             return true;
         }
     }
-
 
     /**
      * Checks if a route matches its routines
@@ -747,7 +751,9 @@ class Router
     /** Sorts current routes according to path and parameters */
     protected function sortRoutesByComplexity()
     {
-        usort($this->routes, function($a, $b) {
+        usort(
+            $this->routes,
+            function ($a, $b) {
                 $a = $a->pattern;
                 $b = $b->pattern;
                 $pi = AbstractRoute::PARAM_IDENTIFIER;

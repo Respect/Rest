@@ -1,4 +1,10 @@
 <?php
+/*
+ * This file is part of the Respect\Rest package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Respect\Rest\Routes;
 
@@ -8,10 +14,9 @@ use ReflectionMethod;
 /** A callback-based route */
 class Callback extends AbstractRoute
 {
-
     /** @var callable The actual callback this route holds */
     protected $callback;
-    
+
     /** @var array String argument parameters from the Request */
     public $arguments;
 
@@ -25,18 +30,18 @@ class Callback extends AbstractRoute
      * @param array    $arguments Additional arguments for this callback
      */
     public function __construct(
-        $method, 
-        $pattern, 
-        $callback, 
-        array $arguments=array()
+        $method,
+        $pattern,
+        $callback,
+        array $arguments = array()
     ) {
         $this->callback = $callback;
         $this->arguments = $arguments;
         parent::__construct($method, $pattern);
     }
 
-    /** 
-     * Returns an appropriate Reflection for any callable object 
+    /**
+     * Returns an appropriate Reflection for any callable object
      *
      * @return ReflectionFunctionAbstract The returned reflection object
      */
@@ -79,9 +84,8 @@ class Callback extends AbstractRoute
     public function runTarget($method, &$params)
     {
         return call_user_func_array(
-            $this->callback, 
+            $this->callback,
             array_merge($params, $this->arguments)
         );
     }
-
 }

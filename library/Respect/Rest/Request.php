@@ -1,26 +1,28 @@
 <?php
+/*
+ * This file is part of the Respect\Rest package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Respect\Rest;
 
-use ArrayAccess;
 use ReflectionFunctionAbstract;
 use ReflectionParameter;
-use RuntimeException;
 use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\ProxyableBy;
 use Respect\Rest\Routines\ProxyableThrough;
-use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\ParamSynced;
 
 /** A routed HTTP Request */
 class Request
 {
-
     /** @var string The HTTP method (commonly GET, POST, PUT, DELETE, HEAD) */
     public $method = '';
 
-    /** 
+    /**
      * @var array A numeric array containing valid URL parameters. For a route
      * path like /users/*, a Request for /users/alganet should have an array
      * equivalent to ['alganet']
@@ -35,9 +37,9 @@ class Request
 
     /**
      * @param string $method The HTTP method
-     * @param string $uri The called URI
+     * @param string $uri    The called URI
      */
-    public function __construct($method=null, $uri=null)
+    public function __construct($method = null, $uri = null)
     {
         //Tries to infer request variables only if null
         if (is_null($method)) {
@@ -82,7 +84,7 @@ class Request
         foreach ($this->route->sideRoutes as $sideRoute) {
             if ($sideRoute instanceof Routes\Error) {
                 return set_error_handler(
-                    function() use ($sideRoute) {
+                    function () use ($sideRoute) {
                         $sideRoute->errors[] = func_get_args();
                     }
                 );
@@ -167,8 +169,8 @@ class Request
      * Restores the previous error handler if present then check error routes
      * for logged errors, forwarding them or returning null silently
      *
-     * @param  mixed $errorHandler Some error handler (internal or external to
-     * Respect)
+     * @param mixed $errorHandler Some error handler (internal or external to
+     *                            Respect)
      *
      * @return mixed A route forwarding or a silent null
      */
@@ -193,9 +195,9 @@ class Request
      * Does a catch-like operation on an exception based on previously
      * declared instances from Router::exceptionRoute
      *
-     * @param  Exception $e Any exception
+     * @param Exception $e Any exception
      *
-     * @return mixed     A route forwarding or a silent null
+     * @return mixed A route forwarding or a silent null
      */
     protected function catchExceptions($e)
     {
@@ -207,6 +209,7 @@ class Request
                 || $sideRoute->class === '\Exception'
             ) {
                 $sideRoute->exception = $e;
+
                 return $this->forward($sideRoute);
             }
         }
@@ -222,7 +225,7 @@ class Request
         try {
             //No routes, get out
             if (!$this->route instanceof AbstractRoute) {
-                return null;
+                return;
             }
 
             $errorHandler = $this->prepareForErrorForwards();
@@ -271,7 +274,6 @@ class Request
     public function routineCall($type, $method, Routinable $routine, &$params)
     {
         $reflection = $this->route->getReflection(
-
             //GET and HEAD are the same for routines
             $method == 'HEAD' ? 'GET' : $method
         );
@@ -321,7 +323,7 @@ class Request
             return $routeParam->getDefaultValue();
         }
 
-        return null;
+        return;
     }
 
     /**
@@ -334,7 +336,7 @@ class Request
     public function forward(AbstractRoute $route)
     {
         $this->route = $route;
+
         return $this->response();
     }
-
 }

@@ -1,4 +1,10 @@
 <?php
+/*
+ * This file is part of the Respect\Rest package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Respect\Rest\Routes;
 
@@ -22,22 +28,25 @@ class Instance extends AbstractRoute
 
     public function getReflection($method)
     {
-        if (empty($this->reflection))
+        if (empty($this->reflection)) {
             $this->reflection = new ReflectionMethod(
-                    $this->instance, $method
+                $this->instance,
+                $method
             );
+        }
 
         return $this->reflection;
     }
 
     public function runTarget($method, &$params)
     {
-        if (!$this->instance instanceof Routable)
+        if (!$this->instance instanceof Routable) {
             throw new InvalidArgumentException('Route target must be an instance of Respect\Rest\Routable');
+        }
 
-            return call_user_func_array(
-            array($this->instance, $method), $params
+        return call_user_func_array(
+            array($this->instance, $method),
+            $params
         );
     }
-
 }

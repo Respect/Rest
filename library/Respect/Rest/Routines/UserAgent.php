@@ -1,4 +1,10 @@
 <?php
+/*
+ * This file is part of the Respect\Rest package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Respect\Rest\Routines;
 
@@ -21,7 +27,7 @@ class UserAgent extends AbstractCallbackMediator implements ProxyableThrough, Un
     }
     protected function notifyApproved($requested, $provided, Request $request, $params)
     {
-        $this->negotiated = new SplObjectStorage;;
+        $this->negotiated = new SplObjectStorage();
         $this->negotiated[$request] = $this->getCallback($provided);
     }
     protected function notifyDeclined($requested, $provided, Request $request, $params)
@@ -31,16 +37,17 @@ class UserAgent extends AbstractCallbackMediator implements ProxyableThrough, Un
 
     protected function authorize($requested, $provided)
     {
-        if ($provided === '*' || preg_match("#$provided#", $requested))
+        if ($provided === '*' || preg_match("#$provided#", $requested)) {
             return true;
+        }
 
         return false;
     }
 
     public function through(Request $request, $params)
     {
-        if (false !== $this->negotiated)
-                return $this->negotiated[$request];
+        if (false !== $this->negotiated) {
+            return $this->negotiated[$request];
+        }
     }
-
 }

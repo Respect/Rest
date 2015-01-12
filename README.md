@@ -1,7 +1,9 @@
-Respect\Rest
-============
-
-[![Build Status](https://secure.travis-ci.org/Respect/Rest.png)](http://travis-ci.org/Respect/Rest) [![Latest Stable Version](https://poser.pugx.org/respect/rest/v/stable.png)](https://packagist.org/packages/respect/rest) [![Total Downloads](https://poser.pugx.org/respect/rest/downloads.png)](https://packagist.org/packages/respect/rest) [![Latest Unstable Version](https://poser.pugx.org/respect/rest/v/unstable.png)](https://packagist.org/packages/respect/rest) [![License](https://poser.pugx.org/respect/rest/license.png)](https://packagist.org/packages/respect/rest)
+# Respect\Rest
+[![Build Status](https://img.shields.io/travis/Respect/Rest.svg?style=flat-square)](http://travis-ci.org/Respect/Rest)
+[![Code Coverage](https://img.shields.io/scrutinizer/coverage/g/Respect/Rest.svg?style=flat-square)](https://scrutinizer-ci.com/g/Respect/Rest)
+[![Latest Version](https://img.shields.io/packagist/v/respect/rest.svg?style=flat-square)](https://packagist.org/packages/respect/rest)
+[![Total Downloads](https://img.shields.io/packagist/dt/respect/rest.svg?style=flat-square)](https://packagist.org/packages/respect/rest)
+[![License](https://img.shields.io/packagist/l/respect/rest.svg?style=flat-square)](https://packagist.org/packages/respect/rest)
 
 Thin controller for RESTful applications and APIs.
 
@@ -10,13 +12,17 @@ Thin controller for RESTful applications and APIs.
  * Completely RESTful, the right way to build apps.
 
 
-Installation
-------------
+## Installation
 
-Packages available on [PEAR](http://respect.li/pear) and [Composer](http://packagist.org/packages/Respect/Rest). Autoloading is [PSR-0](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md) compatible.
+The package is available on [Packagist](https://packagist.org/packages/respect/rest).
+You can install it using [Composer](http://getcomposer.org).
 
-Feature Guide
--------------
+```bash
+composer require respect/rest
+```
+
+## Feature Guide
+
 ### Navigation
 [Configuration][] | [Dispatching][] | [Simple Routing][] | [Parameters][] | [Catch-all][] | [Matching][] | [Methods][] | [Controllers][] | [Streams][] | [Static][] | [Forwarding][] | [When][] | [By][] | [Through][] | [Controller Splitting][] | [Conneg][] | [Basic Auth][] | [User-Agent][] | [Content-Type][] | [HTTP Errors][] | [RESTful Extras][] | [Anti-Patterns][] | [Own Routines][] | [Error Handling][]
 
@@ -25,9 +31,9 @@ Feature Guide
 
 Bootstrapping is easy. Just create an instance of Respect\Rest\Router.
 ```php
-    use Respect\Rest\Router;
+use Respect\Rest\Router;
 
-    $r3 = new Router;
+$r3 = new Router;
 ```
 
 This assumes you have a `.htaccess` file that redirects every request to this PHP file and
@@ -35,7 +41,7 @@ you're running this from the domain root (http://example.com/ without any subfol
 
 If you want to use it from a subfolder, you can pass the virtual root to the Router:
 ```php
-    $r3 = new Router('/myapp');
+$r3 = new Router('/myapp');
 ```
 
 This will instruct the router to work from http://example.com/myapp/.
@@ -43,12 +49,12 @@ This will instruct the router to work from http://example.com/myapp/.
 You can also use the Router without a `.htaccess` file. This uses the CGI `PATH_INFO` variable,
 and can be declared as:
 ```php
-    $r3 = new Router('/index.php/');
+$r3 = new Router('/index.php/');
 ```
 
 The same goes for folders:
 ```php
-    $r3 = new Router('/myapp/index.php/');
+$r3 = new Router('/myapp/index.php/');
 ```
 
 This assumes that every URL in the project will begin with these namespaces.
@@ -59,7 +65,7 @@ This assumes that every URL in the project will begin with these namespaces.
 The Router is auto-dispatched, which means that you don't have to call anything more than
 declaring routes to run it. If you want to omit this behavior, you can set:
 ```php
-    $r3->isAutoDispatched = false;
+$r3->isAutoDispatched = false;
 ```
 
 Note that you need the following step in order to see uncaught Exceptions in your application
@@ -67,7 +73,7 @@ output. Standard error output on logs is untouched.
 
 You can then dispatch it yourself at the end of the proccess:
 ```php
-    print $r3->run();
+print $r3->run();
 ```
 
 You can print the output or store in a variable if you want. This allows you to better
@@ -78,17 +84,17 @@ test and integrate the Router into existing applications.
 
 The Hello World route goes something like this:
 ```php
-    $r3->get('/', function() {
-        return 'Hello World';
-    });
+$r3->get('/', function() {
+    return 'Hello World';
+});
 ```
 
 Hitting `http://localhost/` (consider your local configuration for this) will print
 "Hello World" in the browser. You can declare as many routes as you want:
 ```php
-    $r3->get('/hello', function() {
-        return 'Hello from Path';
-    });
+$r3->get('/hello', function() {
+    return 'Hello from Path';
+});
 ```
 
 Hitting `http://localhost/hello` will now print "Hello from Path".
@@ -99,9 +105,9 @@ Hitting `http://localhost/hello` will now print "Hello from Path".
 You can declare routes that receives parameters from the URL. For this, every parameter
 is a `/*` on the route path. Considering the previous sample model:
 ```php
-    $r3->get('/users/*', function($screenName) {
-        echo "User {$screenName}";
-    });
+$r3->get('/users/*', function($screenName) {
+    echo "User {$screenName}";
+});
 ```
 
 Accessing `http://localhost/users/alganet` or any other username besides `alganet` will
@@ -109,9 +115,9 @@ now print "User alganet" (or the username of your choosing).
 
 Multiple parameters can be defined:
 ```php
-    $r3->get('/users/*/lists/*', function($user, $list) {
-        return "List {$list} from user {$user}.";
-    });
+$r3->get('/users/*/lists/*', function($user, $list) {
+    return "List {$list} from user {$user}.";
+});
 ```
 
 Last parameters on the route path are optional by default, so declaring just
@@ -120,9 +126,9 @@ parameter. You can declare a second `->get('/posts'`, now the Router will
 match it properly, or treat the missing parameter yourself by making them
 `null`able on the passed function:
 ```php
-    $r3->get('/posts/*/*/*', function($year,$month=null,$day=null) {
-        /** list posts, month and day are optional */
-    });
+$r3->get('/posts/*/*/*', function($year,$month=null,$day=null) {
+    /** list posts, month and day are optional */
+});
 ```
 
  1. This will match /posts/2010/10/10, /posts/2011/01 and /posts/2010
@@ -135,9 +141,9 @@ match it properly, or treat the missing parameter yourself by making them
 Sometimes you need to catch an undefined number of parameters. You can use
 Routes with catch-all parameters like this:
 ```php
-    $r3->get('/users/*/documents/**', function($user, $documentPath) {
-        return readfile(PATH_STORAGE. implode('/', $documentPath));
-    });
+$r3->get('/users/*/documents/**', function($user, $documentPath) {
+    return readfile(PATH_STORAGE. implode('/', $documentPath));
+});
 ```
 
  1. The above sample will match `/users/alganet/documents/foo/bar/baz/anything`.
@@ -152,7 +158,7 @@ Routes with catch-all parameters like this:
 ### Route Matching
 [Top][]
 
-Things can became very complex quick. We have simple routes, routes with parameters, optional 
+Things can became very complex quick. We have simple routes, routes with parameters, optional
 parameters and catch-all parameters. A simple rule to keep in mind is that Respect\Rest
 matches the routes from the most specific to the most generic.
 
@@ -172,9 +178,9 @@ maintainability of the code.
 
 You may want to have multiple routes perform the same action. Pluralization is the most common reason for this. This can be done like so:
 ```php
-    $r3->get(array('/user/*', '/users/*'), function($userName) {
-        return 'Hello '. $userName;
-    });
+$r3->get(array('/user/*', '/users/*'), function($userName) {
+    return 'Hello '. $userName;
+});
 ```
 
 ### Matching any HTTP Method
@@ -184,9 +190,9 @@ Sometimes you need to use a router to proxy requests to some other router or map
 requests to a class. By using the magic method `any`, you can pass any HTTP method to a given
 function.
 ```php
-    $r3->any('/users/*', function($userName) {
-        /** do anything */
-    });
+$r3->any('/users/*', function($userName) {
+    /** do anything */
+});
 ```
 
  1. Any HTTP method will match this same route.
@@ -195,18 +201,18 @@ function.
 ### Class Controllers
 [Top][]
 
-The `any` method is extremely useful to bind classes to controllers, one of Respect\Rest's most 
+The `any` method is extremely useful to bind classes to controllers, one of Respect\Rest's most
 awesome features:
 ```php
-    use Respect\Rest\Routable;
+use Respect\Rest\Routable;
 
-    class MyArticle implements Routable {
-        public function get($id) { }
-        public function delete($id) { }
-        public function put($id) { }
-    }
+class MyArticle implements Routable {
+    public function get($id) { }
+    public function delete($id) { }
+    public function put($id) { }
+}
 
-    $r3->any('/article/*', 'MyArticle');
+$r3->any('/article/*', 'MyArticle');
 ```
 
   1. This route will bind the class methods to the HTTP methods for the given path.
@@ -220,7 +226,7 @@ awesome features:
 
 Passing constructor arguments to the class is also possible:
 ```php
-    $r3->any('/images/*', 'ImageController', array($myImageHandler, $myDb));
+$r3->any('/images/*', 'ImageController', array($myImageHandler, $myDb));
 ```
 
   1. This will pass `$myImageHandler` and `$myDb` as parameters for the
@@ -228,7 +234,7 @@ Passing constructor arguments to the class is also possible:
 
 You can also instantiate the class yourself if you want:
 ```php
-    $r3->any('/downloads/*', $myDownloadManager);
+$r3->any('/downloads/*', $myDownloadManager);
 ```
 
   1. Sample above will assign the existent `$myDownloadManager` as a controller.
@@ -236,7 +242,7 @@ You can also instantiate the class yourself if you want:
 
 And you can even use a factory or DI container to build the controller class:
 ```php
-    $r3->any('/downloads/*', 'MyControllerClass', array('Factory', 'getController'));
+$r3->any('/downloads/*', 'MyControllerClass', array('Factory', 'getController'));
 ```
 
   1. Sample above will use the MyController class returned by Factory::getController
@@ -250,17 +256,17 @@ And you can even use a factory or DI container to build the controller class:
 Sometimes you need to route users to streams. The Router doesn't have to first handle
 large files or wait for streams to finish before serving them.
 ```php
-    $r3->get('/images/*/hi-res', function($imageName) {
-        header('Content-type: image/jpg');
-        return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
-    });
+$r3->get('/images/*/hi-res', function($imageName) {
+    header('Content-type: image/jpg');
+    return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
+});
 ```
 
 This will redirect the file directly to the browser without keeping it in
 memory.
 
 CAUTION: We created a possible security vulnerability in the sample: passing a parameter
-directly to a `fopen` handle. Please validate user input parameters before using them. 
+directly to a `fopen` handle. Please validate user input parameters before using them.
 This is for demonstrational purposes only.
 
 ### Routing Static Values
@@ -268,7 +274,7 @@ This is for demonstrational purposes only.
 
 No surprises here, you can make a route return a plain string:
 ```php
-    $r3->get('/greetings', 'Hello!');
+$r3->get('/greetings', 'Hello!');
 ```
 
 ### Forwarding Routes
@@ -277,19 +283,19 @@ No surprises here, you can make a route return a plain string:
 Respect\Rest has an internal forwarding mechanism. First you'll need to understand that
 every route declaration returns an instance:
 ```php
-    $usersRoute = $r3->any('/users', 'UsersController');
+$usersRoute = $r3->any('/users', 'UsersController');
 ```
 
 Then you can `use` and `return` this route in another one:
 ```php
-    $r3->any('/premium', function($user) use ($db, $usersRoute) {
-        if (!$db->userPremium($user)) {
-          return $usersRoute;
-        }
-    });
+$r3->any('/premium', function($user) use ($db, $usersRoute) {
+    if (!$db->userPremium($user)) {
+      return $usersRoute;
+    }
+});
 ```
 
-Illustrative sample above will redirect internally when an user is not privileged to 
+Illustrative sample above will redirect internally when an user is not privileged to
 another route that handle normal users.
 
 ### When Routine (if)
@@ -297,16 +303,16 @@ another route that handle normal users.
 
 Respect\Rest uses a different approach to validate route parameters:
 ```php
-    $r3->get('/documents/*', function($documentId) {
-        /** do something */
-    })->when(function($documentId) {
-        return is_numeric($documentId) && $documentId > 0;
-    });
-    // Routines can also be called using class and method names.
-    $r3->get('/documents/*', function($documentId) {
-        /** do something */
-    })->when('SomeClass_name', 'someMethod_name');
-    // You can also pass any instance that implements the __invoke() magic method to any routine.
+$r3->get('/documents/*', function($documentId) {
+    /** do something */
+})->when(function($documentId) {
+    return is_numeric($documentId) && $documentId > 0;
+});
+// Routines can also be called using class and method names.
+$r3->get('/documents/*', function($documentId) {
+    /** do something */
+})->when('SomeClass_name', 'someMethod_name');
+// You can also pass any instance that implements the __invoke() magic method to any routine.
 ```
 
   1. This will match the route only if the callback on *when* is matched.
@@ -323,27 +329,27 @@ not just data types such as `int` or `string`.
 We highly recommend that you use a strong validation library when using this. Consider
 [Respect\Validation](http://github.com/Respect/Validation).
 ```php
-    $r3->get('/images/*/hi-res', function($imageName) {
-        header('Content-type: image/jpg');
-        return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
-    })->when(function($imageName) {
-        /** Using Respect Validation alias to `V` */
-        return V::alphanum(".")->length(5,155)
-                ->noWhitespace()->validate($imageName);
-    });
+$r3->get('/images/*/hi-res', function($imageName) {
+    header('Content-type: image/jpg');
+    return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
+})->when(function($imageName) {
+    /** Using Respect Validation alias to `V` */
+    return V::alphanum(".")->length(5,155)
+            ->noWhitespace()->validate($imageName);
+});
 ```
 
 ### By Routine (before)
 [Top][]
 
-Sometimes you need to run something before a route does its job. This is 
+Sometimes you need to run something before a route does its job. This is
 useful for logging, authentication and similar purposes.
 ```php
-    $r3->get('/artists/*/albums/*', function($artistName, $albumName) {
-        /** do something */
-    })->by(function($albumName) use ($myLogger) {
-        $myLogger->logAlbumVisit($albumName);
-    });
+$r3->get('/artists/*/albums/*', function($artistName, $albumName) {
+    /** do something */
+})->by(function($albumName) use ($myLogger) {
+    $myLogger->logAlbumVisit($albumName);
+});
 ```
 
   1. This will execute the callback defined with *by* before the route action
@@ -367,11 +373,11 @@ Similar to `->by`, but runs after the route did its job. In the sample
 below we're showing something similar to invalidating a cache after
 saving some new information.
 ```php
-    $r3->post('/artists/*/albums/*', function($artistName, $albumName) {
-        /** save some artist info */
-    })->through(function() use($myCache) {
-        $myCache->clear($artistName, $albumName);
-    });
+$r3->post('/artists/*/albums/*', function($artistName, $albumName) {
+    /** save some artist info */
+})->through(function() use($myCache) {
+    $myCache->clear($artistName, $albumName);
+});
 ```
 
   1. `by` proxies will be executed before the route action, `through proxies`
@@ -383,14 +389,14 @@ Sample above allows you to do something based on the route parameters, but when
 procesing something after the route has run, its desirable to process its output
 as well. This can be achieved with a nested closure:
 ```php
-    $r3->any('/settings', 'SetingsController')->through(function(){
-        return function($data) {
-            if (isset($settings['admin_user'])) {
-                unset($settings['admin_user']);
-            }
-            return $data;
-        };
-    });
+$r3->any('/settings', 'SetingsController')->through(function(){
+    return function($data) {
+        if (isset($settings['admin_user'])) {
+            unset($settings['admin_user']);
+        }
+        return $data;
+    };
+});
 ```
 
 The illustrative sample above removes sensitive keys from a settings controller before
@@ -399,34 +405,34 @@ outputing the result.
 ### Controller Splitting
 [Top][]
 
-When using routines you are encouraged to separate the controller logic into components. You can 
+When using routines you are encouraged to separate the controller logic into components. You can
 reuse them:
 ```php
-    $logRoutine = function() use ($myLogger, $r3) {
-        $myLogger->logVisit($r3->request->path);
-    };
+$logRoutine = function() use ($myLogger, $r3) {
+    $myLogger->logVisit($r3->request->path);
+};
 
-    $r3->any('/users', 'UsersController')->by($logRoutine);
-    $r3->any('/products', 'ProductsController')->by($logRoutine);
+$r3->any('/users', 'UsersController')->by($logRoutine);
+$r3->any('/products', 'ProductsController')->by($logRoutine);
 ```
 
 A simple way of applying routines to every route on the router is:
 ```php
-    $r3->always('By', $logRoutine);
+$r3->always('By', $logRoutine);
 ```
 
 You can use the param sync to take advantage of this:
 ```php
-    $r3->always('When', function($user=null) {
-        if ($user) {
-          return strlen($user) > 3;
-        }
-    });
-    
-    $r3->any('/products', function () { /***/ });
-    $r3->any('/users/*', function ($user) { /***/ });
-    $r3->any('/users/*/products', function ($user) { /***/ });
-    $r3->any('/listeners/*', function ($user) { /***/ });
+$r3->always('When', function($user=null) {
+    if ($user) {
+      return strlen($user) > 3;
+    }
+});
+
+$r3->any('/products', function () { /***/ });
+$r3->any('/users/*', function ($user) { /***/ });
+$r3->any('/users/*/products', function ($user) { /***/ });
+$r3->any('/listeners/*', function ($user) { /***/ });
 ```
 
 Since there are three routes with the `$user` parameter, `when` will
@@ -435,21 +441,21 @@ verify them all automatically by its name.
 ### Content Negotiation
 [Top][]
 
-Respect/Rest currently supports the four distinct types of Accept header content-negotiation: 
+Respect/Rest currently supports the four distinct types of Accept header content-negotiation:
 Mimetype, Encoding, Language and Charset. Usage sample:
 ```php
-    $r3->get('/about', function() {
-        return array('v' => 2.0);
-    })->acceptLanguage(array(
-        'en' => function($data) { return array("Version" => $data['v']); },
-        'pt' => function($data) { return array("Versão"  => $data['v']); }
-    ))->accept(array(
-        'text/html' => function($data) {
-            list($k,$v)=each($data);
-            return "<strong>$k</strong>: $v";
-        },
-        'application/json' => 'json_encode'
-    ));
+$r3->get('/about', function() {
+    return array('v' => 2.0);
+})->acceptLanguage(array(
+    'en' => function($data) { return array("Version" => $data['v']); },
+    'pt' => function($data) { return array("Versão"  => $data['v']); }
+))->accept(array(
+    'text/html' => function($data) {
+        list($k,$v)=each($data);
+        return "<strong>$k</strong>: $v";
+    },
+    'application/json' => 'json_encode'
+));
 ```
 
 As in every routine, conneg routines are executed in the same order in which
@@ -460,14 +466,14 @@ Please note that when returning streams, conneg routines are also called.
 You may take advantage of this when processing streams. The hardcore example
 below serves text, using the deflate encoding, directly to the browser:
 ```php
-    $r3->get('/text/*', function($filename) {
-      return fopen('data/'.$filename, 'r+');
-    })->acceptEncoding(array(
-        'deflate' => function($stream) {
-            stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
-            return $stream; /** now deflated on demand */
-        }
-    ));
+$r3->get('/text/*', function($filename) {
+  return fopen('data/'.$filename, 'r+');
+})->acceptEncoding(array(
+    'deflate' => function($stream) {
+        stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
+        return $stream; /** now deflated on demand */
+    }
+));
 ```
 
 When applying conneg routines to multiple routes that can return streams you
@@ -478,9 +484,9 @@ When applying conneg routines to multiple routes that can return streams you
 
 Support for Basic HTTP Authentication is already implemented as a routine:
 ```php
-    $r3->get('/home', 'HomeController')->authBasic('My Realm', function($user, $pass) {
-        return $user === 'admin' && $pass === 'p4ss';
-    }); 
+$r3->get('/home', 'HomeController')->authBasic('My Realm', function($user, $pass) {
+    return $user === 'admin' && $pass === 'p4ss';
+});
 ```
 
 You'll receive an username and password provided by the user, and you just need
@@ -495,12 +501,12 @@ act as an internal forward (see the section on forwarding above).
 
 Below is an illustrative sample of how to block requests from mobile devices:
 ```php
-    $r3->get('/videos/*', 'VideosController')->userAgent(array(
-        'iphone|android' => function(){
-            header('HTTP/1.1 403 Forbidden');
-            return false; /** do not process the route. */
-        }
-    ));
+$r3->get('/videos/*', 'VideosController')->userAgent(array(
+    'iphone|android' => function(){
+        header('HTTP/1.1 403 Forbidden');
+        return false; /** do not process the route. */
+    }
+));
 ```
 
 You can pass several items in the array, like any conneg routine. The array
@@ -515,20 +521,20 @@ By default, HTML forms send POST data as `multipart/form-data`, but API clients
 may send any other format. PUT requests often send other mime types. You can pre-process
 this data before doing anything:
 ```php
-    $r3->post('/timeline', function() {
-        return file_get_contents('php://input');
-    })->contentType(array(
-        'multipart/form-data' => function($input) {
-            parse_str($input, $output);
-            return $output;
-        },
-        'application/json' => function($input) {
-            return my_json_converter($input);
-        },
-        'text/xml' => function($input) {
-            return my_xml_converter($input);
-        },
-    ));
+$r3->post('/timeline', function() {
+    return file_get_contents('php://input');
+})->contentType(array(
+    'multipart/form-data' => function($input) {
+        parse_str($input, $output);
+        return $output;
+    },
+    'application/json' => function($input) {
+        return my_json_converter($input);
+    },
+    'text/xml' => function($input) {
+        return my_xml_converter($input);
+    },
+));
 ```
 
 ### HTTP Errors
@@ -545,7 +551,7 @@ Respect\Rest currently handle the following errors by default:
 ### RESTful Extras
 [Top][]
 
-  * A HEAD request automatically works sending all GET headers without body. You can override 
+  * A HEAD request automatically works sending all GET headers without body. You can override
     this behavior declaring custom `head` routes.
   * An OPTIONS request to `*` or any route path returns the `Allow` headers properly.
   * When returning 405, `Allow` headers are also set properly.
@@ -566,7 +572,7 @@ own routines by instance using:
 ```
 
 In the sample above, `MyRoutine` is a user provided routine declared as a class and
-appended to the router. Custom routines have the option of several different interfaces 
+appended to the router. Custom routines have the option of several different interfaces
 which can be implemented:
 
   * IgnorableFileExtension - Instructs the router to ignore the file extension in requests
@@ -586,9 +592,9 @@ Respect\Rest provides two special ways to handle errors. The first one is using 
 Routes:
 
 ```php
-    $r3->exceptionRoute('InvalidArgumentException', function (InvalidArgumentException $e) {
-        return 'Sorry, this error happened: '.$e->getMessage();
-    });
+$r3->exceptionRoute('InvalidArgumentException', function (InvalidArgumentException $e) {
+    return 'Sorry, this error happened: '.$e->getMessage();
+});
 ```
 
 Whenever an uncaught exception appears on any route, it will be caught and forwarded to
@@ -596,9 +602,9 @@ this side route. Similarly, there is a route for PHP errors:
 
 
 ```php
-    $r3->errorRoute(function (array $err) {
-        return 'Sorry, this errors happened: '.var_dump($err);
-    });
+$r3->errorRoute(function (array $err) {
+    return 'Sorry, this errors happened: '.var_dump($err);
+});
 ```
 
 [Top]: #navigation

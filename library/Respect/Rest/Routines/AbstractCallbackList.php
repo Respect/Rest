@@ -1,9 +1,15 @@
 <?php
+/*
+ * This file is part of the Respect\Rest package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
-use \UnexpectedValueException;
-use \ArrayObject;
+use UnexpectedValueException;
+use ArrayObject;
 
 /**
  * Facilitates the keyed callback lists for routines.
@@ -16,14 +22,18 @@ class AbstractCallbackList extends ArrayObject implements Routinable
     {
         $this->setFlags(self::ARRAY_AS_PROPS);
 
-        if (!($callbackList = array_filter($list, 'is_callable')))
-            throw new UnexpectedValueException('Invalid setting: Not a single callable argument for callback routines: '. get_class($this));
+        if (!($callbackList = array_filter($list, 'is_callable'))) {
+            $message = 'Invalid setting: Not a single callable argument for callback routines: '.get_class($this);
+            throw new UnexpectedValueException($message);
+        }
 
-        foreach ($callbackList as $acceptSpec => $callback)
-            if (true === is_callable($callback))
+        foreach ($callbackList as $acceptSpec => $callback) {
+            if (true === is_callable($callback)) {
                 $this[$acceptSpec] = $callback;
-            else
+            } else {
                 error_log("The $acceptSpec enry does not have a valid callback configured, it has been ignored.\n", 1);
+            }
+        }
     }
 
     /**
@@ -41,6 +51,7 @@ class AbstractCallbackList extends ArrayObject implements Routinable
     public function hasKey($key)
     {
         return isset($this->$key);
+
         return array_key_exists($key, $this);
     }
     public function filterKeysContain($needle)
@@ -71,5 +82,4 @@ class AbstractCallbackList extends ArrayObject implements Routinable
     {
         return call_user_func_array($this->$key, $params);
     }
-
 }

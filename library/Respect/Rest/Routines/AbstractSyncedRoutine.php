@@ -1,15 +1,19 @@
 <?php
+/*
+ * This file is part of the Respect\Rest package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Respect\Rest\Routines;
 
-use InvalidArgumentException;
 use ReflectionFunction;
 use ReflectionMethod;
 use ReflectionObject;
 use ReflectionClass;
 use Closure;
-use Respect\Rest\Routes\AbstractRoute,
-    Respect\Rest\Request;
+use Respect\Rest\Request;
 
 /** Base class for routines that sync parameters */
 abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSynced
@@ -27,8 +31,9 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
     public function getParameters()
     {
         $reflection = $this->getReflection();
-        if (!$reflection instanceof ReflectionObject && !$reflection instanceof ReflectionClass)
+        if (!$reflection instanceof ReflectionObject && !$reflection instanceof ReflectionClass) {
             return $this->getReflection()->getParameters();
+        }
 
         return array();
     }
@@ -37,7 +42,7 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
      * Executes the routine and return its result.
      *
      * @param  Respect\Rest\Request $request
-     * @param  array  $params
+     * @param  array                $params
      * @return mixed
      */
     public function execute(Request $request, $params)
@@ -46,8 +51,10 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
         if (is_string($callback)) {
             $reflection      = $this->getReflection();
             $routineInstance = $reflection->newInstanceArgs($params);
+
             return $routineInstance();
         }
+
         return call_user_func_array($callback, $params);
     }
 
@@ -59,14 +66,14 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
     protected function getReflection()
     {
         $callback = $this->getCallback();
-        if (is_array($callback))
+        if (is_array($callback)) {
             return new ReflectionMethod($callback[0], $callback[1]);
-        else if ($callback instanceof Closure)
+        } elseif ($callback instanceof Closure) {
             return new ReflectionFunction($callback);
-        else if (is_string($callback))
+        } elseif (is_string($callback)) {
             return new ReflectionClass($callback);
-        else
+        } else {
             return new ReflectionObject($callback);
+        }
     }
-
 }
