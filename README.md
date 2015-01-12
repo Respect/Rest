@@ -13,7 +13,12 @@ Thin controller for RESTful applications and APIs.
 Installation
 ------------
 
-Packages available on [PEAR](http://respect.li/pear) and [Composer](http://packagist.org/packages/Respect/Rest). Autoloading is [PSR-0](https://github.com/php-fig/fig-standards/blob/master/accepted/PSR-0.md) compatible.
+The package is available on [Packagist](https://packagist.org/packages/respect/rest).
+You can install it using [Composer](http://getcomposer.org).
+
+```bash
+composer require respect/rest
+```
 
 Feature Guide
 -------------
@@ -152,7 +157,7 @@ Routes with catch-all parameters like this:
 ### Route Matching
 [Top][]
 
-Things can became very complex quick. We have simple routes, routes with parameters, optional 
+Things can became very complex quick. We have simple routes, routes with parameters, optional
 parameters and catch-all parameters. A simple rule to keep in mind is that Respect\Rest
 matches the routes from the most specific to the most generic.
 
@@ -195,7 +200,7 @@ function.
 ### Class Controllers
 [Top][]
 
-The `any` method is extremely useful to bind classes to controllers, one of Respect\Rest's most 
+The `any` method is extremely useful to bind classes to controllers, one of Respect\Rest's most
 awesome features:
 ```php
     use Respect\Rest\Routable;
@@ -260,7 +265,7 @@ This will redirect the file directly to the browser without keeping it in
 memory.
 
 CAUTION: We created a possible security vulnerability in the sample: passing a parameter
-directly to a `fopen` handle. Please validate user input parameters before using them. 
+directly to a `fopen` handle. Please validate user input parameters before using them.
 This is for demonstrational purposes only.
 
 ### Routing Static Values
@@ -289,7 +294,7 @@ Then you can `use` and `return` this route in another one:
     });
 ```
 
-Illustrative sample above will redirect internally when an user is not privileged to 
+Illustrative sample above will redirect internally when an user is not privileged to
 another route that handle normal users.
 
 ### When Routine (if)
@@ -336,7 +341,7 @@ We highly recommend that you use a strong validation library when using this. Co
 ### By Routine (before)
 [Top][]
 
-Sometimes you need to run something before a route does its job. This is 
+Sometimes you need to run something before a route does its job. This is
 useful for logging, authentication and similar purposes.
 ```php
     $r3->get('/artists/*/albums/*', function($artistName, $albumName) {
@@ -399,7 +404,7 @@ outputing the result.
 ### Controller Splitting
 [Top][]
 
-When using routines you are encouraged to separate the controller logic into components. You can 
+When using routines you are encouraged to separate the controller logic into components. You can
 reuse them:
 ```php
     $logRoutine = function() use ($myLogger, $r3) {
@@ -422,7 +427,7 @@ You can use the param sync to take advantage of this:
           return strlen($user) > 3;
         }
     });
-    
+
     $r3->any('/products', function () { /***/ });
     $r3->any('/users/*', function ($user) { /***/ });
     $r3->any('/users/*/products', function ($user) { /***/ });
@@ -435,7 +440,7 @@ verify them all automatically by its name.
 ### Content Negotiation
 [Top][]
 
-Respect/Rest currently supports the four distinct types of Accept header content-negotiation: 
+Respect/Rest currently supports the four distinct types of Accept header content-negotiation:
 Mimetype, Encoding, Language and Charset. Usage sample:
 ```php
     $r3->get('/about', function() {
@@ -480,7 +485,7 @@ Support for Basic HTTP Authentication is already implemented as a routine:
 ```php
     $r3->get('/home', 'HomeController')->authBasic('My Realm', function($user, $pass) {
         return $user === 'admin' && $pass === 'p4ss';
-    }); 
+    });
 ```
 
 You'll receive an username and password provided by the user, and you just need
@@ -545,7 +550,7 @@ Respect\Rest currently handle the following errors by default:
 ### RESTful Extras
 [Top][]
 
-  * A HEAD request automatically works sending all GET headers without body. You can override 
+  * A HEAD request automatically works sending all GET headers without body. You can override
     this behavior declaring custom `head` routes.
   * An OPTIONS request to `*` or any route path returns the `Allow` headers properly.
   * When returning 405, `Allow` headers are also set properly.
@@ -566,7 +571,7 @@ own routines by instance using:
 ```
 
 In the sample above, `MyRoutine` is a user provided routine declared as a class and
-appended to the router. Custom routines have the option of several different interfaces 
+appended to the router. Custom routines have the option of several different interfaces
 which can be implemented:
 
   * IgnorableFileExtension - Instructs the router to ignore the file extension in requests
