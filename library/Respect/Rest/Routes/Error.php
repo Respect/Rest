@@ -1,8 +1,6 @@
 <?php
 namespace Respect\Rest\Routes;
 
-use ReflectionClass;
-
 class Error extends Callback
 {
     public $callback;

@@ -2,7 +2,7 @@
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
-use \UnexpectedValueException;
+use UnexpectedValueException;
 
 /**
  * Mediates the callback selection process when choosing the appropriate
@@ -30,10 +30,12 @@ abstract class AbstractCallbackMediator extends AbstractCallbackList implements 
     public function when(Request $request, $params)
     {
         if (true ==
-        ($decision = $this->mediate($requested, $provided, $request, $params)))
-                $this->notifyApproved($requested, $provided, $request, $params);
-        else
-                $this->notifyDeclined($requested, $provided, $request, $params);
+        ($decision = $this->mediate($requested, $provided, $request, $params))) {
+            $this->notifyApproved($requested, $provided, $request, $params);
+        } else {
+            $this->notifyDeclined($requested, $provided, $request, $params);
+        }
+
         return $decision;
     }
 
@@ -43,21 +45,25 @@ abstract class AbstractCallbackMediator extends AbstractCallbackList implements 
      * supplied.
      * The implementation gets to authorize against each possibility or the
      * request will be declined if no satisfactory requirements are reached.
-    **/
+     **/
     private function mediate(&$requested, &$provided, Request $request, $params)
     {
-        if (is_array($requests = $this->identifyRequested($request, $params)))
+        if (is_array($requests = $this->identifyRequested($request, $params))) {
             foreach ($requests as $requested) {
-                if (is_array($provisions = $this->considerProvisions($requested)))
+                if (is_array($provisions = $this->considerProvisions($requested))) {
                     foreach ($provisions as $provided) {
-                        if ($this->authorize($requested, $provided, $request))
-                                return true;
+                        if ($this->authorize($requested, $provided, $request)) {
+                            return true;
                         }
-                else
+                    }
+                } else {
                     throw new UnexpectedValueException('Provisions must be an array of 0 to many.');
+                }
             }
-        else
+        } else {
             throw new UnexpectedValueException('Requests must be an array of 0 to many.');
+        }
+
         return false;
     }
 
@@ -66,6 +72,4 @@ abstract class AbstractCallbackMediator extends AbstractCallbackList implements 
     {
         return $requested == $provided;
     }
-
 }
-

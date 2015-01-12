@@ -2,4 +2,6 @@
 
 namespace Respect\Rest\Routines;
 
-interface IgnorableFileExtension {}
+interface IgnorableFileExtension
+{
+}

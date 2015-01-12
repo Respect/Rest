@@ -2,8 +2,6 @@
 
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
-
 /** Handles mime type content negotiation */
 class Accept extends AbstractAccept
 {
@@ -11,17 +9,19 @@ class Accept extends AbstractAccept
 
     protected function authorize($requested, $provided)
     {
-        if ($requested === $provided || $requested === '*/*')
-                return $provided;
+        if ($requested === $provided || $requested === '*/*') {
+            return $provided;
+        }
 
         if (false !== strpos($requested, '/')) {
             list($requestedA, $requestedB) = explode('/', $requested);
-            list($providedA, ) = explode('/', $provided);
+            list($providedA,) = explode('/', $provided);
 
-            if ($providedA === $requestedA && $requestedB === '*')
-                    return $providedA;
+            if ($providedA === $requestedA && $requestedB === '*') {
+                return $providedA;
+            }
         }
+
         return parent::authorize($requested, $provided);
     }
-
 }

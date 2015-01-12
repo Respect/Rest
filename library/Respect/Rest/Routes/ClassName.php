@@ -4,20 +4,18 @@ namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
 use ReflectionClass;
-use ReflectionException;
 use ReflectionMethod;
 use Respect\Rest\Routable;
 
 /** A route that builds an instance of a class to run it */
 class ClassName extends AbstractRoute
 {
-
     /** @var string The class name this route will instantiate */
     public $class = '';
-    
+
     /** @var array Constructor params for the built instance */
     public $constructorParams = array();
-    
+
     /** @var object The built class instance */
     protected $instance = null;
 
@@ -34,7 +32,7 @@ class ClassName extends AbstractRoute
         $method,
         $pattern,
         $class,
-        array $params=array()
+        array $params = array()
     ) {
         $this->class = $class;
         $this->constructorParams = $params;
@@ -50,25 +48,24 @@ class ClassName extends AbstractRoute
     {
         $className = $this->class;
         $reflection = new ReflectionClass($className);
-        
+
         if (!$reflection->implementsInterface('Respect\\Rest\\Routable')) {
             throw new InvalidArgumentException(
                 'Routed classes must implement Respect\\Rest\\Routable'
-            ); 
+            );
         }
 
         if (
-            empty($this->constructorParams) 
+            empty($this->constructorParams)
             || !method_exists($this->class, '__construct')
         ) {
-            return new $className;
+            return new $className();
         }
 
         $reflection = new ReflectionClass($this->class);
-        
+
         return $reflection->newInstanceArgs($this->constructorParams);
     }
-
 
     /**
      * Gets the reflection for a specific method. For this route, the reflection
@@ -81,7 +78,7 @@ class ClassName extends AbstractRoute
     public function getReflection($method)
     {
         $mirror = new ReflectionClass($this->class);
-        
+
         if ($mirror->hasMethod($method)) {
             return new ReflectionMethod($this->class, $method);
         }
@@ -104,9 +101,8 @@ class ClassName extends AbstractRoute
         }
 
         return call_user_func_array(
-            array($this->instance, $method), 
+            array($this->instance, $method),
             $params
         );
     }
-
 }

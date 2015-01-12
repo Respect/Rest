@@ -22,22 +22,25 @@ class Instance extends AbstractRoute
 
     public function getReflection($method)
     {
-        if (empty($this->reflection))
+        if (empty($this->reflection)) {
             $this->reflection = new ReflectionMethod(
-                    $this->instance, $method
+                $this->instance,
+                $method
             );
+        }
 
         return $this->reflection;
     }
 
     public function runTarget($method, &$params)
     {
-        if (!$this->instance instanceof Routable)
+        if (!$this->instance instanceof Routable) {
             throw new InvalidArgumentException('Route target must be an instance of Respect\Rest\Routable');
+        }
 
-            return call_user_func_array(
-            array($this->instance, $method), $params
+        return call_user_func_array(
+            array($this->instance, $method),
+            $params
         );
     }
-
 }

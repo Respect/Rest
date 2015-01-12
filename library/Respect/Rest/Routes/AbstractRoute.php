@@ -60,13 +60,13 @@ abstract class AbstractRoute
     public $pattern = '';
     /** @var string The generated regex to match the route pattern */
     public $regexForMatch = '';
-    /** 
-     * @var string The generated regex for creating URIs from parameters 
+    /**
+     * @var string The generated regex for creating URIs from parameters
      * @see Respect\Rest\AbstractRoute::createURI
      */
     public $regexForReplace = '';
-    /** 
-     * @var array A list of routines appended to this route 
+    /**
+     * @var array A list of routines appended to this route
      * @see Respect\Rest\Routines\AbstractRoutine
      */
     public $routines = array();
@@ -75,7 +75,7 @@ abstract class AbstractRoute
      * @see Respect\Rest\Routes\AbstractRoute
      */
     public $sideRoutes = array();
-    
+
     /** @var array A virtualhost applied to this route (deprecated) */
     public $virtualHost = null;
 
@@ -119,7 +119,7 @@ abstract class AbstractRoute
     public function __call($method, $arguments)
     {
         $reflection = new ReflectionClass(
-                'Respect\\Rest\\Routines\\' . ucfirst($method)
+            'Respect\\Rest\\Routines\\'.ucfirst($method)
         );
 
         return $this->appendRoutine($reflection->newInstanceArgs($arguments));
@@ -140,6 +140,7 @@ abstract class AbstractRoute
             : spl_object_hash($routine);
 
         $this->routines[$key] = $routine;
+
         return $this;
     }
 
@@ -154,15 +155,14 @@ abstract class AbstractRoute
      *
      * @return string the created URI
      */
-    public function createUri($param1=null, $etc=null)
+    public function createUri($param1 = null, $etc = null)
     {
         $params = func_get_args();
         array_unshift($params, $this->regexForReplace);
 
         $params = preg_replace('#(?<!^)/? *$#', '', $params);
-        
-        return rtrim($this->virtualHost, ' /') .
-            call_user_func_array('sprintf', $params);
+
+        return rtrim($this->virtualHost, ' /').call_user_func_array('sprintf', $params);
     }
 
     /**
@@ -176,17 +176,16 @@ abstract class AbstractRoute
      *
      * @return bool always true \,,/
      */
-    public function matchRoutines(Request $request, $params=array())
+    public function matchRoutines(Request $request, $params = array())
     {
         foreach ($this->routines as $routine) {
-            if (
-                $routine instanceof ProxyableWhen
+            if ($routine instanceof ProxyableWhen
                     && !$request->routineCall(
                         'when',
                         $request->method,
                         $routine,
-                        $params)
-            ) {
+                        $params
+                    )) {
                 return false;
             }
         }
@@ -204,7 +203,7 @@ abstract class AbstractRoute
      *
      * @return bool as true as xkcd (always true)
      */
-    public function match(Request $request, &$params=array())
+    public function match(Request $request, &$params = array())
     {
         $params = array();
         $matchUri = $request->uri;
@@ -250,17 +249,17 @@ abstract class AbstractRoute
      */
     protected function createRegexPatterns($pattern)
     {
-    	$extra = $this->extractCatchAllPattern($pattern);
-    	
+        $extra = $this->extractCatchAllPattern($pattern);
+
         $matchPattern = str_replace(
             static::QUOTED_PARAM_IDENTIFIER,
             static::REGEX_SINGLE_PARAM,
             preg_quote(rtrim($pattern, ' /')),
             $paramCount
         );
-        
+
         $pattern = rtrim($pattern);
-        
+
         $replacePattern = str_replace(
             static::PARAM_IDENTIFIER,
             '/%s',
@@ -268,6 +267,7 @@ abstract class AbstractRoute
         );
         $matchPattern = $this->fixOptionalParams($matchPattern);
         $matchRegex = "#^{$matchPattern}{$extra}$#";
+
         return array($matchRegex, $replacePattern);
     }
 
@@ -297,6 +297,7 @@ abstract class AbstractRoute
             static::PARAM_IDENTIFIER,
             $pattern
         );
+
         return $extra;
     }
 
@@ -327,5 +328,4 @@ abstract class AbstractRoute
 
         return $quotedPattern;
     }
-
 }
