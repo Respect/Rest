@@ -24,5 +24,10 @@
         "psr-4": {
             "Respect\\": "library/Respect"
         }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Stubs\\": "tests/src/Stubs"
+        }
     }
 }

@@ -1,8 +1,6 @@
 <phpunit backupGlobals="false"
-         backupStaticAttributes="false" 
-         bootstrap="bootstrap.php"
+         backupStaticAttributes="false"
          cacheTokens="true"
-         colors="true"
          convertErrorsToExceptions="true"
          convertNoticesToExceptions="true"
          convertWarningsToExceptions="true"
@@ -10,13 +8,14 @@
          stopOnFailure="false"
          syntaxCheck="false"
          verbose="false">
+    <testsuites>
+        <testsuite>
+            <directory suffix="Test.php">tests</directory>
+        </testsuite>
+    </testsuites>
     <filter>
-        <whitelist addUncoveredFilesFromWhitelist="false">
-            <directory>../library/Respect/</directory>
+        <whitelist>
+            <directory>library/</directory>
         </whitelist>
     </filter>
-    <testsuite name="Respect\Rest Test Suite">
-        <directory>.</directory>
-    </testsuite>
 </phpunit>
-
