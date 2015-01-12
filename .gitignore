@@ -1,5 +1,3 @@
-.foundation
-.foundation-tmp
-tests/reports
 composer.lock
+Makefile
 vendor/
