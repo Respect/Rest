@@ -1,390 +1,452 @@
 <?php
+namespace Respect\Rest;
 
-namespace Respect\Rest {
+use PHPUnit_Framework_TestCase;
+/**
+ * @covers Respect\Rest\Router
+ */
+class RouterTest extends PHPUnit_Framework_TestCase
+{
+    public static $status = 200;
 
-    class DummyRoute extends \DateTime implements Routable {}
-
-    class NewRouterTest extends \PHPUnit_Framework_TestCase
+    public function setUp()
     {
-        function setUp() 
-        {
-            $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
-            $_SERVER['REQUEST_URI'] = '/';
-            $_SERVER['REQUEST_METHOD'] = 'GET';
-            $_REQUEST['_method'] = '';
-            $this->router = new Router;
-            $this->router->isAutoDispatched = false;
-            $this->router->methodOverriding = false;
-        }
-        public function tearDown()
-        {
-            global $header;
-            $header = array();
-        }
-        function test_cleaning_up_params_should_remove_empty_string_params()
-        {
-            $params = array('foo', '', 'bar');
-            $expected = array('foo', 'bar');
-            $this->assertEquals($expected, Router::cleanUpParams($params));
-        }
-        function test_magic_call_should_throw_exception_with_just_one_arg()
-        {
-            $this->setExpectedException('InvalidArgumentException');
-            $this->router->thisIsAnInvalidMagicCallWithOnlyOneArg('foo');
-        }
-        function test_magic_call_should_throw_exception_with_zero_args()
-        {
-            $this->setExpectedException('InvalidArgumentException');
-            $this->router->thisIsAnInvalidMagicCallWithOnlyOneArg();
-        }
-        function test_magic_call_with_closure_should_create_callback_route()
-        {
-            $route = $this->router->thisIsAMagicCall('/some/path', function() {});
-            $this->assertInstanceOf('Respect\Rest\Routes\Callback', $route); 
-        }
-        function test_magic_call_with_func_name_should_create_callback_route()
-        {
-            $route = $this->router->thisIsAMagicCall('/some/path', 'strlen');
-            $this->assertInstanceOf('Respect\Rest\Routes\Callback', $route); 
-        }
-        function test_magic_call_with_object_instance_should_create_instance_route()
-        { 
-            $route = $this->router->thisIsAMagicCall(
-                '/some/path', new DummyRoute
-            );
-            $this->assertInstanceOf('Respect\Rest\Routes\Instance', $route); 
-        }
-        function test_magic_call_with_class_name_should_return_classname_route()
-        { 
-            $route = $this->router->thisIsAMagicCall(
-                '/some/path', 'DateTime'
-            );
-            $this->assertInstanceOf('Respect\Rest\Routes\ClassName', $route); 
-        }
-        function test_magic_call_with_class_callback_should_return_factory_route()
-        { 
-            $route = $this->router->thisIsAMagicCall(
-                '/some/path', 'DateTime', array(new \Datetime, 'format')
-            );
-            $this->assertInstanceOf('Respect\Rest\Routes\Factory', $route); 
-        }
-        function test_magic_call_with_class_with_constructor_should_return_class_route()
-        { 
-            $route = $this->router->thisIsAMagicCall(
-                '/some/path', 'DateTime', array('2989374983')
-            );
-            $this->assertInstanceOf('Respect\Rest\Routes\ClassName', $route); 
-        }
-        function test_magic_call_with_some_static_value()
-        { 
-            $route = $this->router->thisIsAMagicCall(
-                '/some/path', array('foo')
-            );
-            $this->assertInstanceOf('Respect\Rest\Routes\StaticValue', $route); 
-        }
-        function test_destructor_runs_router_automatically_when_protocol_is_present()
-        {
-            $this->router->get('/**', function(){ return 'ok'; });
-            $this->router->isAutoDispatched = true;
-            ob_start();
-            unset($this->router);
-            $response = ob_get_clean();
-            $this->assertEquals('ok', $response);
-        }
-        function test_converting_router_to_string_should_dispatch_and_run_it()
-        {
-            $this->router->get('/**', function(){ return 'ok'; });
-            $response = (string) $this->router;
-            $this->assertEquals('ok', $response);
-        }
-        function test_dispatch_non_existing_route()
-        {
-            global $header;
-            $this->router->any('/', function() {});
-            $this->router->dispatch('get', '/my/name/is/hall');
-            $this->assertContains('HTTP/1.1 404', $header);
-            $this->assertNotContains('HTTP/1.1 405', $header);
-        }
-        function test_method_not_allowed_header()
-        {
-            global $header;
-            $this->router->get('/', function() { return 'ok'; });
-            $this->router->put('/', function() { return 'ok'; });
-            $this->router->dispatch('delete', '/');
-            $this->assertContains('HTTP/1.1 405', $header);
-            $this->assertContains('Allow: GET, PUT', $header);
-        }
-        function test_bad_request_header()
-        {
-            global $header;
-            $this->router->get('/', function() { return 'ok'; })->when(function(){return false;});
-            $this->router->dispatch('get', '/');
-            $this->assertContains('HTTP/1.1 400', $header);
-        }
-        function test_method_not_allowed_header_with_conneg()
-        {
-            global $header;
-            $this->router->get('/', function() { return 'ok'; })
-                         ->accept(array('text/html' => function($d) {return $d;}));
-            $this->router->dispatch('delete', '/');
-            $this->assertContains('HTTP/1.1 405', $header);
-            $this->assertContains('Allow: GET', $header);
-        }
-        function test_transparent_options_allow_methods()
-        {
-            global $header;
-            $this->router->get('/', function() { return 'ok'; });
-            $this->router->post('/', function() { return 'ok'; });
-            $this->router->dispatch('options', '/');
-            $this->assertNotContains('HTTP/1.1 405', $header);
-            $this->assertContains('Allow: GET, POST', $header);
-        }
-        function test_transparent_global_options_allow_methods()
-        {
-            global $header;
-            $this->router->get('/', function() { return 'ok'; });
-            $this->router->post('/', function() { return 'ok'; });
-            $this->router->dispatch('options', '*');
-            $this->assertNotContains('HTTP/1.1 405', $header);
-            $this->assertContains('Allow: GET, POST', $header);
-        }
-        function test_method_overriding()
-        {
-            $this->router->methodOverriding = true;
-            $_REQUEST['_method'] = 'PUT';
-            $this->router->put('/', function() { return 'ok'; });
-            $response = $this->router->run(new Request('POST', '/'));
-            $this->assertEquals('ok', (string) $response);
-        }
-        function test_method_not_acceptable()
-        {
-            global $header;
-            $this->router->get('/', function() { return 'ok'; })
-                         ->accept(array('foo/bar' => function($d) {return $d;}));
-            $this->router->dispatch('get', '/');
-            $this->assertContains('HTTP/1.1 406', $header);
-            $this->assertContains('Allow: GET', $header);
-        }
-        function test_http_method_head()
-        {
-            global $header;
-            $expectedHeader = 'X-Burger: With Cheese!';
-            $this->router->get('/', function() use ($expectedHeader) { 
-                header($expectedHeader);
-                return 'ok'; 
-            });
-            $headResponse = $this->router->dispatch('HEAD', '/');
-            $getResponse  = $this->router->dispatch('GET', '/');
-            $this->assertEquals('ok', (string) $getResponse);
-            $this->assertContains($expectedHeader, $header);
-        }
-        function test_user_agent_content_negotiation()
-        {
-            $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
-            $this->router->get('/', function () {
-                return 'unknown';
-            })->userAgent(array(
-                'FIREFOX' => function() { return 'FIREFOX'; },
-                'IE' => function() { return 'IE'; },
-            ));
-            $response = $this->router->dispatch('GET', '/');
-            $this->assertEquals('FIREFOX', $response);
-        }
-        function test_user_agent_content_negotiation_fallback()
-        {
-            $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
-            $this->router->get('/', function () {
-                return 'unknown';
-            })->userAgent(array(
-                '*' => function() { return 'IE'; },
-            ));
-            $response = $this->router->dispatch('GET', '/');
-            $this->assertEquals('IE', $response);
-        }
-        function test_stream_routine()
-        {
-            $done                            = false;
-            $self                            = $this;
-            $request                         = new Request('GET', '/input');
-            $_SERVER['HTTP_ACCEPT_ENCODING'] = 'deflate';
-            $this->router->get('/input', function() { return fopen('php://input', 'r+'); })
-                         ->acceptEncoding(array(
-                            'deflate' => function($stream) use ($self, &$done) {
-                                $done = true;
-                                $self->assertTrue(is_resource($stream));
-                                stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
-                                return $stream; //now deflated on demand 
-                            }
-                         ));
-            
-            $response = $this->router->run($request);
-            $this->assertTrue($done);
-            //var_dump((string)$response);
-            $this->assertEmpty((string) $response);
-        }
-
-        function test_http_auth_should_send_401_and_WWW_headers_when_authentication_fails()
-        {
-            global $header;
-
-            $auth = function($username, $password) {
-                            return true;
-                };
-            $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
-            $this->router->dispatch('get', '/')->response();
-            $this->assertContains('HTTP/1.1 401', $header);
-            $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
-        }
-
-        function test_http_auth_should_allow_redirects_inside_auth_closure()
-        {
-            global $header;
-
-            $login = $this->router->get('/login', 'Login');
-            $auth = function($username, $password) use($login) {
-                        return $login;
-                };
-            $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
-            $response = $this->router->dispatch('get', '/')->response();
-            $this->assertEquals('Login', $response);
-            $this->assertContains('HTTP/1.1 401', $header);
-            $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
-        }
-
-        function test_auth_basic_request_should_be_aware_of_Authorization_headers()
-        {
-            global $header;
-            $user           = 'John';
-            $pass           = 'Doe';
-            $checkpoint     = false;
-            $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode($user.':'.$pass);
-            $this->router->get('/', 'ok')->authBasic("Test Realm", function($username, $password) use (&$checkpoint, $user, $pass) {
-                            if (($username == $user) && ($password == $pass)) {
-                                $checkpoint = true;
-                                return true;
-                            }
-                            return false;
-                         });
-            (string) $this->router->dispatch('GET', '/')->response();
-            $this->assertTrue($checkpoint, 'Auth not run');
-            $this->assertNotContains('HTTP/1.1 401', $header);
-            $this->assertNotContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
-            unset($_SERVER['HTTP_AUTHORIZATION']);
-        }
-
-        function test_auth_basic_authorized_should_be_aware_of_PHP_env_auth_variables()
-        {
-            global $header;
-            $user           = 'John';
-            $pass           = 'Doe';
-            $checkpoint     = false;
-            $_SERVER['PHP_AUTH_USER'] = $user;
-            $_SERVER['PHP_AUTH_PW']   = $pass;
-            $this->router->get('/', 'ok')->authBasic("Test Realm", function($username, $password) use (&$checkpoint, $user, $pass) {
-                            if (($username == $user) && ($password == $pass)) {
-                                $checkpoint = true;
-                                return true;    
-                            }
-                            return false;
-                         });
-            (string) $this->router->dispatch('GET', '/')->response();
-            $this->assertTrue($checkpoint, 'Auth not run');
-            $this->assertNotContains('HTTP/1.1 401', $header);
-            $this->assertNotContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
-            unset($_SERVER['PHP_AUTH_PW'], $_SERVER['PHP_AUTH_USER']);
-        }
-
-        /**
-         * @group issues
-         * @ticket 37
-        **/
-        function test_optional_parameter_in_class_routes(){
-            $r = new Router();
-            $r->any('/optional/*', __NAMESPACE__.'\\MyOptionalParamRoute');
-            $response = $r->dispatch('get', '/optional')->response();
-            $this->assertEquals('John Doe', (string) $response);
-        }
-
-        function test_optional_parameter_in_function_routes(){
-            $r = new Router();
-            $r->any('/optional/*', function($user=null){
-                return $user ?: 'John Doe';
-            });
-            $response = $r->dispatch('get', '/optional')->response();
-            $this->assertEquals('John Doe', (string) $response);
-        }
-
-        function test_optional_parameter_in_function_routes_multiple(){
-            $r = new Router();
-            $r->any('/optional', function(){
-                return 'No User';
-            });
-            $r->any('/optional/*', function($user=null){
-                return $user ?: 'John Doe';
-            });
-            $response = $r->dispatch('get', '/optional')->response();
-            $this->assertEquals('No User', (string) $response);
-        }
-        function test_two_optional_parameters_in_function_routes(){
-            $r = new Router();
-            $r->any('/optional/*/*', function($user=null, $list=null){
-                return $user . $list;
-            });
-            $response = $r->dispatch('get', '/optional/Foo/Bar')->response();
-            $this->assertEquals('FooBar', (string) $response);
-        }
-        function test_two_optional_parameters_one_passed_in_function_routes(){
-            $r = new Router();
-            $r->any('/optional/*/*', function($user=null, $list=null){
-                return $user . $list;
-            });
-            $response = $r->dispatch('get', '/optional/Foo')->response();
-            $this->assertEquals('Foo', (string) $response);
-        }
-        function test_single_last_param()
-        {
-            $r = new Router();
-            $args = array();
-            $r->any('/documents/*', function($documentId) use (&$args) {
-                $args = func_get_args();
-            });
-            $r->dispatch('get', '/documents/1234')->response();
-            $this->assertEquals(array('1234'), $args);
-        }
-        function test_single_last_param2()
-        {
-            $r = new Router();
-            $args = array();
-            $r->any('/documents/**', function($documentsPath) use (&$args) {
-                $args = func_get_args();
-            });
-            $r->dispatch('get', '/documents/foo/bar')->response();
-            $this->assertEquals(array(array('foo', 'bar')), $args);
-        }
-        
+        $_SERVER['REQUEST_METHOD'] = 'GET';
+        $_SERVER['REQUEST_URI'] = '/';
     }
 
-    if (!class_exists(__NAMESPACE__.'\\MyOptionalParamRoute')) {
-        class MyOptionalParamRoute implements Routable
-        {
-
-            public function get($user=null)
-            {
-                return $user ?: 'John Doe';
-            }
-        }
-    }
-
-    function header($string, $replace=true, $http_response_code=200)
+    /**
+     * @covers            Respect\Rest\Router::__call
+     * @expectedException InvalidArgumentException
+     */
+    public function testMagicConstructorWarnsIfNoSufficientParametersWerePassed()
     {
-        global $header;
-        if (!$replace && isset($header))
-            return;
-
-        $header[$string] = $string;
+        $router = new Router;
+        $router->thisIsInsufficientForMagicConstruction();
     }
+    /**
+     * @covers            Respect\Rest\Router::__call
+     * @expectedException InvalidArgumentException
+     */
+    public function testMagicConstructorWarnsIfNoSufficientParametersWerePassed2()
+    {
+        $router = new Router;
+        $router->thisIsInsufficientForMagicConstruction('/magicians');
+    }
+
+    /**
+     * @covers Respect\Rest\Router::__call
+     * @covers Respect\Rest\Router::callbackRoute
+     */
+    public function testMagicConstructorCanCreateCallbackRoutes()
+    {
+        $router = new Router;
+        $callbackRoute = $router->get('/', $target = function() {});
+        $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target);
+
+        $this->assertInstanceOf(
+            'Respect\\Rest\\Routes\\Callback',
+            $callbackRoute,
+            'Returned result from a magic constructor in this case should return a Routes\Callback'
+        );
+
+        $this->assertEmpty(
+            $callbackRoute->arguments,
+            'When there are no arguments the Routes\Callback should have none as well'
+        );
+
+        $this->assertEquals(
+            $callbackRoute,
+            $concreteCallbackRoute,
+            'The magic and concrete instances of Routes\Callback should be equivalent'
+        );
+    }
+
+    /**
+     * @covers  Respect\Rest\Router::__call
+     * @covers  Respect\Rest\Router::callbackRoute
+     * @depends testMagicConstructorCanCreateCallbackRoutes
+     */
+    public function testMagicConstructorCanCreateCallbackRoutesWithExtraParams()
+    {
+        $router = new Router;
+        $callbackRoute = $router->get('/', $target = function() {}, array('extra'));
+        $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target, array('extra'));
+
+        $this->assertInstanceOf(
+            'Respect\\Rest\\Routes\\Callback',
+            $callbackRoute,
+            'Returned result from a magic constructor in this case should return a Routes\Callback'
+        );
+
+        $this->assertContains(
+            'extra',
+            $callbackRoute->arguments,
+            'The "extra" appended to the magic constructor should be present on the arguments list'
+        );
+
+        $this->assertEquals(
+            $callbackRoute,
+            $concreteCallbackRoute,
+            'The magic and concrete instances of Routes\Callback should be equivalent'
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::__call
+     * @covers Respect\Rest\Router::instanceRoute
+     */
+    public function testMagicConstructorCanRouteToPreBuiltInstances()
+    {
+        $router = new Router;
+        $myInstance = $this->getMock('Respect\\Rest\\Routable', array('GET'));
+        $instanceRoute = $router->get('/', $myInstance);
+        $concreteInstanceRoute = $router->instanceRoute('GET', '/', $myInstance);
+
+        $this->assertInstanceOf(
+            'Respect\\Rest\\Routes\\Instance',
+            $instanceRoute,
+            'Returned result from a magic constructor in this case should return a Routes\Instance'
+        );
+
+        $this->assertEquals(
+            $instanceRoute,
+            $concreteInstanceRoute,
+            'The magic and concrete instances of Routes\Instance should be equivalent'
+        );
+    }
+
+    /**
+     * @covers       Respect\Rest\Router::__call
+     * @covers       Respect\Rest\Router::staticRoute
+     * @dataProvider provideForStaticRoutableValues
+     */
+    public function testMagicConstructorCanRouteToStaticValue($staticValue, $reason)
+    {
+        $router = new Router;
+        $router->isAutoDispatched = false; // prevent static content from being echoed on dispatch
+        $staticRoute = $router->get('/', $staticValue);
+        $concreteStaticRoute = $router->staticRoute('GET','/', $staticValue);
+
+        $this->assertInstanceOf(
+            'Respect\\Rest\\Routes\\StaticValue',
+            $staticRoute,
+            $reason
+        );
+
+        $this->assertEquals(
+            $staticRoute,
+            $concreteStaticRoute,
+            'The magic and concrete instances of Routes\Static should be equivalent'
+        );
+    }
+
+    public function provideForStaticRoutableValues()
+    {
+        return array(
+            array('Some Static Value', 'Strings should be possible to route statically'),
+            array(array('Some', 'Other', 'Routable', 'Value'), 'Arrays should be possible to route statically'),
+            array(10, 'Integers and scalars should be possible to route statically')
+        );
+    }
+
+    /**
+     * @covers            Respect\Rest\Router::__call
+     * @covers            Respect\Rest\Router::staticRoute
+     * @dataProvider      provideForNonStaticRoutableValues
+     * @expectedException InvalidArgumentException
+     */
+    public function testMagicConstructorCannotRouteSomeStaticValues($staticValue, $reason)
+    {
+        $router = new Router;
+        $nonStaticRoute = $router->get('/', $staticValue);
+
+        $router->run(); // __toString is not allowed to throw exceptions
+
+        $this->assertNotInstanceOf(
+            'Respect\\Rest\\Routes\\StaticValue',
+            $nonStaticRoute,
+            $reason
+        );
+    }
+
+    public function provideForNonStaticRoutableValues()
+    {
+        return array(
+            array('PDO', 'Strings that are class names should NOT be possible to route statically'),
+            array('Traversable', 'Strings that are interface names should NOT be possible to route statically')
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::__call
+     * @covers Respect\Rest\Router::classRoute
+     */
+    public function testMagicConstructorCanRouteToClasses()
+    {
+        $router = new Router;
+        $className = 'GeneratedClass'.md5(rand());
+        $this->getMock('Respect\\Rest\\Routable', array('GET'), array(), $className);
+        $classRoute = $router->get('/', $className);
+        $concreteClassRoute = $router->classRoute('GET', '/', $className);
+
+        $this->assertInstanceOf(
+            'Respect\\Rest\\Routes\\ClassName',
+            $classRoute,
+            'Returned result from a magic constructor in this case should return a Routes\ClassName'
+        );
+
+        $this->assertEquals(
+            $classRoute,
+            $concreteClassRoute,
+            'The magic and concrete instances of Routes\ClassName should be equivalent'
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::__call
+     * @covers Respect\Rest\Router::classRoute
+     */
+    public function testMagicConstructorCanRouteToClassesUsingConstructorParams()
+    {
+        $router = new Router;
+        $className = 'GeneratedClass'.md5(rand());
+        $this->getMock('Respect\\Rest\\Routable', array('GET'), array(), $className);
+        $classRoute = $router->get('/', $className, array('some', 'constructor', 'params'));
+        $concreteClassRoute = $router->classRoute('GET', '/', $className, array('some', 'constructor', 'params'));
+
+        $this->assertInstanceOf(
+            'Respect\\Rest\\Routes\\ClassName',
+            $classRoute,
+            'Returned result from a magic constructor in this case should return a Routes\ClassName'
+        );
+
+        $this->assertEquals(
+            array('some', 'constructor', 'params'),
+            $classRoute->constructorParams,
+            'The constructor params should be available on the instance of Routes\ClassName'
+        );
+
+        $this->assertEquals(
+            $classRoute,
+            $concreteClassRoute,
+            'The magic and concrete instances of Routes\ClassName should be equivalent'
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::__call
+     * @covers Respect\Rest\Router::factoryRoute
+     */
+    public function testMagicConstructorCanRouteToFactoriesThatReturnInstancesOfAClass()
+    {
+        $router = new Router;
+        eval('class MockRoutable implements Respect\Rest\Routable{ public function GET() {} }');
+        eval('class FactoryClass { public static function factoryMethod() { return new MockRoutable(); } }');
+        $factoryRoute = $router->get('/', 'FactoryClass', array('FactoryClass', 'factoryMethod'));
+        $concreteFactoryRoute = $router->factoryRoute('GET', '/', 'FactoryClass', array('FactoryClass', 'factoryMethod'));
+
+        $this->assertInstanceOf(
+            'Respect\\Rest\\Routes\\Factory',
+            $factoryRoute,
+            'Returned result from a magic constructor in this case should return a Routes\Factory'
+        );
+
+        $this->assertEquals(
+            $factoryRoute,
+            $concreteFactoryRoute,
+            'The magic and concrete instances of Routes\Factory should be equivalent'
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::dispatchRequest
+     * @covers Respect\Rest\Router::isRoutelessDispatch
+     * @covers Respect\Rest\Router::isDispatchedToGlobalOptionsMethod
+     * @covers Respect\Rest\Router::getAllowedMethods
+     * @runInSeparateProcess
+     */
+    public function testCanRespondToGlobalOptionsMethodAutomatically()
+    {
+        $router = new Router;
+        $router->get('/asian', 'Asian Food!');
+        $router->post('/eastern', 'Eastern Food!');
+        $router->eat('/mongolian', 'Mongolian Food!');
+        $response = (string) $router->dispatch('OPTIONS', '*')->response();
+
+        $this->assertContains(
+            'Allow: GET, POST, EAT',
+            xdebug_get_headers(),
+            'There should be a sent Allow header with all methods from all routes'
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::dispatchRequest
+     * @covers Respect\Rest\Router::isRoutelessDispatch
+     * @covers Respect\Rest\Router::hasDispatchedOverridenMethod
+     */
+    public function testDeveloperCanOverridePostMethodWithQueryStringParameter()
+    {
+        $_REQUEST['_method'] = 'PUT';
+        $router = new Router;
+        $router->methodOverriding = true;
+        $router->put('/bulbs', 'Some Bulbs Put Response');
+        $router->post('/bulbs', 'Some Bulbs Post Response');
+
+        $result = (string) $router->dispatch('POST', '/bulbs')->response();
+
+        $this->assertSame(
+            'Some Bulbs Put Response',
+            $result,
+            'Router should dispatch to PUT (overriden) instead of POST'
+        );
+
+        $this->assertNotSame(
+            'Some Bulbs Post Response',
+            $result,
+            'Router NOT dispatch to POST when method is overriden'
+        );
+
+        return $router;
+    }
+
+    /**
+     * @covers  Respect\Rest\Router::dispatchRequest
+     * @covers  Respect\Rest\Router::isRoutelessDispatch
+     * @covers  Respect\Rest\Router::hasDispatchedOverridenMethod
+     * @depends testDeveloperCanOverridePostMethodWithQueryStringParameter
+     */
+    public function testDeveloperCanTurnOffMethodOverriding(Router $router)
+    {
+        $_REQUEST['_method'] = 'PUT';
+        $router->methodOverriding = false;
+        $result = (string) $router->dispatch('POST', '/bulbs')->response();
+
+        $this->assertSame(
+            'Some Bulbs Post Response',
+            $result,
+            'Router should dispatch to POST (not overriden) instead of PUT'
+        );
+
+        $this->assertNotSame(
+            'Some Bulbs Put Response',
+            $result,
+            'Router NOT dispatch to PUT when method is overriden'
+        );
+    }
+
+    /**
+     * @covers  Respect\Rest\Router::dispatchRequest
+     * @covers  Respect\Rest\Router::routeDispatch
+     * @covers  Respect\Rest\Router::applyVirtualHost
+     */
+    public function testDeveloperCanSetUpAVirtualHostPathOnConstructor()
+    {
+        $router = new Router('/store');
+        $router->get('/products', 'Some Products!');
+        $response = $router->dispatch('GET', '/store/products')->response();
+
+        $this->assertSame(
+            'Some Products!',
+            $response,
+            'Router should match using the virtual host combined URI'
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::__destruct
+     */
+    public function testRouterCanBeAutoDispatchedIfProtocolIsDefined()
+    {
+        $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
+        $router = new Router;
+        $router->get('/', 'Hello Respect');
+        unset($router);
+
+        $this->expectOutputString('Hello Respect');
+    }
+
+    /**
+     * @covers Respect\Rest\Router::dispatch
+     * @covers Respect\Rest\Router::routeDispatch
+     */
+    public function testReturns404WhenNoRoutesExist()
+    {
+        $router = new Router;
+        $response = (string) $router->dispatch('GET', '/')->response();
+
+        $this->assertEquals(
+            '404',
+            static::$status,
+            'There should be a sent 404 status'
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::dispatch
+     * @covers Respect\Rest\Router::routeDispatch
+     */
+    public function testReturns404WhenNoRouteMatches()
+    {
+        $router = new Router;
+        $router->get('/foo', 'This exists.');
+        $response = (string) $router->dispatch('GET', '/')->response();
+
+        $this->assertEquals(
+            '404',
+            static::$status,
+            'There should be a sent 404 status'
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::appendRoute
+     */
+    public function testNamesRoutesUsingAttributes()
+    {
+        $router = new Router;
+        $router->allMembers = $router->any('/members', 'John, Carl');
+        $response = (string) $router->dispatch('GET', '/members')->response();
+
+        $this->assertTrue(
+            isset($router->allMembers),
+            'There must be an attribute set for that key'
+        );
+
+        $this->assertEquals(
+            'John, Carl',
+            $response,
+            'The route must be declared anyway'
+        );
+    }
+
+    /**
+     * @covers Respect\Rest\Router::applyVirtualHost
+     * @covers Respect\Rest\Router::appendRoute
+     */
+    public function testCreateUriShouldBeAwareOfVirtualHost()
+    {
+        $router = new Router('/my/virtual/host');
+        $catsRoute = $router->any('/cats/*', 'Meow');
+        $virtualHostUri = $catsRoute->createUri('mittens');
+        $this->assertEquals(
+            '/my/virtual/host/cats/mittens',
+            $virtualHostUri,
+            'Virtual host should be prepended to the path on createUri()'
+        );
+    }
+
 }
 
-namespace {
-    $header=array();
+if (!function_exists(__NAMESPACE__.'\\header')) {
+    function header($h) {
+        $s = debug_backtrace(true);
+        $rt = function($a) {return isset($a['object'])
+            && $a['object'] instanceof RouterTest;};
+        if (array_filter($s, $rt) && 0 === strpos($h, 'HTTP/1.1 ')) {
+            RouterTest::$status = substr($h, 9);
+        }
+        return @\header($h);
+    }
 }

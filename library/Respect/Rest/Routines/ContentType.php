@@ -1,4 +1,10 @@
 <?php
+/*
+ * This file is part of the Respect\Rest package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
 namespace Respect\Rest\Routines;
 
@@ -6,47 +12,33 @@ use SplObjectStorage;
 use Respect\Rest\Request;
 
 /** Handles content type content negotiation */
-class ContentType extends AbstractRoutine implements ProxyableWhen, ProxyableBy, Unique
+class ContentType extends AbstractCallbackMediator implements ProxyableBy, Unique
 {
-
     protected $contentMap = array();
     protected $negotiated = null;
 
-    public function __construct(array $callbacksPerContentType = array())
+    protected function identifyRequested(Request $request, $params)
     {
-        if (!array_filter($callbacksPerContentType, 'is_callable'))
-            throw new \Exception(''); //TODO
-
-            $this->negotiated = new SplObjectStorage;
-        $this->contentMap = $callbacksPerContentType;
+        return isset($_SERVER['CONTENT_TYPE']) ? array($_SERVER['CONTENT_TYPE']) : array();
     }
-
-    /** Negotiates the content type with the given request */
-    protected function negotiate(Request $request)
+    protected function considerProvisions($requested)
     {
-        if (!isset($_SERVER['CONTENT_TYPE']))
-            return false;
-
-        $requested = $_SERVER['CONTENT_TYPE'];
-        foreach ($this->contentMap as $provided => $callback)
-            if ($requested == $provided)
-                return $this->negotiated[$request] = $callback;
-
-        return false;
+        return $this->getKeys();
+    }
+    protected function notifyApproved($requested, $provided, Request $request, $params)
+    {
+        $this->negotiated = new SplObjectStorage();
+        $this->negotiated[$request] = $this->getCallback($provided);
+    }
+    protected function notifyDeclined($requested, $provided, Request $request, $params)
+    {
+        $this->negotiated = false;
     }
 
     public function by(Request $request, $params)
     {
-        if (!isset($this->negotiated[$request])
-            || false === $this->negotiated[$request])
-            return;
-
-        return call_user_func($this->negotiated[$request]);
+        if (false !== $this->negotiated) {
+            return call_user_func($this->negotiated[$request]);
+        }
     }
-
-    public function when(Request $request, $params)
-    {
-        return false !== $this->negotiate($request);
-    }
-
 }

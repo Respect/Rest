@@ -1,7 +1,40 @@
 <?php
+namespace Respect\Rest {
 
-namespace Respect\Rest;
-
+/**
+ * @covers Respect\Rest\Router
+ * @covers Respect\Rest\Request
+ * @covers Respect\Rest\Routable
+ * @covers Respect\Rest\Routes\AbstractRoute
+ * @covers Respect\Rest\Routes\ClassName
+ * @covers Respect\Rest\Routes\Factory
+ * @covers Respect\Rest\Routes\Instance
+ * @covers Respect\Rest\Routes\StaticValue
+ * @covers Respect\Rest\Routines\AbstractAccept
+ * @covers Respect\Rest\Routines\AbstractCallbackList
+ * @covers Respect\Rest\Routines\AbstractCallbackMediator
+ * @covers Respect\Rest\Routines\AbstractRoutine
+ * @covers Respect\Rest\Routines\AbstractSyncedRoutine
+ * @covers Respect\Rest\Routines\Accept
+ * @covers Respect\Rest\Routines\AcceptCharset
+ * @covers Respect\Rest\Routines\AcceptEncoding
+ * @covers Respect\Rest\Routines\AcceptLanguage
+ * @covers Respect\Rest\Routines\AuthBasic
+ * @covers Respect\Rest\Routines\By
+ * @covers Respect\Rest\Routines\ContentType
+ * @covers Respect\Rest\Routines\IgnorableFileExtension
+ * @covers Respect\Rest\Routines\ProxyableBy
+ * @covers Respect\Rest\Routines\LastModified
+ * @covers Respect\Rest\Routines\ParamSynced
+ * @covers Respect\Rest\Routines\ProxyableBy
+ * @covers Respect\Rest\Routines\ProxyableThrough
+ * @covers Respect\Rest\Routines\ProxyableWhen
+ * @covers Respect\Rest\Routines\Routinable
+ * @covers Respect\Rest\Routines\Through
+ * @covers Respect\Rest\Routines\Unique
+ * @covers Respect\Rest\Routines\UserAgent
+ * @covers Respect\Rest\Routines\When
+ */
 class OldRouterTest extends \PHPUnit_Framework_TestCase
 {
 
@@ -303,6 +336,9 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('ok', $result);
     }
 
+    /**
+     * @covers Respect\Rest\Router::always
+     */
     public function testSimpleAlways()
     {
         $result = null;
@@ -317,6 +353,9 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('ok', $result);
     }
 
+    /**
+     * @covers Respect\Rest\Router::always
+     */
     public function testSimpleAlwaysAfter()
     {
         $result = null;
@@ -540,6 +579,7 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
 
     public function testAccept()
     {
+        $_SERVER['REQUEST_URI'] = '/users/alganet';
         $request = new Request('get', '/users/alganet');
         $_SERVER['HTTP_ACCEPT'] = 'application/json';
         $this->object->get('/users/*', function() {
@@ -767,15 +807,6 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
     {
         global $header;
         $header = array();
-        eval('
-        namespace Respect\Rest\Routines;
-
-        function header($s) {
-            global $header;
-            $header[] = $s;
-        }
-
-        ');
         $_SERVER['IF_MODIFIED_SINCE'] = '2011-11-11 11:11:11';
         $requestBoth = new Request('get', '/users/alganet');
         $this->object->get('/users/*', function() {
@@ -916,6 +947,24 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('John Doe', (string) $response);
     }
 }
+if (!function_exists(__NAMESPACE__.'\\header')) {
+    function header($string, $replace=true, $http_response_code=200)
+    {
+        global $header;
+        if (!$replace && isset($header))
+            return;
+
+        $header[$string] = $string;
+        $h = $string;
+        $s = debug_backtrace(true);
+        $rt = function($a) {return isset($a['object'])
+            && $a['object'] instanceof RouterTest;};
+        if (array_filter($s, $rt) && 0 === strpos($h, 'HTTP/1.1 ')) {
+            RouterTest::$status = substr($h, 9);
+        }
+        return @\header($h);
+    }
+}
 
 class MyOptionalParamRoute implements Routable
 {
@@ -947,4 +996,22 @@ class MyController implements Routable
         return array($user, 'post', $this->params);
     }
 
+}
+}
+
+namespace Respect\Rest\Routines {
+    if (!function_exists(__NAMESPACE__.'\\header')) {
+        function header($string, $replace=true, $http_response_code=200)
+        {
+            global $header;
+            if (!$replace && isset($header))
+                return;
+
+            $header[$string] = $string;
+        }
+    }
+}
+
+namespace {
+    $header=array();
 }
