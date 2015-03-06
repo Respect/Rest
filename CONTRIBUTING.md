@@ -1,7 +1,7 @@
 # Contributing to Respect\Rest
 
 Contributions to Respect\Rest are always welcome. You make our lives easier by
-sending us your contributions through GitHub pull requests.
+sending us your contributions through [GitHub pull requests](http://help.github.com/pull-requests).
 
 Pull requests for bug fixes must be based on the current stable branch whereas
 pull requests for new features must be based on `master`.
@@ -53,6 +53,10 @@ and changing it according to your needs.
 We are trying to follow the [PHP-FIG](http://www.php-fig.org)'s standards, so
 when you send us a pull request, be sure you are following them.
 
-## Sending your code to us
+***
 
-Please see http://help.github.com/pull-requests/.
+See also:
+
+- [Feature Guide](docs/README.md)
+- [Installation](docs/INSTALL.md)
+- [License](LICENSE.md)

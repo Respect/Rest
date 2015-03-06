@@ -1,3 +1,4 @@
+/.couscous/
 composer.lock
 Makefile
 vendor/
