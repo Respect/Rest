@@ -1,0 +1,39 @@
+template:
+    url: https://github.com/Respect/RespectCouscous
+
+exclude:
+    - example
+    - library
+    - tests
+    - vendor
+
+baseUrl: http://respect.github.io/Rest
+
+github:
+    user: Respect
+    repo: Rest
+
+title: Respect\Rest
+subTitle: Thin controller for RESTful applications
+
+gaTrackingId: UA-59839366-1
+
+menu:
+    sections:
+        main:
+            items:
+                home:
+                    text: Home
+                    relativeUrl: /
+                contributing:
+                    text: Contributing
+                    relativeUrl: /contributing.html
+                featureguide:
+                    text: Feature Guide
+                    relativeUrl: /docs/
+                installation:
+                    text: Installation
+                    relativeUrl: /docs/install.html
+                license:
+                    text: License
+                    relativeUrl: /license.html
