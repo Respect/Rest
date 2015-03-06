@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+
+        <title>Respect\Rest</title>
+
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+        <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap-theme.min.css">
+        <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css">
+        <link rel="stylesheet" href="http://respect.github.io/Rest/css/main.css">
+    </head>
+    <body>
+
+        <header class="navbar navbar-default navbar-fixed-top">
+
+            <a class="navbar-brand" href="http://respect.github.io/Rest/">
+                Respect\Rest
+                <small class="hidden-xs hidden-sm">
+                    Thin controller for RESTful applications
+                </small>
+            </a>
+
+                            <a href="https://github.com/Respect/Rest">
+                    <img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/38ef81f8aca64bb9a64448d0d70f1308ef5341ab/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png">
+                </a>
+            
+        </header>
+
+        <main class="container-fluid">
+            <div class="row">
+                                    <nav id="sidebar" class="col-sm-3 col-lg-2" role="navigation">
+
+                        
+                            
+                            <ul class="nav nav-pills nav-stacked">
+                                                                    <li class="">
+                                        <a href="http://respect.github.io/Rest/">
+                                            Home
+                                        </a>
+                                    </li>
+                                                                    <li class="">
+                                        <a href="http://respect.github.io/Rest/contributing.html">
+                                            Contributing
+                                        </a>
+                                    </li>
+                                                                    <li class="">
+                                        <a href="http://respect.github.io/Rest/docs/">
+                                            Feature Guide
+                                        </a>
+                                    </li>
+                                                                    <li class="">
+                                        <a href="http://respect.github.io/Rest/docs/install.html">
+                                            Installation
+                                        </a>
+                                    </li>
+                                                                    <li class="">
+                                        <a href="http://respect.github.io/Rest/license.html">
+                                            License
+                                        </a>
+                                    </li>
+                                                            </ul>
+
+                        
+                    </nav>
+                
+                <section class="col-sm-offset-3 col-lg-offset-2 col-sm-9 col-lg-10">
+                    <h1 id="feature-guide">Feature Guide</h1>
+<h2 id="configuration">Configuration</h2>
+<p>Bootstrapping is easy. Just create an instance of Respect\Rest\Router.</p>
+<pre><code class="language-php">use Respect\Rest\Router;
+
+$r3 = new Router;</code></pre>
+<p>This assumes you have a <code>.htaccess</code> file that redirects every request to this PHP file and
+you're running this from the domain root (<a href="http://example.com/">http://example.com/</a> without any subfolder).</p>
+<p>If you want to use it from a subfolder, you can pass the virtual root to the Router:</p>
+<pre><code class="language-php">$r3 = new Router('/myapp');</code></pre>
+<p>This will instruct the router to work from <a href="http://example.com/myapp/">http://example.com/myapp/</a>.</p>
+<p>You can also use the Router without a <code>.htaccess</code> file. This uses the CGI <code>PATH_INFO</code> variable,
+and can be declared as:</p>
+<pre><code class="language-php">$r3 = new Router('/index.php/');</code></pre>
+<p>The same goes for folders:</p>
+<pre><code class="language-php">$r3 = new Router('/myapp/index.php/');</code></pre>
+<p>This assumes that every URL in the project will begin with these namespaces.</p>
+<h2 id="dispatching">Dispatching</h2>
+<p>The Router is auto-dispatched, which means that you don't have to call anything more than
+declaring routes to run it. If you want to omit this behavior, you can set:</p>
+<pre><code class="language-php">$r3-&gt;isAutoDispatched = false;</code></pre>
+<p>Note that you need the following step in order to see uncaught Exceptions in your application
+output. Standard error output on logs is untouched.</p>
+<p>You can then dispatch it yourself at the end of the proccess:</p>
+<pre><code class="language-php">echo $r3-&gt;run();</code></pre>
+<p>You can print the output or store in a variable if you want. This allows you to better
+test and integrate the Router into existing applications.</p>
+<h2 id="simple-routing">Simple Routing</h2>
+<p>The Hello World route goes something like this:</p>
+<pre><code class="language-php">$r3-&gt;get('/', function() {
+    return 'Hello World';
+});</code></pre>
+<p>Hitting <code>http://localhost/</code> (consider your local configuration for this) will print
+&quot;Hello World&quot; in the browser. You can declare as many routes as you want:</p>
+<pre><code class="language-php">$r3-&gt;get('/hello', function() {
+    return 'Hello from Path';
+});</code></pre>
+<p>Hitting <code>http://localhost/hello</code> will now print &quot;Hello from Path&quot;.</p>
+<h2 id="using-parameters">Using Parameters</h2>
+<p>You can declare routes that receives parameters from the URL. For this, every parameter
+is a <code>/*</code> on the route path. Considering the previous sample model:</p>
+<pre><code class="language-php">$r3-&gt;get('/users/*', function($screenName) {
+    echo "User {$screenName}";
+});</code></pre>
+<p>Accessing <code>http://localhost/users/alganet</code> or any other username besides <code>alganet</code> will
+now print &quot;User alganet&quot; (or the username of your choosing).</p>
+<p>Multiple parameters can be defined:</p>
+<pre><code class="language-php">$r3-&gt;get('/users/*/lists/*', function($user, $list) {
+    return "List {$list} from user {$user}.";
+});</code></pre>
+<p>Last parameters on the route path are optional by default, so declaring just
+a <code>-&gt;get('/posts/*'</code> will match <code>http://localhost/posts/</code> without any
+parameter. You can declare a second <code>-&gt;get('/posts'</code>, now the Router will
+match it properly, or treat the missing parameter yourself by making them
+<code>null</code>able on the passed function:</p>
+<pre><code class="language-php">$r3-&gt;get('/posts/*/*/*', function($year,$month=null,$day=null) {
+    /** list posts, month and day are optional */
+});</code></pre>
+<ol>
+<li>This will match /posts/2010/10/10, /posts/2011/01 and /posts/2010</li>
+<li>Optional parameters are allowed only on the end of the route path. This
+does not allow optional parameters: <code>/posts/*/*/*/comments/*</code></li>
+</ol>
+<h2 id="catch-all-parameters">Catch-all Parameters</h2>
+<p>Sometimes you need to catch an undefined number of parameters. You can use
+Routes with catch-all parameters like this:</p>
+<pre><code class="language-php">$r3-&gt;get('/users/*/documents/**', function($user, $documentPath) {
+    return readfile(PATH_STORAGE. implode('/', $documentPath));
+});</code></pre>
+<ol>
+<li>The above sample will match <code>/users/alganet/documents/foo/bar/baz/anything</code>.
+Callback $user parameter will receive alganet and $documentPath will
+receive an array filled with [foo,bar,baz,anything].</li>
+<li>Catch-all parameters are defined by a double asterisk <code>/**</code>.</li>
+<li>Catch-all parameters must appear only on the end of the path. Double
+asterisks in any other position will be converted to single asterisks.</li>
+<li>Catch-all parameters will match <strong>after</strong> any other route that matches
+the same pattern.</li>
+</ol>
+<h2 id="route-matching">Route Matching</h2>
+<p>Things can became very complex quick. We have simple routes, routes with parameters, optional
+parameters and catch-all parameters. A simple rule to keep in mind is that Respect\Rest
+matches the routes from the most specific to the most generic.</p>
+<ul>
+<li>Routes with the most slashes <code>/</code> are more specific and will be matched first.</li>
+<li>Routes with parameters are less specific than routes without parameters.</li>
+<li>Routes with multiple parameters are even less specific than a route with one parameter.</li>
+<li>Routes with catch-all parameters are the least specific and will be matched last.</li>
+</ul>
+<p>Summing up: Slashes and asterisks places your route at the top of the priority list to match first.</p>
+<p>Respect\Rest sort routes automatically, but it is highly recommended to declare routes
+from the most specific to the most generic. This will improve performance and
+maintainability of the code.</p>
+<h2 id="multiple-routes">Multiple Routes</h2>
+<p>You may want to have multiple routes perform the same action. Pluralization is the most common reason for this. This can be done like so:</p>
+<pre><code class="language-php">$r3-&gt;get(array('/user/*', '/users/*'), function($userName) {
+    return 'Hello '. $userName;
+});</code></pre>
+<h2 id="matching-any-http-method">Matching any HTTP Method</h2>
+<p>Sometimes you need to use a router to proxy requests to some other router or map
+requests to a class. By using the magic method <code>any</code>, you can pass any HTTP method to a given
+function.</p>
+<pre><code class="language-php">$r3-&gt;any('/users/*', function($userName) {
+    /** do anything */
+});</code></pre>
+<ol>
+<li>Any HTTP method will match this same route.</li>
+<li>You can figure out the method using the standard PHP <code>$_SERVER['REQUEST_METHOD']</code></li>
+</ol>
+<h2 id="class-controllers">Class Controllers</h2>
+<p>The <code>any</code> method is extremely useful to bind classes to controllers, one of Respect\Rest's most
+awesome features:</p>
+<pre><code class="language-php">use Respect\Rest\Routable;
+
+class MyArticle implements Routable {
+    public function get($id) { }
+    public function delete($id) { }
+    public function put($id) { }
+}
+
+$r3-&gt;any('/article/*', 'MyArticle');</code></pre>
+<ol>
+<li>This route will bind the class methods to the HTTP methods for the given path.</li>
+<li>Parameters will be sent to the class methods just like the callbacks from
+the previous examples.</li>
+<li>Controllers are lazy loaded and persistent. The <em>MyArticle</em> class will
+be instantiated only when a route matches one of its methods, and this
+instance will be reused on subsequent callbacks (redirects, etc).</li>
+<li>Classes must implement the interface Respect\Rest\Routable for safety reasons.
+(Imagine someone mapping HTTP to a PDO class automatically, that wouldn't be right).</li>
+</ol>
+<p>Passing constructor arguments to the class is also possible:</p>
+<pre><code class="language-php">$r3-&gt;any('/images/*', 'ImageController', array($myImageHandler, $myDb));</code></pre>
+<ol>
+<li>This will pass <code>$myImageHandler</code> and <code>$myDb</code> as parameters for the
+<em>ImageController</em> class constructor.</li>
+</ol>
+<p>You can also instantiate the class yourself if you want:</p>
+<pre><code class="language-php">$r3-&gt;any('/downloads/*', $myDownloadManager);</code></pre>
+<ol>
+<li>Sample above will assign the existent <code>$myDownloadManager</code> as a controller.</li>
+<li>This instance is also reused by Respect\Rest</li>
+</ol>
+<p>And you can even use a factory or DI container to build the controller class:</p>
+<pre><code class="language-php">$r3-&gt;any('/downloads/*', 'MyControllerClass', array('Factory', 'getController'));</code></pre>
+<ol>
+<li>Sample above will use the MyController class returned by Factory::getController</li>
+<li>This instance is also reused by Respect\Rest</li>
+<li>Third parameter is any <em>callable</em> variable, so you can put a closure there to build
+an instance if you want.</li>
+</ol>
+<h2 id="routing-streams">Routing Streams</h2>
+<p>Sometimes you need to route users to streams. The Router doesn't have to first handle
+large files or wait for streams to finish before serving them.</p>
+<pre><code class="language-php">$r3-&gt;get('/images/*/hi-res', function($imageName) {
+    header('Content-type: image/jpg');
+    return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
+});</code></pre>
+<p>This will redirect the file directly to the browser without keeping it in
+memory.</p>
+<p>CAUTION: We created a possible security vulnerability in the sample: passing a parameter
+directly to a <code>fopen</code> handle. Please validate user input parameters before using them.
+This is for demonstrational purposes only.</p>
+<h2 id="routing-static-values">Routing Static Values</h2>
+<p>No surprises here, you can make a route return a plain string:</p>
+<pre><code class="language-php">$r3-&gt;get('/greetings', 'Hello!');</code></pre>
+<h2 id="forwarding-routes">Forwarding Routes</h2>
+<p>Respect\Rest has an internal forwarding mechanism. First you'll need to understand that
+every route declaration returns an instance:</p>
+<pre><code class="language-php">$usersRoute = $r3-&gt;any('/users', 'UsersController');</code></pre>
+<p>Then you can <code>use</code> and <code>return</code> this route in another one:</p>
+<pre><code class="language-php">$r3-&gt;any('/premium', function($user) use ($db, $usersRoute) {
+    if (!$db-&gt;userPremium($user)) {
+      return $usersRoute;
+    }
+});</code></pre>
+<p>Illustrative sample above will redirect internally when an user is not privileged to
+another route that handle normal users.</p>
+<h2 id="when-routine-if">When Routine (if)</h2>
+<p>Respect\Rest uses a different approach to validate route parameters:</p>
+<pre><code class="language-php">$r3-&gt;get('/documents/*', function($documentId) {
+    /** do something */
+})-&gt;when(function($documentId) {
+    return is_numeric($documentId) &amp;&amp; $documentId &gt; 0;
+});
+// Routines can also be called using class and method names.
+$r3-&gt;get('/documents/*', function($documentId) {
+    /** do something */
+})-&gt;when('SomeClass_name', 'someMethod_name');
+// You can also pass any instance that implements the __invoke() magic method to any routine.</code></pre>
+<ol>
+<li>This will match the route only if the callback on <em>when</em> is matched.</li>
+<li>The <code>$documentId</code> param must have the same name in the action and the
+condition (but does not need to appear in the same order).</li>
+<li>You can specify more than one parameter per condition callback.</li>
+<li>You can specify more than one callback: <code>when($cb1)-&gt;when($cb2)-&gt;when($etc)</code></li>
+<li>Conditions will also sync with parameters on binded classes and instance
+methods.</li>
+</ol>
+<p>This makes it possible for the user to validate parameters using any custom routine and
+not just data types such as <code>int</code> or <code>string</code>.</p>
+<p>We highly recommend that you use a strong validation library when using this. Consider
+<a href="http://github.com/Respect/Validation">Respect\Validation</a>.</p>
+<pre><code class="language-php">$r3-&gt;get('/images/*/hi-res', function($imageName) {
+    header('Content-type: image/jpg');
+    return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
+})-&gt;when(function($imageName) {
+    /** Using Respect Validation alias to `V` */
+    return V::alphanum(".")-&gt;length(5,155)
+            -&gt;noWhitespace()-&gt;validate($imageName);
+});</code></pre>
+<h2 id="by-routine-before">By Routine (before)</h2>
+<p>Sometimes you need to run something before a route does its job. This is
+useful for logging, authentication and similar purposes.</p>
+<pre><code class="language-php">$r3-&gt;get('/artists/*/albums/*', function($artistName, $albumName) {
+    /** do something */
+})-&gt;by(function($albumName) use ($myLogger) {
+    $myLogger-&gt;logAlbumVisit($albumName);
+});</code></pre>
+<ol>
+<li>This will execute the callback defined with <em>by</em> before the route action
+which needs to match a route.</li>
+<li>Parameters are also synced by name and not by order, like with <code>when</code>.</li>
+<li>You can specify more than one parameter per proxy callback.</li>
+<li>You can specify more than one proxy: <code>by($cb1)-&gt;by($cb2)-&gt;by($etc)</code></li>
+<li>A <code>return false</code> from a proxy will stop the execution of any following proxies
+as well as the route action.</li>
+<li>Proxies will also sync with parameters on binded classes and instance
+methods.</li>
+</ol>
+<p>If your By routine returns <code>false</code>, then the route method/function will not be
+processed. If you return an instance of another route, an internal forward
+will be performed.</p>
+<h2 id="through-routine-after">Through Routine (after)</h2>
+<p>Similar to <code>-&gt;by</code>, but runs after the route did its job. In the sample
+below we're showing something similar to invalidating a cache after
+saving some new information.</p>
+<pre><code class="language-php">$r3-&gt;post('/artists/*/albums/*', function($artistName, $albumName) {
+    /** save some artist info */
+})-&gt;through(function() use($myCache) {
+    $myCache-&gt;clear($artistName, $albumName);
+});</code></pre>
+<ol>
+<li><code>by</code> proxies will be executed before the route action, <code>through proxies</code>
+will be executed after.</li>
+<li>You are free to use them separately or in tandem.</li>
+<li><code>through</code> can also receive parameters by name.</li>
+</ol>
+<p>Sample above allows you to do something based on the route parameters, but when
+procesing something after the route has run, its desirable to process its output
+as well. This can be achieved with a nested closure:</p>
+<pre><code class="language-php">$r3-&gt;any('/settings', 'SetingsController')-&gt;through(function(){
+    return function($data) {
+        if (isset($settings['admin_user'])) {
+            unset($settings['admin_user']);
+        }
+        return $data;
+    };
+});</code></pre>
+<p>The illustrative sample above removes sensitive keys from a settings controller before
+outputing the result.</p>
+<h2 id="controller-splitting">Controller Splitting</h2>
+<p>When using routines you are encouraged to separate the controller logic into components. You can
+reuse them:</p>
+<pre><code class="language-php">$logRoutine = function() use ($myLogger, $r3) {
+    $myLogger-&gt;logVisit($r3-&gt;request-&gt;path);
+};
+
+$r3-&gt;any('/users', 'UsersController')-&gt;by($logRoutine);
+$r3-&gt;any('/products', 'ProductsController')-&gt;by($logRoutine);</code></pre>
+<p>A simple way of applying routines to every route on the router is:</p>
+<pre><code class="language-php">$r3-&gt;always('By', $logRoutine);</code></pre>
+<p>You can use the param sync to take advantage of this:</p>
+<pre><code class="language-php">$r3-&gt;always('When', function($user=null) {
+    if ($user) {
+      return strlen($user) &gt; 3;
+    }
+});
+
+$r3-&gt;any('/products', function () { /***/ });
+$r3-&gt;any('/users/*', function ($user) { /***/ });
+$r3-&gt;any('/users/*/products', function ($user) { /***/ });
+$r3-&gt;any('/listeners/*', function ($user) { /***/ });</code></pre>
+<p>Since there are three routes with the <code>$user</code> parameter, <code>when</code> will
+verify them all automatically by its name.</p>
+<h2 id="content-negotiation">Content Negotiation</h2>
+<p>Respect/Rest currently supports the four distinct types of Accept header content-negotiation:
+Mimetype, Encoding, Language and Charset. Usage sample:</p>
+<pre><code class="language-php">$r3-&gt;get('/about', function() {
+    return array('v' =&gt; 2.0);
+})-&gt;acceptLanguage(array(
+    'en' =&gt; function($data) { return array("Version" =&gt; $data['v']); },
+    'pt' =&gt; function($data) { return array("Versão"  =&gt; $data['v']); }
+))-&gt;accept(array(
+    'text/html' =&gt; function($data) {
+        list($k,$v)=each($data);
+        return "&lt;strong&gt;$k&lt;/strong&gt;: $v";
+    },
+    'application/json' =&gt; 'json_encode'
+));</code></pre>
+<p>As in every routine, conneg routines are executed in the same order in which
+you appended them to the route. You can also use <code>-&gt;always</code> to apply this
+routine to every route on the Router.</p>
+<p>Please note that when returning streams, conneg routines are also called.
+You may take advantage of this when processing streams. The hardcore example
+below serves text, using the deflate encoding, directly to the browser:</p>
+<pre><code class="language-php">$r3-&gt;get('/text/*', function($filename) {
+  return fopen('data/'.$filename, 'r+');
+})-&gt;acceptEncoding(array(
+    'deflate' =&gt; function($stream) {
+        stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
+        return $stream; /** now deflated on demand */
+    }
+));</code></pre>
+<p>When applying conneg routines to multiple routes that can return streams you
+(really) should check for <code>is_resource()</code> before doing anything.</p>
+<h2 id="basic-http-auth">Basic HTTP Auth</h2>
+<p>Support for Basic HTTP Authentication is already implemented as a routine:</p>
+<pre><code class="language-php">$r3-&gt;get('/home', 'HomeController')-&gt;authBasic('My Realm', function($user, $pass) {
+    return $user === 'admin' &amp;&amp; $pass === 'p4ss';
+});</code></pre>
+<p>You'll receive an username and password provided by the user, and you just need
+to return true or false. True means that the user could be authenticated.</p>
+<p>Respect\Rest will handle the authentication flow, sending the appropriate
+headers when unauthenticated. You can also return another route, which will
+act as an internal forward (see the section on forwarding above).</p>
+<h2 id="filtering-browsers">Filtering Browsers</h2>
+<p>Below is an illustrative sample of how to block requests from mobile devices:</p>
+<pre><code class="language-php">$r3-&gt;get('/videos/*', 'VideosController')-&gt;userAgent(array(
+    'iphone|android' =&gt; function(){
+        header('HTTP/1.1 403 Forbidden');
+        return false; /** do not process the route. */
+    }
+));</code></pre>
+<p>You can pass several items in the array, like any conneg routine. The array
+key is a regular expression matcher without delimiters.</p>
+<h2 id="input-content-type-input-data">Input Content-Type (input data)</h2>
+<p>Note that this is not currently implemented.</p>
+<p>By default, HTML forms send POST data as <code>multipart/form-data</code>, but API clients
+may send any other format. PUT requests often send other mime types. You can pre-process
+this data before doing anything:</p>
+<pre><code class="language-php">$r3-&gt;post('/timeline', function() {
+    return file_get_contents('php://input');
+})-&gt;contentType(array(
+    'multipart/form-data' =&gt; function($input) {
+        parse_str($input, $output);
+        return $output;
+    },
+    'application/json' =&gt; function($input) {
+        return my_json_converter($input);
+    },
+    'text/xml' =&gt; function($input) {
+        return my_xml_converter($input);
+    },
+));</code></pre>
+<h2 id="http-errors">HTTP Errors</h2>
+<p>Respect\Rest currently handle the following errors by default:</p>
+<ul>
+<li>404, when no matching route paths are found.</li>
+<li>401, when the client sends an unauthenticated request to a route using <code>authBasic</code> routine.</li>
+<li>405, when a matching path is found but the method isn't specified.</li>
+<li>400, when a <code>when</code> validation fails.</li>
+<li>406, when the route path and method matches but content-negotiation doesn't.</li>
+</ul>
+<h2 id="restful-extras">RESTful Extras</h2>
+<ul>
+<li>A HEAD request automatically works sending all GET headers without body. You can override
+this behavior declaring custom <code>head</code> routes.</li>
+<li>An OPTIONS request to <code>*</code> or any route path returns the <code>Allow</code> headers properly.</li>
+<li>When returning 405, <code>Allow</code> headers are also set properly.</li>
+</ul>
+<h2 id="anti-patterns">Anti-Patterns</h2>
+<ul>
+<li>You can set <code>$r3-&gt;methodOverriding = true</code> to allow <code>?_method=ANYMETHOD</code> on the URI to
+override default HTTP methods. This is <code>false</code> by default.</li>
+</ul>
+<h2 id="your-own-routines">Your Own Routines</h2>
+<p>Routines are classes in the Respect\Rest\Routines namespace, but you can add your
+own routines by instance using:</p>
+<pre><code class="language-php">    $r3-&gt;get('/greetings', 'Hello World')-&gt;appendRoutine(new MyRoutine);</code></pre>
+<p>In the sample above, <code>MyRoutine</code> is a user provided routine declared as a class and
+appended to the router. Custom routines have the option of several different interfaces
+which can be implemented:</p>
+<ul>
+<li>IgnorableFileExtension - Instructs the router to ignore the file extension in requests</li>
+<li>ParamSynced - Syncs parameters with the route function/method.</li>
+<li>ProxyableBy - Instructs the router to run method <code>by()</code> before the route.</li>
+<li>ProxyableThrough - Instructs the router to run method <code>through()</code> after the route.</li>
+<li>ProxyableWhen - Instructs the router to run method <code>when()</code> to validate the route match.</li>
+<li>Unique - Makes this routine be replaced, not appended, if more than one is declared for
+the same type.</li>
+</ul>
+<p>You can use any combination of the above but also need to implement the Routinable interface.</p>
+<h2 id="error-handling">Error Handling</h2>
+<p>Respect\Rest provides two special ways to handle errors. The first one is using Exception
+Routes:</p>
+<pre><code class="language-php">$r3-&gt;exceptionRoute('InvalidArgumentException', function (InvalidArgumentException $e) {
+    return 'Sorry, this error happened: '.$e-&gt;getMessage();
+});</code></pre>
+<p>Whenever an uncaught exception appears on any route, it will be caught and forwarded to
+this side route. Similarly, there is a route for PHP errors:</p>
+<pre><code class="language-php">$r3-&gt;errorRoute(function (array $err) {
+    return 'Sorry, this errors happened: '.var_dump($err);
+});</code></pre>
+<hr />
+<p>See also:</p>
+<ul>
+<li><a href="../contributing.html">Contributing</a></li>
+<li><a href="install.html">Installation</a></li>
+<li><a href="../license.html">License</a></li>
+</ul>
+                    <div id="go-top">
+                        <hr />
+                        <p>
+                            <a class="btn btn-primary btn-sm" href="#" role="button">
+                                <span class="glyphicon glyphicon-arrow-up" aria-hidden="true"></span>
+                            </a>
+                        </p>
+                    </div>
+                </section>
+            </div>
+        </main>
+
+        <script src="//code.jquery.com/jquery-1.11.2.min.js"></script>
+        <script src="//netdna.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
+        <script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+
+        <script>
+            $(function() {
+                hljs.initHighlightingOnLoad();
+
+                var top = $('#go-top');
+
+                $(window).scroll(function() {
+                    if($(window).scrollTop() + $(window).height() <= $(document).height() - 100) {
+                        return;
+                    }
+
+                    top.fadeIn();
+                });
+            });
+
+            
+                (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+                (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+                m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+                })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+                ga('create', 'UA-59839366-1', 'auto');
+                ga('send', 'pageview');
+
+            
+        </script>
+    </body>
+</html>

@@ -1,0 +1,64 @@
+body {
+    font-size: 18px;
+}
+
+main {
+    margin-top: 90px;
+}
+
+
+.navbar .navbar-brand {
+    font-size: 28px;
+    height: auto;
+    line-height: 50px;
+    margin-left: 20px;
+}
+
+.navbar .navbar-brand small {
+    font-size: 18px;
+    font-weight: 300;
+    margin-left: 10px;
+}
+
+@media screen and (min-width: 770px) {
+    #sidebar {
+        position: fixed;
+    }
+}
+
+@media screen and (max-width: 770px) {
+    #sidebar li,
+    #sidebar li a {
+        display: inline-block;
+    }
+}
+
+h1 {
+    border-bottom: 1px solid #E7E7E7;
+}
+
+h1, h2, h3 {
+    margin-bottom: 15px;
+    font-weight: 300;
+}
+
+#go-top {
+    display: none;
+    text-align: right;
+}
+
+pre {
+    background-color: #F7F7F7;
+    border: none;
+}
+
+code {
+    color: #000000;
+    font-family: Consolas, "Liberation Mono", Menlo, Courier, monospace;
+    background-color: rgba(0,0,0,0.04) !important;
+    font-size: 80%;
+}
+
+pre > code {
+    background: inherit !important;
+}
