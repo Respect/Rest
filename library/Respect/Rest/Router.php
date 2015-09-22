@@ -174,6 +174,9 @@ class Router
         } elseif ($routeTarget instanceof Routable) {
             return $this->instanceRoute($method, $path, $routeTarget);
 
+        } elseif ($routeTarget instanceof Router) {
+            return $this->instanceSubRouter($method, $path, $routeTarget);
+
         //static returns the argument itself
         } elseif (!is_string($routeTarget)) {
             return $this->staticRoute($method, $path, $routeTarget);
@@ -474,6 +477,24 @@ class Router
     public function instanceRoute($method, $path, $instance)
     {
         $route = new Routes\Instance($method, $path, $instance);
+        $this->appendRoute($route);
+
+        return $route;
+    }
+
+
+    /**
+     * Creates and returns an router-based route
+     *
+     * @param string $method  The HTTP metod (GET, POST, etc)
+     * @param string $path    The URI Path (/foo/bar...)
+     * @param string $intance An instance of Router
+     *
+     * @return Respect\Rest\Routes\SubRouter The route created
+     */
+    public function instanceSubRouter($method, $path, $instance)
+    {
+        $route = new Routes\SubRouter($method, $path, $instance);
         $this->appendRoute($route);
 
         return $route;
