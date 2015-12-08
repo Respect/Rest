@@ -537,7 +537,7 @@ class Router
 
         //OPTIONS? Let's inform the allowd methods
         if ($this->request->method === 'OPTIONS' && $allowedMethods) {
-            header('Allow: '.implode(', ', $allowedMethods));
+            $this->handleOptionsRequest($allowedMethods, $matchedByPath);
         } elseif (0 === count($matchedByPath)) {
             header('HTTP/1.1 404');
         } elseif (!$this->routineMatch($matchedByPath) instanceof Request) {
@@ -675,6 +675,26 @@ class Router
 
         $this->informAllowedMethods($allowedMethods);
         $this->request->route = null;
+    }
+
+    /**
+     * Handles a OPTIONS request, inform of the allowed methods and
+     * calls custom OPTIONS handler (if any).
+     *
+     * @param array $allowedMehods A list of allowed methods
+     * @param \SplObjectStorage $matchedByPath A list of matched routes by path
+     *
+     * @return null sends Allow header.
+     */
+    protected function handleOptionsRequest(array $allowedMethods, \SplObjectStorage $matchedByPath)
+    {
+        $this->informAllowedMethods($allowedMethods);
+
+        if (in_array('OPTIONS', $allowedMethods)) {
+            $this->routineMatch($matchedByPath);
+        } else {
+            $this->request->route = null;
+        }
     }
 
     /**
