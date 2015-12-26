@@ -30,8 +30,8 @@ class SubRouter extends AbstractRoute
     {
         if (empty($this->reflection)) {
             $this->reflection = new ReflectionMethod(
-                $this->instance,
-                $method
+                $this,
+                'runTarget'
             );
         }
 
