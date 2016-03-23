@@ -79,9 +79,7 @@ class Request
      */
     protected function prepareForErrorForwards()
     {
-        $errorHandler = null;
-
-        foreach ($this->route->sideRoutes as $sideRoute) {
+       foreach ($this->route->sideRoutes as $sideRoute) {
             if ($sideRoute instanceof Routes\Error) {
                 return set_error_handler(
                     function () use ($sideRoute) {
