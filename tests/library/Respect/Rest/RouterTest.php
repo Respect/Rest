@@ -274,9 +274,8 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $router->eat('/mongolian', 'Mongolian Food!');
         $response = (string) $router->dispatch('OPTIONS', '*')->response();
 
-        $this->assertContains(
+        $this->assertHeaderContains(
             'Allow: GET, POST, EAT',
-            xdebug_get_headers(),
             'There should be a sent Allow header with all methods from all routes'
         );
     }
@@ -452,9 +451,8 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $response = (string) $router->dispatch('OPTIONS', '/asian')->response();
 
         // assert
-        $this->assertContains(
+        $this->assertHeaderContains(
             'Allow: GET, POST',
-            xdebug_get_headers(),
             'There should be a sent Allow header with all methods for the handler that match this request.'
         );
 
@@ -481,9 +479,8 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $response = (string) $router->dispatch('OPTIONS', '/asian')->response();
 
         // assert
-        $this->assertContains(
+        $this->assertHeaderContains(
             'Allow: GET, OPTIONS, POST',
-            xdebug_get_headers(),
             'There should be a sent Allow header with all methods for the handler that match this request.'
         );
 
@@ -491,6 +488,19 @@ class RouterTest extends PHPUnit_Framework_TestCase
             'OPTIONS: Asian Food!',
             $response,
             'OPTIONS request should call the correct custom OPTIONS handler.'
+        );
+    }
+
+    private function assertHeaderContains($expected, $message = null)
+    {
+        if (false === extension_loaded('xdebug')) {
+            $this->markTestSkipped('XDebug is required for this test to run.');
+        }
+
+        $this->assertContains(
+            $expected,
+            xdebug_get_headers(),
+            $message
         );
     }
 }
