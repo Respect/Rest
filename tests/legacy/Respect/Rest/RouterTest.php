@@ -2,6 +2,8 @@
 
 namespace Respect\Rest {
 
+    use PHPUnit\Framework\TestCase;
+
     class DummyRoute extends \DateTime implements Routable {}
     /**
      * @covers Respect\Rest\Router
@@ -38,7 +40,7 @@ namespace Respect\Rest {
      * @covers Respect\Rest\Routines\UserAgent
      * @covers Respect\Rest\Routines\When
      */
-    class NewRouterTest extends \PHPUnit_Framework_TestCase
+    class NewRouterTest extends TestCase
     {
         function setUp()
         {
@@ -575,7 +577,7 @@ namespace Respect\Rest {
             $this->assertEquals('"ok: blub"', $out);
 
         }
-        
+
         function test_request_should_be_available_from_router_after_dispatching()
         {
             $request = new \Respect\Rest\Request('get', '/foo');

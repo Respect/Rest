@@ -2,13 +2,13 @@
 namespace Respect\Rest\Routines;
 
 use Exception;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 
 /** 
  * @covers Respect\Rest\Routines\When
  */
-class WhenTest2 extends PHPUnit_Framework_TestCase
+class WhenTest2 extends TestCase
 {
 	public function testRoutineWhenShouldBlockRouteFromMatchIfTheCallbackReturnIsFalse()
 	{

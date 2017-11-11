@@ -2,12 +2,13 @@
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers Respect\Rest\Routines\Through
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class ThroughTest extends \PHPUnit_Framework_TestCase
+class ThroughTest extends TestCase
 {
     /**
      * @var Through

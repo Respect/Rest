@@ -4,12 +4,13 @@ namespace Respect\Rest\Routines {
 use Respect\Rest\Request,
     Respect\Rest\Router;
 use Stubs\Routines\WhenAlwaysTrue;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers Respect\Rest\Routines\When
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class WhenTest extends \PHPUnit_Framework_TestCase
+class WhenTest extends TestCase
 {
     /**
      * @var When

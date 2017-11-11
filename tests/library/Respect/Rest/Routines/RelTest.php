@@ -2,13 +2,13 @@
 namespace Respect\Rest\Routines;
 
 use Exception;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 
 /** 
  * @covers Respect\Rest\Routines\Rel 
  */
-class RelTest extends PHPUnit_Framework_TestCase
+class RelTest extends TestCase
 {
 	public function testSimpleTextRelationPassesThroughData()
 	{

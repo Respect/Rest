@@ -2,10 +2,12 @@
 
 namespace Respect\Rest\Routes;
 
+use PHPUnit\Framework\TestCase;
+
 /**
  * @covers Respect\Rest\Routes\ClassName
  */
-class ClassNameTest extends \PHPUnit_Framework_TestCase
+class ClassNameTest extends TestCase
 {
     function setUp()
     {

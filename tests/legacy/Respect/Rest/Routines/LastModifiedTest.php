@@ -2,11 +2,13 @@
 namespace Respect\Rest\Routines {
 
 use Respect\Rest\Request;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @covers Respect\Rest\Routines\LastModified
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class LastModifiedTest extends \PHPUnit_Framework_TestCase
+class LastModifiedTest extends TestCase
 {
     /**
      * @var LastModified

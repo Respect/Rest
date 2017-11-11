@@ -2,12 +2,14 @@
 
 namespace Respect\Rest\Routes;
 
+use PHPUnit\Framework\TestCase;
+
 /**
  * @covers Respect\Rest\Routes\Instance
  */
-class InstanceTest extends \PHPUnit_Framework_TestCase
+class InstanceTest extends TestCase
 {
-    function setUp() 
+    function setUp()
     {
         $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
         $_SERVER['REQUEST_URI'] = '/';

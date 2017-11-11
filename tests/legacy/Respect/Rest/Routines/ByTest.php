@@ -4,12 +4,13 @@ namespace Respect\Rest\Routines;
 use Respect\Rest\Request,
     Respect\Rest\Router;
 use Stubs\Routines\ByClassWithInvoke;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers Respect\Rest\Routines\By
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class ByTest extends \PHPUnit_Framework_TestCase
+class ByTest extends TestCase
 {
     /**
      * Sets up the fixture, for example, opens a network connection.

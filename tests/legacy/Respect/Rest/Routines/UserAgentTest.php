@@ -2,11 +2,13 @@
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @covers Respect\Rest\Routines\UserAgent
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class UserAgentTest extends \PHPUnit_Framework_TestCase
+class UserAgentTest extends TestCase
 {
     /**
      * @var UserAgent

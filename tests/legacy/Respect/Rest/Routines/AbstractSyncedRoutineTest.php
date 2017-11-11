@@ -2,12 +2,13 @@
 namespace Respect\Rest\Routines;
 
 use Stubs\Routines\ByClassWithInvoke;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers Respect\Rest\Routines\ParamSynced
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class AbstractSyncedRoutineTest extends \PHPUnit_Framework_TestCase
+class AbstractSyncedRoutineTest extends TestCase
 {
     /**
      * @var AbstractSyncedRoutine

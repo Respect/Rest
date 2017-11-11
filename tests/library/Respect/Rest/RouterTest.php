@@ -1,11 +1,11 @@
 <?php
 namespace Respect\Rest;
 
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 /**
  * @covers Respect\Rest\Router
  */
-class RouterTest extends PHPUnit_Framework_TestCase
+class RouterTest extends TestCase
 {
     public static $status = 200;
 
