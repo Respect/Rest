@@ -112,11 +112,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
     {
         $response = $request->response();
 
-        $this->assertSame(
-            null, 
-            $response,
-            'Response should be null if no route is set'
-        );
+        $this->assertNull($response, 'Response should be null if no route is set');
 
         //TODO Request::response() should check if $this->route instanceof AbstractRoute
     }
@@ -250,11 +246,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
             $response,
             'Response should not be the protected content.'
         );
-        $this->assertSame(
-            false,
-            $response,
-            'Response should false when aborting response.'
-        );
+        $this->assertFalse($response, 'Response should false when aborting response.');
     }
 
     /**
@@ -346,25 +338,25 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $pureNulls = array(
             function($majorVersion, $minorVersion, $patchVersion) use($phpUnit) {
                 $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertSame(null, $majorVersion);
-                $phpUnit->assertSame(null, $minorVersion);
-                $phpUnit->assertSame(null, $patchVersion);
+                $phpUnit->assertNull($majorVersion);
+                $phpUnit->assertNull($minorVersion);
+                $phpUnit->assertNull($patchVersion);
             },
             function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
                 $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertSame(null, $majorVersion);
-                $phpUnit->assertSame(null, $minorVersion);
-                $phpUnit->assertSame(null, $patchVersion);
+                $phpUnit->assertNull($majorVersion);
+                $phpUnit->assertNull($minorVersion);
+                $phpUnit->assertNull($patchVersion);
             },
             function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
                 $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertSame(null, $majorVersion);
-                $phpUnit->assertSame(null, $minorVersion);
-                $phpUnit->assertSame(null, $patchVersion);
+                $phpUnit->assertNull($majorVersion);
+                $phpUnit->assertNull($minorVersion);
+                $phpUnit->assertNull($patchVersion);
             },
             function($majorVersion) use($phpUnit) {
                 $phpUnit->assertCount(1, func_get_args());
-                $phpUnit->assertSame(null, $majorVersion);
+                $phpUnit->assertNull($majorVersion);
             },
             function() use($phpUnit) {
                 $phpUnit->assertCount(0, func_get_args());
@@ -404,7 +396,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
                 $phpUnit->assertCount(3, func_get_args());
                 $phpUnit->assertSame(15, $majorVersion);
                 $phpUnit->assertSame(10, $minorVersion);
-                $phpUnit->assertSame(null, $patchVersion);
+                $phpUnit->assertNull($patchVersion);
             },
             function() use($phpUnit) {
                 $phpUnit->assertCount(0, func_get_args());

@@ -408,10 +408,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $router->allMembers = $router->any('/members', 'John, Carl');
         $response = (string) $router->dispatch('GET', '/members')->response();
 
-        $this->assertTrue(
-            isset($router->allMembers),
-            'There must be an attribute set for that key'
-        );
+        $this->assertObjectHasAttribute('allMembers', $router, 'There must be an attribute set for that key');
 
         $this->assertEquals(
             'John, Carl',

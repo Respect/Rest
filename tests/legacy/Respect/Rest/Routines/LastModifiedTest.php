@@ -58,7 +58,7 @@ class LastModifiedTest extends \PHPUnit_Framework_TestCase
 
 
         $_SERVER['IF_MODIFIED_SINCE'] = '2011-11-11 11:11:13';
-        $this->assertSame(false, $alias->by($request, $params));
+        $this->assertFalse($alias->by($request, $params));
         $this->assertArrayHasKey('HTTP/1.1 304 Not Modified', $header);
     }
 }

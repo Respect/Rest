@@ -43,10 +43,10 @@ class AbstractCallbackListTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetCallback()
     {
-        $this->assertTrue(is_callable($this->object->funkyGetCallback('a')));
-        $this->assertTrue(is_callable($this->object->funkyGetCallback('b')));
-        $this->assertTrue(is_callable($this->object->funkyGetCallback('c')));
-        $this->assertTrue(is_callable($this->object->funkyGetCallback('e')));
+        $this->assertInternalType('callable', $this->object->funkyGetCallback('a'));
+        $this->assertInternalType('callable', $this->object->funkyGetCallback('b'));
+        $this->assertInternalType('callable', $this->object->funkyGetCallback('c'));
+        $this->assertInternalType('callable', $this->object->funkyGetCallback('e'));
     }
     /**
      * @covers Respect\Rest\Routines\AbstractCallbackList::__construct
