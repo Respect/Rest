@@ -1,12 +1,13 @@
 <?php
 namespace Respect\Rest\Routines;
 
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers Respect\Rest\Routines\AbstractCallbackList
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class AbstractCallbackListTest extends \PHPUnit_Framework_TestCase
+class AbstractCallbackListTest extends TestCase
 {
     protected $object;
 
@@ -128,4 +129,3 @@ class FunkyAbstractCallbackList extends AbstractCallbackList{
         return $this->getCallback($key);
     }
 }
-

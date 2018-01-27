@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest {
 
+use PHPUnit\Framework\TestCase;
+
 /**
  * @covers Respect\Rest\Router
  * @covers Respect\Rest\Request
@@ -35,7 +37,7 @@ namespace Respect\Rest {
  * @covers Respect\Rest\Routines\UserAgent
  * @covers Respect\Rest\Routines\When
  */
-class OldRouterTest extends \PHPUnit_Framework_TestCase
+class OldRouterTest extends TestCase
 {
 
     protected $object;

@@ -3,13 +3,14 @@
 namespace Respect\Rest\Routines;
 
 use InvalidArgumentException;
+use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 use ReflectionMethod;
 use Stubs\Routines\AbstractRoutine as Stub;
 use Stubs\Routines\WhenAlwaysTrue as InstanceWithInvoke;
 
 /** Test an AbstractRoutine (abstract class) instantiation through a stub class. */
-class AbstractRoutineTest extends \PHPUnit_Framework_TestCase
+class AbstractRoutineTest extends TestCase
 {
     /**
      * @dataProvider provide_valid_constructor_arguments

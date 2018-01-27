@@ -1,13 +1,13 @@
 <?php
 namespace Respect\Rest\Routes;
 
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use Respect\Rest\Router;
 
 /** 
  * @covers Respect\Rest\Routes\Error
  */
-class ErrorTest extends PHPUnit_Framework_TestCase
+class ErrorTest extends TestCase
 {
     /**
      * @covers Respect\Rest\Routes\Error::getReflection

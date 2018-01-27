@@ -2,11 +2,13 @@
 namespace Respect\Rest\Routes {
 
 use Respect\Rest\Router;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @covers Respect\Rest\Routes\AbstractRoute
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class AbstractRouteTest extends \PHPUnit_Framework_TestCase
+class AbstractRouteTest extends TestCase
 {
     /**
      * @var AbstractRoute local instance

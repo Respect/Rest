@@ -2,11 +2,13 @@
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @covers Respect\Rest\Routines\ContentType
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class ContentTypeTest extends \PHPUnit_Framework_TestCase
+class ContentTypeTest extends TestCase
 {
     /**
      * @var ContentType

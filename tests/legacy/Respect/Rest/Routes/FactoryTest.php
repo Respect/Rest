@@ -3,13 +3,14 @@ namespace Respect\Rest\Routes;
 
 use \Respect\Rest\Routable;
 use \Respect\Rest\Router;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers Respect\Rest\Routes\Factory
  */
-class FactoryTest extends \PHPUnit_Framework_TestCase
+class FactoryTest extends TestCase
 {
-    function setUp() 
+    function setUp()
     {
         $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
         $_SERVER['REQUEST_URI'] = '/';

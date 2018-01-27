@@ -2,13 +2,13 @@
 namespace Respect\Rest;
 
 use Exception;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 
 /** 
  * @covers Respect\Rest\Request 
  */
-class RequestTest extends PHPUnit_Framework_TestCase
+class RequestTest extends TestCase
 {
     /** 
      * @covers  Respect\Rest\Request::__construct

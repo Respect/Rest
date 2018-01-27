@@ -3,12 +3,13 @@
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
+use PHPUnit\Framework\TestCase;
 
 /**
  * @covers Respect\Rest\Routines\AbstractCallbackMediator
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class AbstractCallbackMediatorTest extends \PHPUnit_Framework_TestCase
+class AbstractCallbackMediatorTest extends TestCase
 {
     /**
      * @var AbstractCallbackMediator
@@ -249,4 +250,3 @@ class Negotiator extends AbstractCallbackMediator {
     }
 
 }
-

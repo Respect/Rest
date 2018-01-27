@@ -2,12 +2,13 @@
 
 namespace Respect\Rest\Routines {
 
+use Respect\Rest\Router;
+use PHPUnit\Framework\TestCase;
+
 /**
  * @covers Respect\Rest\Routines\AuthBasic
  */
-use Respect\Rest\Router;
-
-class AuthBasicTest extends \PHPUnit_Framework_TestCase {
+class AuthBasicTest extends TestCase {
 
     private static $wantedParams;
     private $router;
