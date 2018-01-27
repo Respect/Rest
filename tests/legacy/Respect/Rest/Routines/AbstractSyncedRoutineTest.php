@@ -108,10 +108,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit_Framework_TestCase
     public function  test_getParameters_with_callable_instance()
     {
         $stub     = new ByClassWithInvoke;
-        $this->assertTrue(
-            is_callable($stub),
-            'Callable instance does not pass the is_callable test.'
-        );
+        $this->assertInternalType('callable', $stub, 'Callable instance does not pass the is_callable test.');
         $class    = 'Respect\Rest\Routines\AbstractSyncedRoutine';
         $callback = function($name) { return 'Hello '.$name; };
         $routine  = $this->getMockBuilder($class)

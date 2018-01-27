@@ -294,7 +294,7 @@ namespace Respect\Rest {
                          ->acceptEncoding(array(
                             'deflate' => function($stream) use ($self, &$done) {
                                 $done = true;
-                                $self->assertTrue(is_resource($stream));
+                                $self->assertInternalType('resource', $stream);
                                 stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
                                 return $stream; //now deflated on demand
                             }
@@ -388,7 +388,7 @@ namespace Respect\Rest {
                 $args = func_get_args();
             });
             $r->dispatch('get', '/')->response();
-            $this->assertTrue(\is_array($args[0]));
+            $this->assertInternalType('array', $args[0]);
         }
 
         /**
