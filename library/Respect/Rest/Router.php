@@ -174,6 +174,9 @@ class Router
         } elseif ($routeTarget instanceof Routable) {
             return $this->instanceRoute($method, $path, $routeTarget);
 
+        } elseif ($routeTarget instanceof Router) {
+            return $this->instanceSubRouter($method, $path, $routeTarget);
+
         //static returns the argument itself
         } elseif (!is_string($routeTarget)) {
             return $this->staticRoute($method, $path, $routeTarget);
@@ -479,6 +482,24 @@ class Router
         return $route;
     }
 
+
+    /**
+     * Creates and returns an router-based route
+     *
+     * @param string $method  The HTTP metod (GET, POST, etc)
+     * @param string $path    The URI Path (/foo/bar...)
+     * @param string $intance An instance of Router
+     *
+     * @return Respect\Rest\Routes\SubRouter The route created
+     */
+    public function instanceSubRouter($method, $path, $instance)
+    {
+        $route = new Routes\SubRouter($method, $path, $instance);
+        $this->appendRoute($route);
+
+        return $route;
+    }
+
     /**
      * Checks if request is a global OPTIONS (OPTIONS * HTTP/1.1)
      *
@@ -776,20 +797,36 @@ class Router
             function ($a, $b) {
                 $a = $a->pattern;
                 $b = $b->pattern;
-                $pi = AbstractRoute::PARAM_IDENTIFIER;
+				$elementsa = preg_split('#/#', $a, 0, PREG_SPLIT_NO_EMPTY);
+				$elementsb = preg_split('#/#', $b, 0, PREG_SPLIT_NO_EMPTY);
 
-                //Compare similarity and ocurrences of "/"
-                if (Router::compareRoutePatterns($a, $b, '/')) {
-                    return 1;
+				if(end($elementsa) == '**' && end($elementsb) == '**')
+					return count($elementsa) < count($elementsb);
+				if(end($elementsa) == '**')
+					return 1;
+				if(end($elementsb) == '**')
+					return -1;
 
-                //Compare similarity and ocurrences of /*
-                } elseif (Router::compareRoutePatterns($a, $b, $pi)) {
-                    return -1;
+				if(count($elementsa) < count($elementsb)){
+					return -1;
+				}
+				if(count($elementsa) > count($elementsb)){
+					return 1;
+				}
+				$keysa = array_keys($elementsa, '*');
+				$keysb = array_keys($elementsb, '*');
+				if(count($keysa) < count($keysb)){
+					return -1;
+				}
+				if(count($keysa) > count($keysb)){
+					return 1;
+				}
 
-                //Hard fallback for consistency
-                } else {
-                    return 1;
-                }
+				for($index=0; $index < count($keysa); $index++){
+					if($keysa[$index] == $keysb[$index])
+						continue;
+					return $keysa[$index]<$keysb[$index];
+				}
             }
         );
     }
