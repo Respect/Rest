@@ -22,6 +22,7 @@ use Respect\Rest\Routes\AbstractRoute;
  * @method \Respect\Rest\Routes\AbstractRoute delete(\string $path, $routeTarget)
  * @method \Respect\Rest\Routes\AbstractRoute head(\string $path, $routeTarget)
  * @method \Respect\Rest\Routes\AbstractRoute options(\string $path, $routeTarget)
+ * @method \Respect\Rest\Routes\AbstractRoute patch(\string $path, $routeTarget)
  * @method \Respect\Rest\Routes\AbstractRoute any(\string $path, $routeTarget)
  */
 class Router
