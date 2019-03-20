@@ -468,7 +468,7 @@ class Router
      *
      * @param string $method  The HTTP metod (GET, POST, etc)
      * @param string $path    The URI Path (/foo/bar...)
-     * @param string $intance An instance of Routinable
+     * @param string $instance An instance of Routinable
      *
      * @return Respect\Rest\Routes\Instance The route created
      */
@@ -558,6 +558,7 @@ class Router
     public function run(Request $request = null)
     {
         $route = $this->dispatchRequest($request);
+
         if (
             !$route
             || (isset($request->method)
@@ -580,7 +581,7 @@ class Router
     /**
      * Creates and returns a static route
      *
-     * @param string $method      The HTTP metod (GET, POST, etc)
+     * @param string $method      The HTTP method (GET, POST, etc)
      * @param string $path        The URI Path (/foo/bar...)
      * @param string $staticValue Some static value to be printed
      *
@@ -594,7 +595,7 @@ class Router
         return $route;
     }
 
-    /** Appliesthe virtualHost prefix on the current request */
+    /** Applies the virtualHost prefix on the current request */
     protected function applyVirtualHost()
     {
         if ($this->virtualHost) {
@@ -611,7 +612,7 @@ class Router
      *
      * @param Request       $request Some request
      * @param AbstractRoute $route   Some route
-     * @param array         $param   A list of URI params
+     * @param array         $params   A list of URI params
      *
      * @see Respect\Rest\Request::$params
      *
@@ -649,7 +650,7 @@ class Router
     /**
      * Sends an Allow header with allowed methods from a list
      *
-     * @param array $allowedMehods A list of allowed methods
+     * @param array $allowedMethods A list of allowed methods
      *
      * @return null sends an Allow header.
      */
@@ -662,7 +663,7 @@ class Router
      * Informs the PHP environment of a not allowed method alongside
      * its allowed methods for that path
      *
-     * @param array $allowedMehods A list of allowed methods
+     * @param array $allowedMethods A list of allowed methods
      *
      * @return null sends HTTP Status Line and Allow header.
      */
@@ -682,7 +683,7 @@ class Router
      * Handles a OPTIONS request, inform of the allowed methods and
      * calls custom OPTIONS handler (if any).
      *
-     * @param array $allowedMehods A list of allowed methods
+     * @param array $allowedMethods A list of allowed methods
      * @param \SplObjectStorage $matchedByPath A list of matched routes by path
      *
      * @return null sends Allow header.
@@ -743,7 +744,7 @@ class Router
     /**
      * Checks if a route matches its routines
      *
-     * @param SplObjectStorage $matchedByPath A list of routes matched by path
+     * @param \SplObjectStorage $matchedByPath A list of routes matched by path
      *
      * @return bool true if route matches its routines
      */
