@@ -3,7 +3,7 @@
     "description": "Thin controller for RESTful applications",
     "type": "library",
     "homepage": "http://respect.li/",
-    "license": "MIT",
+    "license": "BSD Style",
     "authors": [
         {
             "name": "Alexandre Gaigalas",
