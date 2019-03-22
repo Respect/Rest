@@ -79,21 +79,6 @@ class Router
 
     /**
      * Compares two patterns and returns the first one according to
-     * similarity or presence of catch-all pattern
-     *
-     * @param string $patternA some pattern
-     * @param string $patternB some pattern
-     *
-     * @return bool true if $patternA is before $patternB
-     */
-    public static function comparePatternSimilarity($patternA, $patternB)
-    {
-        return 0 === stripos($patternA, $patternB)
-            || $patternA === AbstractRoute::CATCHALL_IDENTIFIER;
-    }
-
-    /**
-     * Compares two patterns and returns the first one according to
      * similarity, patterns or ocurrences of a subpattern
      *
      * @param string $patternA some pattern
@@ -780,23 +765,29 @@ class Router
                 $a = $a->pattern;
                 $b = $b->pattern;
 
-                //Compare similarity and ocurrences of "/**"
-                if (Router::compareRoutePatterns($a, $b,
-                        AbstractRoute::CATCHALL_IDENTIFIER))
-                    return -1;
+                //Compare the same
+                if ($a === $b)
+                    return 0;
 
-                //Compare similarity and ocurrences of "/*"
-                elseif (Router::compareRoutePatterns($a, $b,
+                //Compare occurences of '/' reusable
+                $slash_count = Router::compareOcurrences($a, $b, '/');
+
+                //Compare catch all "/**"
+                $a_catchall = preg_match('#/\*\*$#', $a);
+                $b_catchall = preg_match('#/\*\*$#', $b);
+                if ($a_catchall != $b_catchall)
+                    return $a_catchall ? 1 : -1;
+                //Compare occurances of '/' of two catch alls
+                if ($a_catchall && $b_catchall)
+                    return $slash_count ? 1 : -1;
+
+                //Compare ocurrences of "/*"
+                if (Router::compareOcurrences($a, $b,
                         AbstractRoute::PARAM_IDENTIFIER))
                     return -1;
 
-                //Compare for "/" without wildcards
-                elseif (Router::compareRoutePatterns(
-                        preg_replace('#(/\*+)*$#', '', $a),
-                        preg_replace('#(/\*+)*$#', '', $b), '/'))
-                    return 1;
-
-                return 0;
+                //Compare occurances of '/'
+                return $slash_count ? -1 : 1;
             }
         );
     }
