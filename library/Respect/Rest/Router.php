@@ -291,6 +291,8 @@ class Router
             $route->appendRoutine($routine);
         }
 
+        $this->sortRoutesByComplexity();
+
         return $this;
     }
 
@@ -529,7 +531,6 @@ class Router
     public function routeDispatch()
     {
         $this->applyVirtualHost();
-        $this->sortRoutesByComplexity();
 
         $matchedByPath  = $this->getMatchedRoutesByPath();
         $allowedMethods = $this->getAllowedMethods(
@@ -778,20 +779,24 @@ class Router
             function ($a, $b) {
                 $a = $a->pattern;
                 $b = $b->pattern;
-                $pi = AbstractRoute::PARAM_IDENTIFIER;
 
-                //Compare similarity and ocurrences of "/"
-                if (Router::compareRoutePatterns($a, $b, '/')) {
-                    return 1;
-
-                //Compare similarity and ocurrences of /*
-                } elseif (Router::compareRoutePatterns($a, $b, $pi)) {
+                //Compare similarity and ocurrences of "/**"
+                if (Router::compareRoutePatterns($a, $b,
+                        AbstractRoute::CATCHALL_IDENTIFIER))
                     return -1;
 
-                //Hard fallback for consistency
-                } else {
+                //Compare similarity and ocurrences of "/*"
+                elseif (Router::compareRoutePatterns($a, $b,
+                        AbstractRoute::PARAM_IDENTIFIER))
+                    return -1;
+
+                //Compare for "/" without wildcards
+                elseif (Router::compareRoutePatterns(
+                        preg_replace('#(/\*+)*$#', '', $a),
+                        preg_replace('#(/\*+)*$#', '', $b), '/'))
                     return 1;
-                }
+
+                return 0;
             }
         );
     }
