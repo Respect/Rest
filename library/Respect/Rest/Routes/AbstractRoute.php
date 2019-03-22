@@ -217,7 +217,7 @@ abstract class AbstractRoute
         foreach ($this->routines as $routine) {
             if ($routine instanceof IgnorableFileExtension) {
                 $matchUri = preg_replace(
-                    '#(\.[\w\d-_.~\+]+)*$#',
+                    '#(\.[\w\d\-_.~\+]+)*$#',
                     '',
                     $request->uri
                 );
