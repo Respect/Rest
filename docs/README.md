@@ -222,7 +222,7 @@ large files or wait for streams to finish before serving them.
 ```php
 $r3->get('/images/*/hi-res', function($imageName) {
     header('Content-type: image/jpg');
-    return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
+    return fopen("/path/to/hi/images/{$imageName}.jpg", 'rb');
 });
 ```
 
@@ -292,7 +292,7 @@ We highly recommend that you use a strong validation library when using this. Co
 ```php
 $r3->get('/images/*/hi-res', function($imageName) {
     header('Content-type: image/jpg');
-    return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
+    return fopen("/path/to/hi/images/{$imageName}.jpg", 'rb');
 })->when(function($imageName) {
     /** Using Respect Validation alias to `V` */
     return V::alphanum(".")->length(5,155)
