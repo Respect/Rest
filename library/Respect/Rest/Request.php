@@ -214,6 +214,30 @@ class Request
     }
 
     /**
+     * Does a catch-like operation on an error based on previously
+     * declared instances from Router::exceptionRoute
+     *
+     * @param Error $e Any exception
+     *
+     * @return mixed A route forwarding or a silent null
+     */
+    protected function catchErrors($e)
+    {
+        foreach ($this->route->sideRoutes as $sideRoute) {
+            $errorClass = get_class($e);
+            if (
+                $errorClass      === $sideRoute->class
+                || $sideRoute->class === 'Error'
+                || $sideRoute->class === '\Error'
+            ) {
+                $sideRoute->exception = $e;
+
+                return $this->forward($sideRoute);
+            }
+        }
+    }
+
+    /**
      * Generates and returns the response from the current route
      *
      * @return string A response!
@@ -256,6 +280,14 @@ class Request
 
             //Returns whatever the exception routes returned
             return (string) $exceptionResponse;
+        } catch (\Error $e) {
+            //Tries to catch it using catchErrors()
+            if (!$errorResponse = $this->catchErrors($e)) {
+                throw $e;
+            }
+
+            //Returns whatever the exception routes returned
+            return (string) $errorResponse;
         }
     }
 
