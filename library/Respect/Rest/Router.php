@@ -62,6 +62,18 @@ class Router
     protected $virtualHost = '';
 
     /**
+     * @var Request|null The current request being dispatched
+     */
+    public ?Request $request = null;
+
+    /**
+     * Property for named route attributes (used by tests)
+     *
+     * @var mixed
+     */
+    public $allMembers;
+
+    /**
      * Compares two patterns and returns the first one according to
      * similarity or ocurrences of a subpattern
      *
@@ -359,7 +371,7 @@ class Router
      *
      * @return mixed Whatever the dispatched route returns
      */
-    public function dispatchRequest(Request $request = null)
+    public function dispatchRequest(?Request $request = null)
     {
         if ($this->isRoutelessDispatch($request)) {
             return $this->request;
@@ -485,7 +497,7 @@ class Router
      *
      * @return bool true if the request doesn't apply for routes
      */
-    public function isRoutelessDispatch(Request $request = null)
+    public function isRoutelessDispatch(?Request $request = null)
     {
         $this->isAutoDispatched = false;
 
@@ -541,7 +553,7 @@ class Router
      *
      * @return string the response string
      */
-    public function run(Request $request = null)
+    public function run(?Request $request = null)
     {
         $route = $this->dispatchRequest($request);
 

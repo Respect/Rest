@@ -2,13 +2,13 @@
 namespace Respect\Rest;
 
 use Exception;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 
 /** 
  * @covers Respect\Rest\Request 
  */
-class RequestTest extends PHPUnit_Framework_TestCase
+class RequestTest extends TestCase
 {
     /** 
      * @covers  Respect\Rest\Request::__construct
@@ -152,6 +152,12 @@ class RequestTest extends PHPUnit_Framework_TestCase
         );
         $request->params = array('dpi', 'price');
         $response = $request->response();
+
+        $this->assertEquals(
+            'Some Printers Response',
+            $response,
+            'Response should return the route target when using previously set path params'
+        );
     }
 
     /**
@@ -186,22 +192,14 @@ class RequestTest extends PHPUnit_Framework_TestCase
      * @dataProvider providerForUserImplementedForwards
      */
     public function testDeveloperCanForwardRoutesByReturningThemOnTheirImplementation(
-        $userImplementedRoute)
-    {
-        $request = new Request('GET', '/cupcakes');
-        $request->route = $userImplementedRoute;
-        $response = $request->response();
-        
-        $this->assertSame('Delicious Cupcake Internally Forwarded', $response);
-    }
-
-    public function providerForUserImplementedForwards()
+        $scenario)
     {
         $internallyForwardedRoute = $this->getMockForRoute(
             'GET', 
             '/candies/cupcakes', 
             'Delicious Cupcake Internally Forwarded'
         );
+
         $forwardWithTarget = $this->getMockForRoute(
             'GET', 
             '/cupcakes', 
@@ -209,19 +207,41 @@ class RequestTest extends PHPUnit_Framework_TestCase
                 return $internallyForwardedRoute;
             }
         );
+
         $forwardWithByRoutine = $this->getMockForRoute(
             'GET',
             '/cereals',
             'Nice Cereals'
         );
-        $byRoutine = $this->getMockForRoutine('ProxyableBy');
-        $byRoutine->expects($this->once())
-                  ->method('by')
-                  ->will($this->returnValue($internallyForwardedRoute));
-        $forwardWithByRoutine->appendRoutine($byRoutine);
+
+        switch ($scenario) {
+            case 'forwardWithTarget':
+                $userImplementedRoute = $forwardWithTarget;
+                break;
+            case 'forwardWithByRoutine':
+                $byRoutine = $this->getMockForRoutine('ProxyableBy');
+                $byRoutine->expects($this->once())
+                          ->method('by')
+                          ->will($this->returnValue($internallyForwardedRoute));
+                $forwardWithByRoutine->appendRoutine($byRoutine);
+                $userImplementedRoute = $forwardWithByRoutine;
+                break;
+            default:
+                $this->fail('Unknown provider scenario');
+        }
+
+        $request = new Request('GET', '/cupcakes');
+        $request->route = $userImplementedRoute;
+        $response = $request->response();
+        
+        $this->assertSame('Delicious Cupcake Internally Forwarded', $response);
+    }
+
+    public static function providerForUserImplementedForwards()
+    {
         return array(
-            array($forwardWithTarget),
-            array($forwardWithByRoutine)
+            array('forwardWithTarget'),
+            array('forwardWithByRoutine'),
         );
     }
 
@@ -285,7 +305,7 @@ class RequestTest extends PHPUnit_Framework_TestCase
      * @dataProvider providerForParamSyncedRoutines
      */
     public function testParamSyncedRoutinesShouldAllReferenceTheSameValuesByTheirNames(
-        $checkers, array $params)
+        $scenario, array $params)
     {
         $request = new Request('GET', '/version');
         $request->params = $params;
@@ -297,6 +317,105 @@ class RequestTest extends PHPUnit_Framework_TestCase
             'GET', 
             $params
         );
+
+        // Build checkers in the test context (so we can use $this->assert* inside closures)
+        $checkers = [];
+        switch ($scenario) {
+            case 'pureSynced':
+                $checkers = [
+                    function($majorVersion, $minorVersion, $patchVersion) {
+                        $this->assertCount(3, func_get_args());
+                        $this->assertSame(15, $majorVersion);
+                        $this->assertSame(10, $minorVersion);
+                        $this->assertSame(5, $patchVersion);
+                    },
+                    function($patchVersion, $minorVersion, $majorVersion) {
+                        $this->assertCount(3, func_get_args());
+                        $this->assertSame(15, $majorVersion);
+                        $this->assertSame(10, $minorVersion);
+                        $this->assertSame(5, $patchVersion);
+                    },
+                    function($majorVersion) {
+                        $this->assertCount(1, func_get_args());
+                        $this->assertSame(15, $majorVersion);
+                    },
+                    function() {
+                        $this->assertCount(0, func_get_args());
+                    },
+                ];
+                break;
+            case 'pureNulls':
+                $checkers = [
+                    function($majorVersion, $minorVersion, $patchVersion) {
+                        $this->assertCount(3, func_get_args());
+                        $this->assertNull($majorVersion);
+                        $this->assertNull($minorVersion);
+                        $this->assertNull($patchVersion);
+                    },
+                    function($patchVersion, $minorVersion, $majorVersion) {
+                        $this->assertCount(3, func_get_args());
+                        $this->assertNull($majorVersion);
+                        $this->assertNull($minorVersion);
+                        $this->assertNull($patchVersion);
+                    },
+                    function($patchVersion, $minorVersion, $majorVersion) {
+                        $this->assertCount(3, func_get_args());
+                        $this->assertNull($majorVersion);
+                        $this->assertNull($minorVersion);
+                        $this->assertNull($patchVersion);
+                    },
+                    function($majorVersion) {
+                        $this->assertCount(1, func_get_args());
+                        $this->assertNull($majorVersion);
+                    },
+                ];
+                break;
+            case 'pureDefaults':
+                $checkers = [
+                    function($majorVersion=15, $minorVersion=10, $patchVersion=5) {
+                        $this->assertCount(3, func_get_args());
+                        $this->assertSame(15, $majorVersion);
+                        $this->assertSame(10, $minorVersion);
+                        $this->assertSame(5, $patchVersion);
+                    },
+                    function($patchVersion=5, $minorVersion=10, $majorVersion=15) {
+                        $this->assertCount(3, func_get_args());
+                        $this->assertSame(15, $majorVersion);
+                        $this->assertSame(10, $minorVersion);
+                        $this->assertSame(5, $patchVersion);
+                    },
+                    function($majorVersion=15) {
+                        $this->assertCount(1, func_get_args());
+                        $this->assertSame(15, $majorVersion);
+                    },
+                    function() {
+                        $this->assertCount(0, func_get_args());
+                    },
+                ];
+                break;
+            case 'mixed':
+                $checkers = [
+                    function($majorVersion, $minorVersion, $patchVersion=5) {
+                        $this->assertCount(3, func_get_args());
+                        $this->assertSame(15, $majorVersion);
+                        $this->assertSame(10, $minorVersion);
+                        $this->assertSame(5, $patchVersion);
+                    },
+                    function($majorVersion, $minorVersion, $patchVersion) {
+                        $this->assertCount(3, func_get_args());
+                        $this->assertSame(15, $majorVersion);
+                        $this->assertSame(10, $minorVersion);
+                        $this->assertNull($patchVersion);
+                    },
+                    function() {
+                        $this->assertCount(0, func_get_args());
+                    },
+                ];
+                break;
+            default:
+                $this->fail('Unknown provider scenario');
+        }
+
         foreach ($checkers as $checker) {
             $route->appendRoutine($this->getMockForProxyableRoutine($route, 'By', $checker));
         }
@@ -308,106 +427,13 @@ class RequestTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('MySoftwareName', $response);
     }
 
-    public function providerForParamSyncedRoutines()
+    public static function providerForParamSyncedRoutines()
     {
-        $phpUnit = $this;
-        $params = array(15, 10, 5);
-
-        $pureSynced = array(
-            function($majorVersion, $minorVersion, $patchVersion) use($phpUnit) {
-                $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertSame(15, $majorVersion);
-                $phpUnit->assertSame(10, $minorVersion);
-                $phpUnit->assertSame(5, $patchVersion);
-            },
-            function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
-                $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertSame(15, $majorVersion);
-                $phpUnit->assertSame(10, $minorVersion);
-                $phpUnit->assertSame(5, $patchVersion);
-            },
-            function($majorVersion) use($phpUnit) {
-                $phpUnit->assertCount(1, func_get_args());
-                $phpUnit->assertSame(15, $majorVersion);
-            },
-            function() use($phpUnit) {
-                $phpUnit->assertCount(0, func_get_args());
-            },
-        );
-
-        $pureNulls = array(
-            function($majorVersion, $minorVersion, $patchVersion) use($phpUnit) {
-                $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertNull($majorVersion);
-                $phpUnit->assertNull($minorVersion);
-                $phpUnit->assertNull($patchVersion);
-            },
-            function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
-                $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertNull($majorVersion);
-                $phpUnit->assertNull($minorVersion);
-                $phpUnit->assertNull($patchVersion);
-            },
-            function($patchVersion, $minorVersion, $majorVersion) use($phpUnit) {
-                $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertNull($majorVersion);
-                $phpUnit->assertNull($minorVersion);
-                $phpUnit->assertNull($patchVersion);
-            },
-            function($majorVersion) use($phpUnit) {
-                $phpUnit->assertCount(1, func_get_args());
-                $phpUnit->assertNull($majorVersion);
-            },
-            function() use($phpUnit) {
-                $phpUnit->assertCount(0, func_get_args());
-            },
-        );
-
-        $pureDefaults = array(
-            function($majorVersion=15, $minorVersion=10, $patchVersion=5) use($phpUnit) {
-                $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertSame(15, $majorVersion);
-                $phpUnit->assertSame(10, $minorVersion);
-                $phpUnit->assertSame(5, $patchVersion);
-            },
-            function($patchVersion=5, $minorVersion=10, $majorVersion=15) use($phpUnit) {
-                $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertSame(15, $majorVersion);
-                $phpUnit->assertSame(10, $minorVersion);
-                $phpUnit->assertSame(5, $patchVersion);
-            },
-            function($majorVersion=15) use($phpUnit) {
-                $phpUnit->assertCount(1, func_get_args());
-                $phpUnit->assertSame(15, $majorVersion);
-            },
-            function() use($phpUnit) {
-                $phpUnit->assertCount(0, func_get_args());
-            },
-        );
-
-        $mixed = array(
-            function($majorVersion, $minorVersion, $patchVersion=5) use($phpUnit) {
-                $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertSame(15, $majorVersion);
-                $phpUnit->assertSame(10, $minorVersion);
-                $phpUnit->assertSame(5, $patchVersion);
-            },
-            function($majorVersion=15, $minorVersion, $patchVersion) use($phpUnit) {
-                $phpUnit->assertCount(3, func_get_args());
-                $phpUnit->assertSame(15, $majorVersion);
-                $phpUnit->assertSame(10, $minorVersion);
-                $phpUnit->assertNull($patchVersion);
-            },
-            function() use($phpUnit) {
-                $phpUnit->assertCount(0, func_get_args());
-            },
-        );
-
         return array(
-            array($pureSynced, array(15, 10, 5)),
-            array($pureNulls, array()),
-            array($pureDefaults, array()),
-            array($mixed, array(15, 10))
+            array('pureSynced', array(15, 10, 5)),
+            array('pureNulls', array()),
+            array('pureDefaults', array()),
+            array('mixed', array(15, 10))
         );
     }
 
@@ -450,11 +476,26 @@ class RequestTest extends PHPUnit_Framework_TestCase
 
         $constructorParams = array($method, $uri);
 
-        $request = $this->getMock(
-            'Respect\Rest\Request', 
-            $mockedMethods, 
-            $constructorParams
-        );
+        $builder = $this->getMockBuilder('Respect\\Rest\\Request')
+            ->setConstructorArgs($constructorParams);
+        if (!empty($mockedMethods)) {
+            if (method_exists($builder, 'onlyMethods')) {
+                try {
+                    $builder->onlyMethods($mockedMethods);
+                } catch (\PHPUnit\Framework\MockObject\CannotUseOnlyMethodsException $e) {
+                    if (method_exists($builder, 'addMethods')) {
+                        $builder->addMethods($mockedMethods);
+                    } elseif (method_exists($builder, 'setMethods')) {
+                        $builder->setMethods($mockedMethods);
+                    } else {
+                        throw $e;
+                    }
+                }
+            } elseif (method_exists($builder, 'setMethods')) {
+                $builder->setMethods($mockedMethods);
+            }
+        }
+        $request = $builder->getMock();
 
         if ($hasResponse) {
             $request->expects($this->once())

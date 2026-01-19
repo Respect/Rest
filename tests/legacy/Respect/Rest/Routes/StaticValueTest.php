@@ -4,9 +4,9 @@ namespace Respect\Rest\Routes;
 /**
  * @covers Respect\Rest\Routes\StaticValue
  */
-class StaticValueTest extends \PHPUnit_Framework_TestCase
+class StaticValueTest extends \PHPUnit\Framework\TestCase
 {
-    function setUp() 
+    function setUp(): void 
     {
         $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
         $_SERVER['REQUEST_URI'] = '/';

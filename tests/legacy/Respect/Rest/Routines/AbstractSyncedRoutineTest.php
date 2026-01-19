@@ -7,7 +7,7 @@ use Stubs\Routines\ByClassWithInvoke;
  * @covers Respect\Rest\Routines\ParamSynced
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class AbstractSyncedRoutineTest extends \PHPUnit_Framework_TestCase
+class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var AbstractSyncedRoutine
@@ -19,7 +19,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit_Framework_TestCase
      * This method is called before a test is executed.
      * @covers Respect\Rest\Routines\AbstractSyncedRoutine::getReflection
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->object = new By(function ($userId, $blogId) {
               return 'from AbstractSyncedRoutine implementation callback';
@@ -31,7 +31,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit_Framework_TestCase
      * Tears down the fixture, for example, closes a network connection.
      * This method is called after a test is executed.
      */
-    protected function tearDown()
+    protected function tearDown(): void
     {
         unset($this->object);
     }
@@ -58,7 +58,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit_Framework_TestCase
         $class    = 'Respect\Rest\Routines\AbstractSyncedRoutine';
         $callback = array('DateTime', 'createFromFormat');
         $stub     = $this->getMockBuilder($class)
-                         ->setMethods(array('getCallback'))
+                         ->onlyMethods(['getCallback'])
                          ->disableOriginalConstructor()
                          ->getMock();
         $stub->expects($this->any())
@@ -84,7 +84,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit_Framework_TestCase
         $class    = 'Respect\Rest\Routines\AbstractSyncedRoutine';
         $callback = function($name) { return 'Hello '.$name; };
         $stub     = $this->getMockBuilder($class)
-                         ->setMethods(array('getCallback'))
+                         ->onlyMethods(['getCallback'])
                          ->disableOriginalConstructor()
                          ->getMock();
         $stub->expects($this->any())
@@ -108,11 +108,11 @@ class AbstractSyncedRoutineTest extends \PHPUnit_Framework_TestCase
     public function  test_getParameters_with_callable_instance()
     {
         $stub     = new ByClassWithInvoke;
-        $this->assertInternalType('callable', $stub, 'Callable instance does not pass the is_callable test.');
+        $this->assertIsCallable($stub, 'Callable instance does not pass the is_callable test.');
         $class    = 'Respect\Rest\Routines\AbstractSyncedRoutine';
         $callback = function($name) { return 'Hello '.$name; };
         $routine  = $this->getMockBuilder($class)
-                         ->setMethods(array('getCallback'))
+                         ->onlyMethods(['getCallback'])
                          ->disableOriginalConstructor()
                          ->getMock();
         $routine->expects($this->any())

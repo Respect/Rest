@@ -6,7 +6,7 @@ use Respect\Rest\Router;
  * @covers Respect\Rest\Routes\AbstractRoute
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class AbstractRouteTest extends \PHPUnit_Framework_TestCase
+class AbstractRouteTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var AbstractRoute local instance
@@ -16,19 +16,19 @@ class AbstractRouteTest extends \PHPUnit_Framework_TestCase
     /**
      * Setting the stage for our unit tests.
      */
-    protected function setUp()
+    protected function setUp(): void
     {
     }
 
     /**
      * This is where we would clean up after testing, if necessary.
      */
-    protected function tearDown()
+    protected function tearDown(): void
     {
     }
 
 
-    function extensions_provider()
+    public static function extensions_provider()
     {
         return array(
             array('test.json',             'test'),
