@@ -1,15 +1,15 @@
 <?php
 namespace Respect\Rest;
 
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 /**
  * @covers Respect\Rest\Router
  */
-class RouterTest extends PHPUnit_Framework_TestCase
+class RouterTest extends TestCase
 {
     public static $status = 200;
 
-    public function setUp()
+    public function setUp(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['REQUEST_URI'] = '/';
@@ -17,19 +17,19 @@ class RouterTest extends PHPUnit_Framework_TestCase
 
     /**
      * @covers            Respect\Rest\Router::__call
-     * @expectedException InvalidArgumentException
      */
     public function testMagicConstructorWarnsIfNoSufficientParametersWerePassed()
     {
+        $this->expectException('InvalidArgumentException');
         $router = new Router;
         $router->thisIsInsufficientForMagicConstruction();
     }
     /**
      * @covers            Respect\Rest\Router::__call
-     * @expectedException InvalidArgumentException
      */
     public function testMagicConstructorWarnsIfNoSufficientParametersWerePassed2()
     {
+        $this->expectException('InvalidArgumentException');
         $router = new Router;
         $router->thisIsInsufficientForMagicConstruction('/magicians');
     }
@@ -99,7 +99,19 @@ class RouterTest extends PHPUnit_Framework_TestCase
     public function testMagicConstructorCanRouteToPreBuiltInstances()
     {
         $router = new Router;
-        $myInstance = $this->getMock('Respect\\Rest\\Routable', array('GET'));
+        $builder = $this->getMockBuilder('Respect\\Rest\\Routable')->disableOriginalConstructor();
+        try {
+            $builder->onlyMethods(['GET']);
+        } catch (\PHPUnit\Framework\MockObject\CannotUseOnlyMethodsException $e) {
+            if (method_exists($builder, 'addMethods')) {
+                $builder->addMethods(['GET']);
+            } elseif (method_exists($builder, 'setMethods')) {
+                $builder->setMethods(['GET']);
+            } else {
+                throw $e;
+            }
+        }
+        $myInstance = $builder->getMock();
         $instanceRoute = $router->get('/', $myInstance);
         $concreteInstanceRoute = $router->instanceRoute('GET', '/', $myInstance);
 
@@ -141,7 +153,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    public function provideForStaticRoutableValues()
+    public static function provideForStaticRoutableValues()
     {
         return array(
             array('Some Static Value', 'Strings should be possible to route statically'),
@@ -154,10 +166,10 @@ class RouterTest extends PHPUnit_Framework_TestCase
      * @covers            Respect\Rest\Router::__call
      * @covers            Respect\Rest\Router::staticRoute
      * @dataProvider      provideForNonStaticRoutableValues
-     * @expectedException InvalidArgumentException
      */
     public function testMagicConstructorCannotRouteSomeStaticValues($staticValue, $reason)
     {
+        $this->expectException(\InvalidArgumentException::class);
         $router = new Router;
         $nonStaticRoute = $router->get('/', $staticValue);
 
@@ -170,7 +182,7 @@ class RouterTest extends PHPUnit_Framework_TestCase
         );
     }
 
-    public function provideForNonStaticRoutableValues()
+    public static function provideForNonStaticRoutableValues()
     {
         return array(
             array('PDO', 'Strings that are class names should NOT be possible to route statically'),
@@ -186,7 +198,21 @@ class RouterTest extends PHPUnit_Framework_TestCase
     {
         $router = new Router;
         $className = 'GeneratedClass'.md5(rand());
-        $this->getMock('Respect\\Rest\\Routable', array('GET'), array(), $className);
+        $builder = $this->getMockBuilder('Respect\\Rest\\Routable')
+            ->setMockClassName($className)
+            ->disableOriginalConstructor();
+        try {
+            $builder->onlyMethods(['GET']);
+        } catch (\PHPUnit\Framework\MockObject\CannotUseOnlyMethodsException $e) {
+            if (method_exists($builder, 'addMethods')) {
+                $builder->addMethods(['GET']);
+            } elseif (method_exists($builder, 'setMethods')) {
+                $builder->setMethods(['GET']);
+            } else {
+                throw $e;
+            }
+        }
+        $builder->getMock();
         $classRoute = $router->get('/', $className);
         $concreteClassRoute = $router->classRoute('GET', '/', $className);
 
@@ -211,7 +237,21 @@ class RouterTest extends PHPUnit_Framework_TestCase
     {
         $router = new Router;
         $className = 'GeneratedClass'.md5(rand());
-        $this->getMock('Respect\\Rest\\Routable', array('GET'), array(), $className);
+        $builder = $this->getMockBuilder('Respect\\Rest\\Routable')
+            ->setMockClassName($className)
+            ->disableOriginalConstructor();
+        try {
+            $builder->onlyMethods(['GET']);
+        } catch (\PHPUnit\Framework\MockObject\CannotUseOnlyMethodsException $e) {
+            if (method_exists($builder, 'addMethods')) {
+                $builder->addMethods(['GET']);
+            } elseif (method_exists($builder, 'setMethods')) {
+                $builder->setMethods(['GET']);
+            } else {
+                throw $e;
+            }
+        }
+        $builder->getMock();
         $classRoute = $router->get('/', $className, array('some', 'constructor', 'params'));
         $concreteClassRoute = $router->classRoute('GET', '/', $className, array('some', 'constructor', 'params'));
 
@@ -408,7 +448,8 @@ class RouterTest extends PHPUnit_Framework_TestCase
         $router->allMembers = $router->any('/members', 'John, Carl');
         $response = (string) $router->dispatch('GET', '/members')->response();
 
-        $this->assertObjectHasAttribute('allMembers', $router, 'There must be an attribute set for that key');
+        $ref = new \ReflectionObject($router);
+        $this->assertTrue($ref->hasProperty('allMembers'), 'There must be an attribute set for that key');
 
         $this->assertEquals(
             'John, Carl',
@@ -494,9 +535,27 @@ class RouterTest extends PHPUnit_Framework_TestCase
             $this->markTestSkipped('XDebug is required for this test to run.');
         }
 
+        $headers = xdebug_get_headers();
+
+        // If checking Allow header, compare methods regardless of order
+        if (0 === strpos($expected, 'Allow:')) {
+            $expectedMethods = array_map('trim', explode(',', substr($expected, strlen('Allow:'))));
+            foreach ($headers as $h) {
+                if (0 === strpos($h, 'Allow:')) {
+                    $methods = array_map('trim', explode(',', substr($h, strlen('Allow:'))));
+                    sort($expectedMethods);
+                    sort($methods);
+                    $this->assertEquals($expectedMethods, $methods, $message);
+                    return;
+                }
+            }
+
+            $this->fail($message ?: "Allow header not found");
+        }
+
         $this->assertContains(
             $expected,
-            xdebug_get_headers(),
+            $headers,
             $message
         );
     }

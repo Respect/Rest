@@ -9,13 +9,15 @@ use Stubs\Routines\ByClassWithInvoke;
  * @covers Respect\Rest\Routines\By
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class ByTest extends \PHPUnit_Framework_TestCase
+class ByTest extends \PHPUnit\Framework\TestCase
 {
+    private By $object;
+
     /**
      * Sets up the fixture, for example, opens a network connection.
      * This method is called before a test is executed.
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->object = new By(function () {
               return 'from by callback';
@@ -26,7 +28,7 @@ class ByTest extends \PHPUnit_Framework_TestCase
      * Tears down the fixture, for example, closes a network connection.
      * This method is called after a test is executed.
      */
-    protected function tearDown()
+    protected function tearDown(): void
     {
         unset($this->object);
     }
@@ -89,11 +91,8 @@ class ByTest extends \PHPUnit_Framework_TestCase
             $expected = 'route',
             (string) $router->dispatch('GET', '/')
         );
-        $this->assertAttributeEquals(
-            $expected = true,
-            'invoked',
-            $routine,
-            'Routine was not invoked!'
-        );
+        $ref = new \ReflectionObject($routine);
+        $prop = $ref->getProperty('invoked');
+        $this->assertEquals(true, $prop->getValue($routine), 'Routine was not invoked!');
     }
 }

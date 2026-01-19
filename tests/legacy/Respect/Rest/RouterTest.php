@@ -38,9 +38,12 @@ namespace Respect\Rest {
      * @covers Respect\Rest\Routines\UserAgent
      * @covers Respect\Rest\Routines\When
      */
-    class NewRouterTest extends \PHPUnit_Framework_TestCase
+    class NewRouterTest extends \PHPUnit\Framework\TestCase
     {
-        function setUp()
+        private $expectedHeader;
+        private $router;
+
+        function setUp(): void
         {
             $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
             $_SERVER['REQUEST_URI'] = '/';
@@ -51,20 +54,20 @@ namespace Respect\Rest {
             $this->router->isAutoDispatched = false;
             $this->router->methodOverriding = false;
         }
-        public function tearDown()
+        public function tearDown(): void
         {
             global $header;
             $header = array();
         }
         function test_magic_call_should_throw_exception_with_just_one_arg()
         {
-            $this->setExpectedException('InvalidArgumentException');
+            $this->expectException('InvalidArgumentException');
             $this->router->thisIsAnInvalidMagicCallWithOnlyOneArg('foo');
         }
 
         function test_magic_call_should_throw_exception_with_zero_args()
         {
-            $this->setExpectedException('InvalidArgumentException');
+            $this->expectException('InvalidArgumentException');
             $this->router->thisIsAnInvalidMagicCallWithOnlyOneArg();
         }
 
@@ -294,7 +297,7 @@ namespace Respect\Rest {
                          ->acceptEncoding(array(
                             'deflate' => function($stream) use ($self, &$done) {
                                 $done = true;
-                                $self->assertInternalType('resource', $stream);
+                                $self->assertIsResource($stream);
                                 stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
                                 return $stream; //now deflated on demand
                             }
@@ -388,7 +391,7 @@ namespace Respect\Rest {
                 $args = func_get_args();
             });
             $r->dispatch('get', '/')->response();
-            $this->assertInternalType('array', $args[0]);
+            $this->assertIsArray($args[0]);
         }
 
         /**
@@ -478,8 +481,8 @@ namespace Respect\Rest {
             $this->router->dispatch('get', '/accept');
             $this->assertContains('Content-Type: foo/bar', $header);
             $this->assertContains('Content-Language: 13375p34|<', $header);
-            $this->assertRegExp('/Vary: negotiate,.*accept(?!-)/', implode("\n", $header));
-            $this->assertRegExp('/Vary: negotiate,.*accept-language/', implode("\n", $header));
+            $this->assertMatchesRegularExpression('/Vary: negotiate,.*accept(?!-)/', implode("\n", $header));
+            $this->assertMatchesRegularExpression('/Vary: negotiate,.*accept-language/', implode("\n", $header));
             $this->assertContains('Content-Location: /accept', $header);
             $this->assertContains('Expires: Thu, 01 Jan 1980 00:00:00 GMT', $header);
             $this->assertContains('Cache-Control: max-age=86400', $header);
@@ -492,7 +495,7 @@ namespace Respect\Rest {
                          ->accept(array('foo/bar' => function($d) {return $d;}));
             $this->router->dispatch('get', '/');
             $this->assertContains('Content-Type: foo/bar', $header);
-            $this->assertRegExp('/Vary: negotiate,.*accept(?!-)/', implode("\n", $header));
+            $this->assertMatchesRegularExpression('/Vary: negotiate,.*accept(?!-)/', implode("\n", $header));
         }
         function test_accept_content_language_header()
         {
@@ -502,7 +505,7 @@ namespace Respect\Rest {
                          ->acceptLanguage(array('13375p34|<' => function($d) {return $d;}));
             $this->router->dispatch('get', '/');
             $this->assertContains('Content-Language: 13375p34|<', $header);
-            $this->assertRegExp('/Vary: negotiate,.*accept-language/', implode("\n", $header));
+            $this->assertMatchesRegularExpression('/Vary: negotiate,.*accept-language/', implode("\n", $header));
         }
         /**
          * @dataProvider provider_content_type_extension
@@ -629,6 +632,7 @@ namespace Respect\Rest {
     if (!class_exists(__NAMESPACE__.'\\HeadTest')) {
         class HeadTest implements Routable
         {
+            private $expectedHeader;
             public function __construct($expectedHeader)
             {
                 $this->expectedHeader = $expectedHeader;

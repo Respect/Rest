@@ -8,14 +8,14 @@ use Respect\Rest\Request;
  * @covers Respect\Rest\Routines\AbstractCallbackMediator
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class AbstractCallbackMediatorTest extends \PHPUnit_Framework_TestCase
+class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var AbstractCallbackMediator
      */
     protected $neg;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $_SERVER['REQUEST_URI'] = '/';
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -26,7 +26,7 @@ class AbstractCallbackMediatorTest extends \PHPUnit_Framework_TestCase
         $this->neg->getMediated($a);
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         unset($this->neg);
     }
@@ -159,24 +159,20 @@ class AbstractCallbackMediatorTest extends \PHPUnit_Framework_TestCase
     /**
      * @covers Respect\Rest\Routines\AbstractCallbackMediator::mediate
      */
-    public function test_requested_exception(){
+    public function test_requested_exception(): void{
         $neg = new Negotiator();
-        $this->setExpectedException(
-            'UnexpectedValueException',
-            'Requests must be an array of 0 to many.'
-        );
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Requests must be an array of 0 to many.');
         $neg->getMediated('not an array');
     }
 
     /**
      * @covers Respect\Rest\Routines\AbstractCallbackMediator::mediate
      */
-    public function test_provisions_exception(){
+    public function test_provisions_exception(): void{
         $neg = new Negotiator();
-        $this->setExpectedException(
-            'UnexpectedValueException',
-            'Provisions must be an array of 0 to many.'
-        );
+        $this->expectException(\UnexpectedValueException::class);
+        $this->expectExceptionMessage('Provisions must be an array of 0 to many.');
         $neg->getMediated(array('a'=>'not an array'));
     }
 }

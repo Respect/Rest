@@ -168,7 +168,7 @@ abstract class AbstractRoute
 
         $params = preg_replace('#(?<!^)/? *$#', '', $params);
 
-        return rtrim($this->virtualHost, ' /').call_user_func_array('sprintf', $params);
+        return rtrim((string) $this->virtualHost, ' /').call_user_func_array('sprintf', $params);
     }
 
     /**

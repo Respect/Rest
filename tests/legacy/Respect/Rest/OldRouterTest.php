@@ -35,14 +35,14 @@ namespace Respect\Rest {
  * @covers Respect\Rest\Routines\UserAgent
  * @covers Respect\Rest\Routines\When
  */
-class OldRouterTest extends \PHPUnit_Framework_TestCase
+class OldRouterTest extends \PHPUnit\Framework\TestCase
 {
 
     protected $object;
     protected $result;
     protected $callback;
 
-    public function setUp()
+    public function setUp(): void
     {
 //        $this->markTestSkipped();
         $this->object = new Router;
@@ -54,28 +54,28 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
      */
     public function testInsufficientParams()
     {
+        $this->expectException('InvalidArgumentException');
         $this->object->invalid();
     }
 
     /**
-     * @expectedException InvalidArgumentException
      */
     public function testNotRoutableController()
     {
+        $this->expectException('InvalidArgumentException');
         $this->object->instanceRoute('ANY', '/', new \stdClass);
         $this->object->dispatch('get', '/')->response();
     }
 
     /**
-     * @expectedException InvalidArgumentException
      */
     public function testNotRoutableControllerByName()
     {
-        $this->object->classRoute('ANY', '/', '\stdClass');
+        $this->expectException('InvalidArgumentException');
+        $this->object->classRoute('ANY', '/', '\\stdClass');
         $this->object->dispatch('get', '/')->response();
     }
 
@@ -117,7 +117,7 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals($expectedParams, $this->result);
     }
 
-    public function providerForSingleRoutes()
+    public static function providerForSingleRoutes()
     {
         return array(
             array(
@@ -213,7 +213,7 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    public function providerForLargeParams()
+    public static function providerForLargeParams()
     {
         return array(
             array(
@@ -244,7 +244,7 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         );
     }
 
-    public function providerForSpecialChars()
+    public static function providerForSpecialChars()
     {
         return array(
             array(
@@ -596,9 +596,9 @@ class OldRouterTest extends \PHPUnit_Framework_TestCase
         $_SERVER['HTTP_ACCEPT_CHARSET'] = 'utf-8';
         $this->object->get('/users/*', function() {
                 return 'açaí';
-            })->acceptCharset(array('utf-8' => 'utf8_decode'));
+            })->acceptCharset(array('utf-8' => fn ($data) => mb_convert_encoding($data, 'ISO-8859-1', 'UTF-8')));
         $r = $this->object->dispatchRequest($request)->response();
-        $this->assertEquals(utf8_decode('açaí'), $r);
+        $this->assertEquals(mb_convert_encoding('açaí', 'ISO-8859-1', 'UTF-8'), $r);
     }
 
 

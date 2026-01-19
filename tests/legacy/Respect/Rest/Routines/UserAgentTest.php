@@ -6,7 +6,7 @@ use Respect\Rest\Request;
  * @covers Respect\Rest\Routines\UserAgent
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class UserAgentTest extends \PHPUnit_Framework_TestCase
+class UserAgentTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var UserAgent
@@ -17,7 +17,7 @@ class UserAgentTest extends \PHPUnit_Framework_TestCase
      * Sets up the fixture, for example, opens a network connection.
      * This method is called before a test is executed.
      */
-    protected function setUp()
+    protected function setUp(): void
     {
         $this->object = new UserAgent(array(
             'FIREFOX' => function (){},
@@ -30,7 +30,7 @@ class UserAgentTest extends \PHPUnit_Framework_TestCase
      * Tears down the fixture, for example, closes a network connection.
      * This method is called after a test is executed.
      */
-    protected function tearDown()
+    protected function tearDown(): void
     {
         unset($this->object);
     }

@@ -6,11 +6,11 @@ namespace Respect\Rest\Routines;
  * @covers Respect\Rest\Routines\AbstractCallbackList
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class AbstractCallbackListTest extends \PHPUnit_Framework_TestCase
+class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
 {
     protected $object;
 
-    protected function setUp()
+    protected function setUp(): void
     {
         $ar = array(
                 'a' => 'htmlentities',
@@ -23,7 +23,7 @@ class AbstractCallbackListTest extends \PHPUnit_Framework_TestCase
         $this->object = new FunkyAbstractCallbackList($ar);
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         unset($this->object);
     }
@@ -43,10 +43,10 @@ class AbstractCallbackListTest extends \PHPUnit_Framework_TestCase
      */
     public function testGetCallback()
     {
-        $this->assertInternalType('callable', $this->object->funkyGetCallback('a'));
-        $this->assertInternalType('callable', $this->object->funkyGetCallback('b'));
-        $this->assertInternalType('callable', $this->object->funkyGetCallback('c'));
-        $this->assertInternalType('callable', $this->object->funkyGetCallback('e'));
+        $this->assertIsCallable($this->object->funkyGetCallback('a'));
+        $this->assertIsCallable($this->object->funkyGetCallback('b'));
+        $this->assertIsCallable($this->object->funkyGetCallback('c'));
+        $this->assertIsCallable($this->object->funkyGetCallback('e'));
     }
     /**
      * @covers Respect\Rest\Routines\AbstractCallbackList::__construct

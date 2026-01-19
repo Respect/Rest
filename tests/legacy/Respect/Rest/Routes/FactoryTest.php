@@ -7,9 +7,9 @@ use \Respect\Rest\Router;
 /**
  * @covers Respect\Rest\Routes\Factory
  */
-class FactoryTest extends \PHPUnit_Framework_TestCase
+class FactoryTest extends \PHPUnit\Framework\TestCase
 {
-    function setUp() 
+    function setUp(): void 
     {
         $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
         $_SERVER['REQUEST_URI'] = '/';

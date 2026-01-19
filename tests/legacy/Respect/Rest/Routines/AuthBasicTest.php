@@ -7,7 +7,7 @@ namespace Respect\Rest\Routines {
  */
 use Respect\Rest\Router;
 
-class AuthBasicTest extends \PHPUnit_Framework_TestCase {
+class AuthBasicTest extends \PHPUnit\Framework\TestCase {
 
     private static $wantedParams;
     private $router;
@@ -17,7 +17,7 @@ class AuthBasicTest extends \PHPUnit_Framework_TestCase {
         $this->assertSame(self::$wantedParams, func_get_args(), 'wrong arguments were passed to the routine\'s callback');
     }
 
-    function setUp()
+    function setUp(): void
     {
         global $header;
         $header = array();
@@ -31,7 +31,7 @@ class AuthBasicTest extends \PHPUnit_Framework_TestCase {
         $this->router->methodOverriding = false;
     }
 
-    protected function tearDown()
+    protected function tearDown(): void
     {
         unset($_SERVER['PHP_AUTH_USER']);
         unset($_SERVER['PHP_AUTH_PW']);

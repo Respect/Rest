@@ -1,4 +1,4 @@
-/.couscous/
+.phpunit.result.cache
 composer.lock
 Makefile
 vendor/

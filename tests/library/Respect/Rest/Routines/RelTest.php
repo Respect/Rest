@@ -2,13 +2,13 @@
 namespace Respect\Rest\Routines;
 
 use Exception;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 
 /** 
  * @covers Respect\Rest\Routines\Rel 
  */
-class RelTest extends PHPUnit_Framework_TestCase
+class RelTest extends TestCase
 {
 	public function testSimpleTextRelationPassesThroughData()
 	{
@@ -32,7 +32,7 @@ class RelTest extends PHPUnit_Framework_TestCase
 			'The links array should contain the related link'
 		);
 
-		$this->assertContains(
+		$this->assertStringContainsString(
 			'/foo',
 			$response['links']['item'],
 			'The related link key should contain the specified rel value'
@@ -62,7 +62,7 @@ class RelTest extends PHPUnit_Framework_TestCase
 			'The links array should contain the related link'
 		);
 
-		$this->assertContains(
+		$this->assertStringContainsString(
 			'/foo',
 			$response['links']['item'],
 			'The related link key should contain the specified rel value'

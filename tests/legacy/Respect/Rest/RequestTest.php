@@ -5,9 +5,9 @@ namespace Respect\Rest;
 /**
  * @covers Respect\Rest\Request
  */
-class LegacyRequestTest extends \PHPUnit_Framework_TestCase
+class LegacyRequestTest extends \PHPUnit\Framework\TestCase
 {
-    function setUp() 
+    function setUp(): void 
     {
         $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
         $_SERVER['REQUEST_URI'] = '/';
