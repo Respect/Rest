@@ -2,12 +2,12 @@
     "name": "respect/rest",
     "description": "Thin controller for RESTful applications",
     "type": "library",
-    "homepage": "http://respect.li/",
-    "license": "BSD Style",
+    "homepage": "https://github.com/Respect",
+    "license": "BSD-3-Clause",
     "authors": [
         {
-            "name": "Alexandre Gaigalas",
-            "email": "alexandre@gaigalas.net"
+            "name": "Alexandre Gomes Gaigalas",
+            "email": "alganet@gmail.com"
         },
         {
             "name": "Respect/Data Contributors",
@@ -32,7 +32,7 @@
     },
     "extra": {
         "branch-alias": {
-            "dev-master": "0.6-dev"
+            "dev-master": "3.0-dev"
         }
     }
 }
