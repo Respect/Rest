@@ -105,21 +105,21 @@ class Request
         foreach ($this->route->routines as $routine) {
             if (!$routine instanceof ProxyableBy) {
                 continue;
-            } else {
-                $result = $this->routineCall(
-                    'by',
-                    $this->method,
-                    $routine,
-                    $this->params
-                );
-
-                //Routine returned an instance, let's forward it
-                if ($result instanceof AbstractRoute) {
-                    return $this->forward($result);
-                } elseif (false === $result) {
-                    return false;
-                }
             }
+            $result = $this->routineCall(
+                'by',
+                $this->method,
+                $routine,
+                $this->params
+            );
+
+            //Routine returned an instance, let's forward it
+            if ($result instanceof AbstractRoute) {
+                return $this->forward($result);
+            } elseif (false === $result) {
+                return false;
+            }
+
         }
     }
 
@@ -135,32 +135,29 @@ class Request
      */
     protected function processPosRoutines($response)
     {
-        $proxyResults = array();
-
-        foreach ($this->route->routines as $routine) {
+       foreach ($this->route->routines as $routine) {
             if ($routine instanceof ProxyableThrough) {
-                $proxyResults[] = $this->routineCall(
+                $proxyCallback = $this->routineCall(
                     'through',
                     $this->method,
                     $routine,
                     $this->params
                 );
-            }
-        }
 
-        //Some routine returned a callback as its result. Let's run
-        //these callbacks on our actual response.
-        //This is mainly used by accept() and similar ones.
-        foreach ($proxyResults as $proxyCallback) {
-            if (is_callable($proxyCallback)) {
-                $response = call_user_func_array(
-                    $proxyCallback,
-                    array($response)
-                );
-            }
-        }
+                //Some routine returned a callback as its result. Let's run
+                //these callbacks on our actual response.
+                //This is mainly used by accept() and similar ones.
 
-        return $response;
+                if (is_callable($proxyCallback)) {
+                    $response = call_user_func_array(
+                        $proxyCallback,
+                        array($response)
+                    );
+                }
+            }
+       }
+
+       return $response;
     }
 
     /**
