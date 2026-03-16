@@ -2,7 +2,7 @@
     "name": "respect/rest",
     "description": "Thin controller for RESTful applications",
     "type": "library",
-    "homepage": "https://github.com/Respect",
+    "homepage": "https://github.com/Respect/Rest",
     "license": "BSD-3-Clause",
     "authors": [
         {
@@ -10,25 +10,57 @@
             "email": "alganet@gmail.com"
         },
         {
-            "name": "Respect/Data Contributors",
-            "homepage": "https://github.com/Respect/Data/graphs/contributors"
+            "name": "Respect/Rest Contributors",
+            "homepage": "https://github.com/Respect/Rest/graphs/contributors"
         }
     ],
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    },
     "require": {
         "php": ">=8.5"
     },
     "require-dev": {
-        "phpunit/phpunit": "^10.0"
+        "phpstan/phpstan": "^2.0",
+        "phpunit/phpunit": "^12.5",
+        "respect/coding-standard": "^5.0",
+        "squizlabs/php_codesniffer": "^4.0"
     },
     "autoload": {
         "psr-4": {
-            "Respect\\": "library/Respect"
+            "Respect\\Rest\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
+            "Respect\\Rest\\": [
+                "tests/library/Respect/Rest/",
+                "tests/legacy/Respect/Rest/"
+            ],
+            "Respect\\Rest\\Routes\\": [
+                "tests/library/Respect/Rest/Routes/",
+                "tests/legacy/Respect/Rest/Routes/"
+            ],
+            "Respect\\Rest\\Routines\\": [
+                "tests/library/Respect/Rest/Routines/",
+                "tests/legacy/Respect/Rest/Routines/"
+            ],
             "Stubs\\": "tests/src/Stubs"
         }
+    },
+    "scripts": {
+        "coverage": "vendor/bin/phpunit --coverage-text",
+        "phpcs": "vendor/bin/phpcs",
+        "phpstan": "vendor/bin/phpstan analyze",
+        "phpunit": "vendor/bin/phpunit",
+        "qa": [
+            "@phpcs",
+            "@phpstan",
+            "@phpunit"
+        ]
     },
     "extra": {
         "branch-alias": {
