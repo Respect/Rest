@@ -128,12 +128,12 @@ class RequestTest extends TestCase
         $request->route = $this->getMockForRoute(
             'GET', 
             '/notebooks', 
-            array('Vaio', 'MacBook', 'ThinkPad')
+            ['Vaio', 'MacBook', 'ThinkPad']
         );
         $response = $request->response();
 
         $this->assertEquals(
-            array('Vaio', 'MacBook', 'ThinkPad'),
+            ['Vaio', 'MacBook', 'ThinkPad'],
             $response,
             'Response should have data returned from runTarget'
         );
@@ -150,9 +150,9 @@ class RequestTest extends TestCase
             '/printers', 
             'Some Printers Response', 
             'GET',
-            array('dpi', 'price')
+            ['dpi', 'price']
         );
-        $request->params = array('dpi', 'price');
+        $request->params = ['dpi', 'price'];
         $response = $request->response();
 
         $this->assertEquals(
@@ -241,10 +241,10 @@ class RequestTest extends TestCase
 
     public static function providerForUserImplementedForwards()
     {
-        return array(
-            array('forwardWithTarget'),
-            array('forwardWithByRoutine'),
-        );
+        return [
+            ['forwardWithTarget'],
+            ['forwardWithByRoutine'],
+        ];
     }
 
     /**
@@ -282,7 +282,7 @@ class RequestTest extends TestCase
             '/logs', 
             'user-deleted-something', // <-- Stub response, keep that in mind
             'GET', 
-            $expectedParams = array()
+            $expectedParams = []
         );
         $routine = $this->getMockForRoutine('ProxyableThrough');
         $routine->expects($this->once())
@@ -431,12 +431,12 @@ class RequestTest extends TestCase
 
     public static function providerForParamSyncedRoutines()
     {
-        return array(
-            array('pureSynced', array(15, 10, 5)),
-            array('pureNulls', array()),
-            array('pureDefaults', array()),
-            array('mixed', array(15, 10))
-        );
+        return [
+            ['pureSynced', [15, 10, 5]],
+            ['pureNulls', []],
+            ['pureDefaults', []],
+            ['mixed', [15, 10]]
+        ];
     }
 
     public function testConvertingToStringCallsResponse() {
@@ -448,7 +448,7 @@ class RequestTest extends TestCase
 
     protected function getMockForProxyableRoutine($route, $name, $implementation)
     {
-        $routine = $this->getMockForRoutine(array("Proxyable$name", "ParamSynced"));
+        $routine = $this->getMockForRoutine(["Proxyable$name", "ParamSynced"]);
         $reflection = new ReflectionFunction($implementation);
         $route->expects($this->any())
           ->method('getReflection')
@@ -460,7 +460,7 @@ class RequestTest extends TestCase
         $routine->expects($this->any())
           ->method(strtolower($name))
           ->willReturnCallback(function($request, $params) use ($implementation) {
-              return call_user_func_array($implementation, $params);
+              return $implementation(...$params);
           });
 
         return $routine;
@@ -468,14 +468,14 @@ class RequestTest extends TestCase
 
     protected function getMockForRequest($method, $uri, $response=null)
     {
-        $hasResponse = !is_null($response);
-        $mockedMethods = array();
+        $hasResponse = $response !== null;
+        $mockedMethods = [];
 
         if ($hasResponse) {
             $mockedMethods[] = 'response';
         }
 
-        $constructorParams = array($method, $uri);
+        $constructorParams = [$method, $uri];
 
         $builder = $this->getMockBuilder('Respect\\Rest\\Request')
             ->setConstructorArgs($constructorParams);
@@ -508,16 +508,16 @@ class RequestTest extends TestCase
     }
 
     protected function getMockForRoute($method, $pattern, $target = null, 
-        $targetMethod = 'GET', $targetParams = array())
+        $targetMethod = 'GET', $targetParams = [])
     {
-        $hasTarget = !is_null($target);
-        $mockedMethods = array();
+        $hasTarget = $target !== null;
+        $mockedMethods = [];
 
         if ($hasTarget) {
             $mockedMethods[] = 'runTarget';
         }
 
-        $constructorParams = array($method, $pattern);
+        $constructorParams = [$method, $pattern];
 
         $route = $this->getMockBuilder('Respect\Rest\Routes\AbstractRoute')
             ->setConstructorArgs($constructorParams)

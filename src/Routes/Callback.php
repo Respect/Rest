@@ -33,7 +33,7 @@ class Callback extends AbstractRoute
         $method,
         $pattern,
         $callback,
-        array $arguments = array()
+        array $arguments = []
     ) {
         $this->callback = $callback;
         $this->arguments = $arguments;
@@ -83,9 +83,6 @@ class Callback extends AbstractRoute
      */
     public function runTarget($method, &$params)
     {
-        return call_user_func_array(
-            $this->callback,
-            array_merge($params, $this->arguments)
-        );
+        return ($this->callback)(...array_merge($params, $this->arguments));
     }
 }

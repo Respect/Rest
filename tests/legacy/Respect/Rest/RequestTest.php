@@ -29,12 +29,12 @@ class LegacyRequestTest extends \PHPUnit\Framework\TestCase
         $request->route = new Routes\Callback('GET', '/', function($bar) {
             return 'ok';
         });
-        $args = array();
+        $args = [];
         $request->route->appendRoutine($routine = new Routines\By(function($foo, $bar, $baz) use (&$args){
             $args = func_get_args();
         }));
-        $dummy=array('bar');
+        $dummy=['bar'];
         $request->routineCall('by', 'GET', $routine, $dummy);
-        $this->assertEquals(array(null,'bar',null), $args);
+        $this->assertEquals([null,'bar',null], $args);
     }
 }

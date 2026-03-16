@@ -20,7 +20,7 @@ class ClassName extends AbstractRoute
     public $class = '';
 
     /** @var array Constructor params for the built instance */
-    public $constructorParams = array();
+    public $constructorParams = [];
 
     /** @var object The built class instance */
     protected $instance = null;
@@ -38,7 +38,7 @@ class ClassName extends AbstractRoute
         $method,
         $pattern,
         $class,
-        array $params = array()
+        array $params = []
     ) {
         $this->class = $class;
         $this->constructorParams = $params;
@@ -102,13 +102,10 @@ class ClassName extends AbstractRoute
      */
     public function runTarget($method, &$params)
     {
-        if (is_null($this->instance)) {
+        if ($this->instance === null) {
             $this->instance = $this->createInstance();
         }
 
-        return call_user_func_array(
-            array($this->instance, $method),
-            $params
-        );
+        return $this->instance->$method(...$params);
     }
 }

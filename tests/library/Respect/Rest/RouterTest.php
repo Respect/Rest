@@ -72,8 +72,8 @@ class RouterTest extends TestCase
     public function testMagicConstructorCanCreateCallbackRoutesWithExtraParams()
     {
         $router = new Router;
-        $callbackRoute = $router->get('/', $target = function() {}, array('extra'));
-        $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target, array('extra'));
+        $callbackRoute = $router->get('/', $target = function() {}, ['extra']);
+        $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target, ['extra']);
 
         $this->assertInstanceOf(
             'Respect\\Rest\\Routes\\Callback',
@@ -147,11 +147,11 @@ class RouterTest extends TestCase
 
     public static function provideForStaticRoutableValues()
     {
-        return array(
-            array('Some Static Value', 'Strings should be possible to route statically'),
-            array(array('Some', 'Other', 'Routable', 'Value'), 'Arrays should be possible to route statically'),
-            array(10, 'Integers and scalars should be possible to route statically')
-        );
+        return [
+            ['Some Static Value', 'Strings should be possible to route statically'],
+            [['Some', 'Other', 'Routable', 'Value'], 'Arrays should be possible to route statically'],
+            [10, 'Integers and scalars should be possible to route statically']
+        ];
     }
 
     /**
@@ -176,10 +176,10 @@ class RouterTest extends TestCase
 
     public static function provideForNonStaticRoutableValues()
     {
-        return array(
-            array('PDO', 'Strings that are class names should NOT be possible to route statically'),
-            array('Traversable', 'Strings that are interface names should NOT be possible to route statically')
-        );
+        return [
+            ['PDO', 'Strings that are class names should NOT be possible to route statically'],
+            ['Traversable', 'Strings that are interface names should NOT be possible to route statically']
+        ];
     }
 
     /**
@@ -214,8 +214,8 @@ class RouterTest extends TestCase
     {
         $router = new Router;
         $className = StubRoutable::class;
-        $classRoute = $router->get('/', $className, array('some', 'constructor', 'params'));
-        $concreteClassRoute = $router->classRoute('GET', '/', $className, array('some', 'constructor', 'params'));
+        $classRoute = $router->get('/', $className, ['some', 'constructor', 'params']);
+        $concreteClassRoute = $router->classRoute('GET', '/', $className, ['some', 'constructor', 'params']);
 
         $this->assertInstanceOf(
             'Respect\\Rest\\Routes\\ClassName',
@@ -224,7 +224,7 @@ class RouterTest extends TestCase
         );
 
         $this->assertEquals(
-            array('some', 'constructor', 'params'),
+            ['some', 'constructor', 'params'],
             $classRoute->constructorParams,
             'The constructor params should be available on the instance of Routes\ClassName'
         );
@@ -245,8 +245,8 @@ class RouterTest extends TestCase
         $router = new Router;
         eval('class MockRoutable implements Respect\Rest\Routable{ public function GET() {} }');
         eval('class FactoryClass { public static function factoryMethod() { return new MockRoutable(); } }');
-        $factoryRoute = $router->get('/', 'FactoryClass', array('FactoryClass', 'factoryMethod'));
-        $concreteFactoryRoute = $router->factoryRoute('GET', '/', 'FactoryClass', array('FactoryClass', 'factoryMethod'));
+        $factoryRoute = $router->get('/', 'FactoryClass', ['FactoryClass', 'factoryMethod']);
+        $concreteFactoryRoute = $router->factoryRoute('GET', '/', 'FactoryClass', ['FactoryClass', 'factoryMethod']);
 
         $this->assertInstanceOf(
             'Respect\\Rest\\Routes\\Factory',

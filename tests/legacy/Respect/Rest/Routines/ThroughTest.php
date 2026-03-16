@@ -40,7 +40,7 @@ class ThroughTest extends \PHPUnit\Framework\TestCase
     public function testThrough()
     {
         $request = @new Request();
-        $params = array();
+        $params = [];
         $alias = &$this->object;
         $this->assertEquals('from through callback',
                 $alias->through($request, $params));

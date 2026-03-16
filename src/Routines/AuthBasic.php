@@ -25,14 +25,12 @@ class AuthBasic extends AbstractRoutine implements ProxyableBy
         $callbackResponse = false;
 
         if (isset($_SERVER['HTTP_AUTHORIZATION'])) {
-            $callbackResponse = call_user_func_array(
-                $this->callback,
-                array_merge(explode(':', base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6))), $params)
+            $callbackResponse = ($this->callback)(
+                ...array_merge(explode(':', base64_decode(substr($_SERVER['HTTP_AUTHORIZATION'], 6))), $params)
             );
         } elseif (isset($_SERVER['PHP_AUTH_USER'])) {
-            $callbackResponse = call_user_func_array(
-                $this->callback,
-                array_merge(array($_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']), $params)
+            $callbackResponse = ($this->callback)(
+                ...array_merge([$_SERVER['PHP_AUTH_USER'], $_SERVER['PHP_AUTH_PW']], $params)
             );
         }
 
@@ -40,7 +38,7 @@ class AuthBasic extends AbstractRoutine implements ProxyableBy
             header('HTTP/1.1 401');
             header("WWW-Authenticate: Basic realm=\"{$this->realm}\"");
 
-            return call_user_func($this->callback, null, null);
+            return ($this->callback)(null, null);
         }
 
         return $callbackResponse;

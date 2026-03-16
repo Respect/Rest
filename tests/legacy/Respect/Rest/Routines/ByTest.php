@@ -39,7 +39,7 @@ class ByTest extends \PHPUnit\Framework\TestCase
     public function test_by_with_an_anonymous_function()
     {
         $request = new Request();
-        $params  = array();
+        $params  = [];
         $routine = new By(function() { return 'from by callback'; });
         $this->assertEquals('from by callback', $routine->by($request, $params));
     }

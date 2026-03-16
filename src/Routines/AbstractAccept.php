@@ -26,11 +26,11 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
         $this->request_uri = $request->uri;
 
         if (!isset($_SERVER[static::ACCEPT_HEADER])) {
-            return array();
+            return [];
         }
         $acceptHeader = $_SERVER[static::ACCEPT_HEADER];
         $acceptParts = explode(',', $acceptHeader);
-        $acceptList = array();
+        $acceptList = [];
         foreach ($acceptParts as $k => &$acceptPart) {
             $parts = explode(';q=', trim($acceptPart));
             $provided = array_shift($parts);
@@ -51,11 +51,11 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
         $this->negotiated[$request] = $this->getCallback($provided);
         if (false === strpos($provided, '.')) {
             $header_type = preg_replace(
-                array(
+                [
                     '/(^.*)(?=\w*$)/U', // select namespace to strip
                     '/(?!^)([A-Z]+)/',   // select camels to add -
-                ),
-                array('', '-$1'),
+                ],
+                ['', '-$1'],
                 get_class($this)
             );
 

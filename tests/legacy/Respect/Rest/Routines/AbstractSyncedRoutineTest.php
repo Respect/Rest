@@ -56,7 +56,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
     public function test_getParameters_with_an_array()
     {
         $class    = 'Respect\Rest\Routines\AbstractSyncedRoutine';
-        $callback = array('DateTime', 'createFromFormat');
+        $callback = ['DateTime', 'createFromFormat'];
         $stub     = $this->getMockBuilder($class)
                          ->onlyMethods(['getCallback'])
                          ->disableOriginalConstructor()

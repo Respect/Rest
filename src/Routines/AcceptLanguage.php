@@ -26,7 +26,7 @@ class AcceptLanguage extends AbstractAccept
             return false;
         }
 
-        list($providedA,) = explode('-', $provided);
+        [$providedA] = explode('-', $provided);
 
         if ($requested === $providedA) {
             return $providedA;

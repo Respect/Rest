@@ -14,10 +14,10 @@ class RelTest extends TestCase
 	{
 		$router = new \Respect\Rest\Router;
 		$router->get('/', function() {
-			return array();
-		})->rel(array(
+			return [];
+		})->rel([
 			'item' => '/foo'
-		));
+		]);
 		$response = $router->dispatch('GET', '/')->response();
 
 		$this->assertArrayHasKey(
@@ -42,12 +42,12 @@ class RelTest extends TestCase
 	{
 		$router = new \Respect\Rest\Router;
 		$router->get('/', function() {
-			return array('foo');
-		})->rel(array(
+			return ['foo'];
+		})->rel([
 			'item' => function ($data) {
 				return "/".$data[0];
 			}
-		));
+		]);
 		$response = $router->dispatch('GET', '/')->response();
 		
 		$this->assertArrayHasKey(
@@ -73,10 +73,10 @@ class RelTest extends TestCase
 	{
 		$router = new \Respect\Rest\Router;
 		$router->get('/', function() {
-			return array();
-		})->rel(array(
-			'item' => array('/foo', '/bar')
-		));
+			return [];
+		})->rel([
+			'item' => ['/foo', '/bar']
+		]);
 		$response = $router->dispatch('GET', '/')->response();
 
 		$this->assertCount(
@@ -101,12 +101,12 @@ class RelTest extends TestCase
 	{
 		$router = new \Respect\Rest\Router;
 		$router->get('/', function() {
-			return array();
-		})->rel(array(
-			'item' => array('/foo', '/bar')
-		))->rel(array(
-			'item' => array('/baz')
-		));
+			return [];
+		})->rel([
+			'item' => ['/foo', '/bar']
+		])->rel([
+			'item' => ['/baz']
+		]);
 		$response = $router->dispatch('GET', '/')->response();
 
 		$this->assertCount(

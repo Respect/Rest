@@ -41,9 +41,9 @@ class LegacyWhenTest extends \PHPUnit\Framework\TestCase
     public function testWhen()
     {
         global $header;
-        $header = array();
+        $header = [];
         $request = @new Request();
-        $params = array();
+        $params = [];
         $alias = &$this->object;
 
         $this->assertTrue($alias->when($request, $params));
@@ -101,5 +101,5 @@ namespace Respect\Rest {
 }
 
 namespace {
-    $header=array();
+    $header=[];
 }

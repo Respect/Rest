@@ -20,8 +20,8 @@ class Accept extends AbstractAccept
         }
 
         if (false !== strpos($requested, '/')) {
-            list($requestedA, $requestedB) = explode('/', $requested);
-            list($providedA,) = explode('/', $provided);
+            [$requestedA, $requestedB] = explode('/', $requested);
+            [$providedA] = explode('/', $provided);
 
             if ($providedA === $requestedA && $requestedB === '*') {
                 return $providedA;

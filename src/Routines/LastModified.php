@@ -20,7 +20,7 @@ class LastModified extends AbstractRoutine implements ProxyableBy, Unique
         }
 
         $ifModifiedSince = new DateTime($_SERVER['IF_MODIFIED_SINCE']);
-        $lastModifiedOn = call_user_func($this->callback, $params);
+        $lastModifiedOn = ($this->callback)($params);
 
         header('Last-Modified: '.$lastModifiedOn->format(DateTime::RFC2822));
         if ($lastModifiedOn <= $ifModifiedSince) {

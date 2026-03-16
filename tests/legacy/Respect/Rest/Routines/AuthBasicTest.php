@@ -20,7 +20,7 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
     function setUp(): void
     {
         global $header;
-        $header = array();
+        $header = [];
         $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
         $_SERVER['REQUEST_URI'] = '/';
         $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -48,7 +48,7 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
         $pass = 'Doe';
         $param1 = 'abc';
         $param2 = 'def';
-        self::$wantedParams = array($user, $pass, $param1, $param2);
+        self::$wantedParams = [$user, $pass, $param1, $param2];
 
 
         $_SERVER['PHP_AUTH_USER'] = $user;
@@ -56,15 +56,15 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
         unset($_SERVER['HTTP_AUTHORIZATION']);
 
         // to be able to run assertions in callback, I'm using a method here instead of a closure
-        $routine = new AuthBasic('auth realm', array($this, 'shunt_wantedParams'));
-        $routine->by(new \Respect\Rest\Request('GET', "/$param1/$param2"), array($param1, $param2));
+        $routine = new AuthBasic('auth realm', [$this, 'shunt_wantedParams']);
+        $routine->by(new \Respect\Rest\Request('GET', "/$param1/$param2"), [$param1, $param2]);
 
         unset($_SERVER['PHP_AUTH_USER']);
         unset($_SERVER['PHP_AUTH_PW']);
         $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode($user . ':' . $pass);
 
-        $routine = new AuthBasic('auth realm', array($this, 'shunt_wantedParams'));
-        $routine->by(new \Respect\Rest\Request('GET', "/$param1/$param2"), array($param1, $param2));
+        $routine = new AuthBasic('auth realm', [$this, 'shunt_wantedParams']);
+        $routine->by(new \Respect\Rest\Request('GET', "/$param1/$param2"), [$param1, $param2]);
     }
 
     /*
@@ -240,5 +240,5 @@ namespace Respect\Rest {
 }
 
 namespace {
-    $header=array();
+    $header=[];
 }

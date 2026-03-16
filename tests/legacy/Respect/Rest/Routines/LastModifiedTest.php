@@ -20,7 +20,7 @@ class LastModifiedTest extends \PHPUnit\Framework\TestCase
     protected function setUp(): void
     {
         global $header;
-        $header = array();
+        $header = [];
         unset($_SERVER['IF_MODIFIED_SINCE']);
         $this->object = new LastModified(function () {
                 return new \DateTime('2011-11-11 11:11:12');
@@ -44,7 +44,7 @@ class LastModifiedTest extends \PHPUnit\Framework\TestCase
     {
         global $header;
         $request = @new Request();
-        $params = array();
+        $params = [];
         $alias = &$this->object;
         $this->assertTrue($alias->by($request, $params));
         $this->assertCount(0, $header);
@@ -90,5 +90,5 @@ namespace Respect\Rest {
 }
 
 namespace {
-    $header=array();
+    $header=[];
 }

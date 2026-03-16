@@ -22,6 +22,6 @@ class Exception extends Callback
 
     public function runTarget($method, &$params)
     {
-        return call_user_func($this->callback, $this->exception);
+        return ($this->callback)($this->exception);
     }
 }

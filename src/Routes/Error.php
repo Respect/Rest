@@ -11,7 +11,7 @@ namespace Respect\Rest\Routes;
 class Error extends Callback
 {
     public $callback;
-    public $errors = array();
+    public $errors = [];
 
     public function __construct($callback)
     {
@@ -20,6 +20,6 @@ class Error extends Callback
 
     public function runTarget($method, &$params)
     {
-        return call_user_func($this->callback, $this->errors);
+        return ($this->callback)($this->errors);
     }
 }

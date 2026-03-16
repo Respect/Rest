@@ -14,12 +14,12 @@ use Respect\Rest\Request;
 /** Handles content type content negotiation */
 class ContentType extends AbstractCallbackMediator implements ProxyableBy, Unique
 {
-    protected $contentMap = array();
+    protected $contentMap = [];
     protected $negotiated = null;
 
     protected function identifyRequested(Request $request, $params)
     {
-        return isset($_SERVER['CONTENT_TYPE']) ? array($_SERVER['CONTENT_TYPE']) : array();
+        return isset($_SERVER['CONTENT_TYPE']) ? [$_SERVER['CONTENT_TYPE']] : [];
     }
     protected function considerProvisions($requested)
     {
@@ -38,7 +38,7 @@ class ContentType extends AbstractCallbackMediator implements ProxyableBy, Uniqu
     public function by(Request $request, $params)
     {
         if (false !== $this->negotiated) {
-            return call_user_func($this->negotiated[$request]);
+            return ($this->negotiated[$request])();
         }
     }
 }

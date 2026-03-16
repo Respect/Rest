@@ -12,13 +12,13 @@ class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
 
     protected function setUp(): void
     {
-        $ar = array(
+        $ar = [
                 'a' => 'htmlentities',
                 'b' => function () { return true; },
                 'c' => 'strpos',
                 'd' => 'this is invalid',
                 'e' => 'is_numeric',
-        );
+        ];
 
         $this->object = new FunkyAbstractCallbackList($ar);
     }
@@ -33,10 +33,10 @@ class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
      */
     public function testExecuteCallback()
     {
-        $this->assertEquals('&lt;p&gt;&lt;/p&gt;',$this->object->funkyExecuteCallback('a',array('<p></p>')));
-        $this->assertTrue($this->object->funkyExecuteCallback('b', array()));
-        $this->assertFalse($this->object->funkyExecuteCallback('c', array('d','abc')));
-        $this->assertTrue($this->object->funkyExecuteCallback('e', array(4)));
+        $this->assertEquals('&lt;p&gt;&lt;/p&gt;',$this->object->funkyExecuteCallback('a',['<p></p>']));
+        $this->assertTrue($this->object->funkyExecuteCallback('b', []));
+        $this->assertFalse($this->object->funkyExecuteCallback('c', ['d','abc']));
+        $this->assertTrue($this->object->funkyExecuteCallback('e', [4]));
     }
     /**
      * @covers Respect\Rest\Routines\AbstractCallbackList::getCallback

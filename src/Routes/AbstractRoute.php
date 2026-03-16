@@ -75,12 +75,12 @@ abstract class AbstractRoute
      * @var array A list of routines appended to this route
      * @see Respect\Rest\Routines\AbstractRoutine
      */
-    public $routines = array();
+    public $routines = [];
     /**
      * @var array A list of side routes to be used
      * @see Respect\Rest\Routes\AbstractRoute
      */
-    public $sideRoutes = array();
+    public $sideRoutes = [];
 
     /** @var array A virtualhost applied to this route (deprecated) */
     public $virtualHost = null;
@@ -109,7 +109,7 @@ abstract class AbstractRoute
         $this->pattern = $pattern;
         $this->method = strtoupper($method);
 
-        list($this->regexForMatch, $this->regexForReplace)
+        [$this->regexForMatch, $this->regexForReplace]
             = $this->createRegexPatterns($pattern);
     }
 
@@ -168,7 +168,7 @@ abstract class AbstractRoute
 
         $params = preg_replace('#(?<!^)/? *$#', '', $params);
 
-        return rtrim((string) $this->virtualHost, ' /').call_user_func_array('sprintf', $params);
+        return rtrim((string) $this->virtualHost, ' /').sprintf(...$params);
     }
 
     /**
@@ -182,7 +182,7 @@ abstract class AbstractRoute
      *
      * @return bool always true \,,/
      */
-    public function matchRoutines(Request $request, $params = array())
+    public function matchRoutines(Request $request, $params = [])
     {
         foreach ($this->routines as $routine) {
             if ($routine instanceof ProxyableWhen
@@ -209,9 +209,9 @@ abstract class AbstractRoute
      *
      * @return bool as true as xkcd (always true)
      */
-    public function match(Request $request, &$params = array())
+    public function match(Request $request, &$params = [])
     {
-        $params = array();
+        $params = [];
         $matchUri = $request->uri;
 
         foreach ($this->routines as $routine) {
@@ -239,7 +239,7 @@ abstract class AbstractRoute
         } elseif (
             false !== stripos($this->pattern, '/**') && !isset($params[0])
         ) {
-            $params[] = array(); // callback expects a parameter give it
+            $params[] = []; // callback expects a parameter give it
         }
 
         return true;
@@ -274,7 +274,7 @@ abstract class AbstractRoute
         $matchPattern = $this->fixOptionalParams($matchPattern);
         $matchRegex = "#^{$matchPattern}{$extra}$#";
 
-        return array($matchRegex, $replacePattern);
+        return [$matchRegex, $replacePattern];
     }
 
     /**

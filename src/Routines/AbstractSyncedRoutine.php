@@ -35,7 +35,7 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
             return $this->getReflection()->getParameters();
         }
 
-        return array();
+        return [];
     }
 
     /**
@@ -55,7 +55,7 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
             return $routineInstance();
         }
 
-        return call_user_func_array($callback, $params);
+        return $callback(...$params);
     }
 
     /**

@@ -18,7 +18,7 @@ use ArrayObject;
 class AbstractCallbackList extends ArrayObject implements Routinable
 {
     /** filters out non callable from the list, step copy to new storage */
-    public function __construct(array $list = array())
+    public function __construct(array $list = [])
     {
         $this->setFlags(self::ARRAY_AS_PROPS);
 
@@ -80,6 +80,6 @@ class AbstractCallbackList extends ArrayObject implements Routinable
 
     protected function executeCallback($key, $params)
     {
-        return call_user_func_array($this->$key, $params);
+        return ($this->$key)(...$params);
     }
 }
