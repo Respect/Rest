@@ -1,10 +1,6 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest;
 
@@ -13,32 +9,24 @@ use Psr\Http\Message\ServerRequestInterface;
 use ReflectionFunctionAbstract;
 use ReflectionParameter;
 use Respect\Rest\Routes\AbstractRoute;
-use Respect\Rest\Routines\Routinable;
+use Respect\Rest\Routines\ParamSynced;
 use Respect\Rest\Routines\ProxyableBy;
 use Respect\Rest\Routines\ProxyableThrough;
-use Respect\Rest\Routines\ParamSynced;
+use Respect\Rest\Routines\Routinable;
 
-/** A routed HTTP Request — internal routing context wrapping a PSR-7 server request */
+/** Internal routing context wrapping a PSR-7 server request */
 class Request
 {
-    /** @var string The HTTP method (commonly GET, POST, PUT, DELETE, HEAD) */
-    public $method = '';
+    public string $method = '';
 
-    /**
-     * @var array A numeric array containing valid URL parameters. For a route
-     * path like /users/*, a Request for /users/alganet should have an array
-     * equivalent to ['alganet']
-     */
-    public $params = [];
+    /** @var array<int, mixed> */
+    public array $params = [];
 
-    /** @var AbstractRoute A route matched for this request */
-    public $route;
+    public ?AbstractRoute $route = null;
 
-    /** @var string The called URI */
-    public $uri = '';
+    public string $uri = '';
 
-    /** @var ServerRequestInterface The wrapped PSR-7 server request */
-    public $serverRequest;
+    public ServerRequestInterface $serverRequest;
 
     public function __construct(ServerRequestInterface $serverRequest)
     {
@@ -47,7 +35,7 @@ class Request
         $this->method = strtoupper($serverRequest->getMethod());
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         $response = $this->response();
 
@@ -58,20 +46,23 @@ class Request
         return (string) $response->getBody();
     }
 
-    protected function prepareForErrorForwards()
+    /** @return callable|null The previous error handler, or null */
+    protected function prepareForErrorForwards(): mixed
     {
-       foreach ($this->route->sideRoutes as $sideRoute) {
+        foreach ($this->route->sideRoutes as $sideRoute) {
             if ($sideRoute instanceof Routes\Error) {
                 return set_error_handler(
-                    function () use ($sideRoute) {
+                    static function () use ($sideRoute): void {
                         $sideRoute->errors[] = func_get_args();
                     }
                 );
             }
         }
+
+        return null;
     }
 
-    protected function processPreRoutines()
+    protected function processPreRoutines(): mixed
     {
         foreach ($this->route->routines as $routine) {
             if (!$routine instanceof ProxyableBy) {
@@ -87,10 +78,14 @@ class Request
 
             if ($result instanceof AbstractRoute) {
                 return $this->forward($result);
-            } elseif (false === $result) {
+            }
+
+            if (false === $result) {
                 return false;
             }
         }
+
+        return null;
     }
 
     /**
@@ -121,9 +116,9 @@ class Request
         return $response;
     }
 
-    protected function forwardErrors($errorHandler)
+    protected function forwardErrors(mixed $errorHandler): ?ResponseInterface
     {
-        if (isset($errorHandler)) {
+        if ($errorHandler !== null) {
             if (!$errorHandler) {
                 restore_error_handler();
             } else {
@@ -136,14 +131,20 @@ class Request
                 return $this->forward($sideRoute);
             }
         }
+
+        return null;
     }
 
-    protected function catchExceptions($e)
+    protected function catchExceptions(\Throwable $e): ?ResponseInterface
     {
         foreach ($this->route->sideRoutes as $sideRoute) {
+            if (!$sideRoute instanceof Routes\Exception) {
+                continue;
+            }
+
             $exceptionClass = get_class($e);
             if (
-                $exceptionClass      === $sideRoute->class
+                $exceptionClass === $sideRoute->class
                 || $sideRoute->class === 'Exception'
                 || $sideRoute->class === '\Exception'
             ) {
@@ -152,6 +153,8 @@ class Request
                 return $this->forward($sideRoute);
             }
         }
+
+        return null;
     }
 
     /** Generates the PSR-7 response from the current route */
@@ -185,30 +188,25 @@ class Request
             $errorResponse = $this->forwardErrors($errorHandler);
 
             if ($errorResponse !== null) {
-                if ($errorResponse instanceof ResponseInterface) {
-                    return $errorResponse;
-                }
-                return $this->route->wrapResponse($errorResponse);
+                return $errorResponse;
             }
 
             return $this->route->wrapResponse($processedResult);
         } catch (\Exception $e) {
-            if (!$exceptionResponse = $this->catchExceptions($e)) {
+            $exceptionResponse = $this->catchExceptions($e);
+            if ($exceptionResponse === null) {
                 throw $e;
             }
 
-            if ($exceptionResponse instanceof ResponseInterface) {
-                return $exceptionResponse;
-            }
-
-            return $this->route->wrapResponse($exceptionResponse);
+            return $exceptionResponse;
         }
     }
 
-    public function routineCall($type, $method, Routinable $routine, &$params)
+    /** @param array<int, mixed> $params */
+    public function routineCall(string $type, string $method, Routinable $routine, array &$params): mixed
     {
         $reflection = $this->route->getReflection(
-            $method == 'HEAD' ? 'GET' : $method
+            $method === 'HEAD' ? 'GET' : $method
         );
 
         $callbackParameters = [];
@@ -228,11 +226,12 @@ class Request
         return $routine->{$type}($this, $callbackParameters);
     }
 
+    /** @param array<int, mixed> $params */
     protected function extractRouteParam(
         ReflectionFunctionAbstract $callback,
         ReflectionParameter $routeParam,
-        &$params
-    ) {
+        array &$params,
+    ): mixed {
         foreach ($callback->getParameters() as $callbackParamReflection) {
             if (
                 $callbackParamReflection->getName() === $routeParam->getName()
@@ -249,7 +248,7 @@ class Request
         return null;
     }
 
-    public function forward(AbstractRoute $route)
+    public function forward(AbstractRoute $route): ?ResponseInterface
     {
         $this->route = $route;
 
