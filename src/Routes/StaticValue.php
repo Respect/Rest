@@ -6,6 +6,7 @@ namespace Respect\Rest\Routes;
 
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
+use Respect\Rest\Request;
 
 class StaticValue extends AbstractRoute
 {
@@ -24,7 +25,7 @@ class StaticValue extends AbstractRoute
         return $this->reflection;
     }
 
-    public function runTarget(string $method, array &$params): mixed
+    public function runTarget(string $method, array &$params, Request $request): mixed
     {
         return $this->returnValue();
     }

@@ -6,6 +6,7 @@ namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
 use ReflectionFunctionAbstract;
+use Respect\Rest\Request;
 use ReflectionMethod;
 use Respect\Rest\Routable;
 
@@ -34,12 +35,18 @@ class Instance extends AbstractRoute
         return $this->reflection;
     }
 
-    public function runTarget(string $method, array &$params): mixed
+    public function runTarget(string $method, array &$params, Request $request): mixed
     {
         if (!$this->instance instanceof Routable) {
             throw new InvalidArgumentException(
                 'Route target must be an instance of Respect\Rest\Routable'
             );
+        }
+
+        $reflection = $this->getReflection($method);
+        if ($reflection !== null) {
+            $args = $this->resolveCallbackArguments($reflection, $params, $request);
+            return $this->instance->$method(...$args);
         }
 
         return $this->instance->$method(...$params);

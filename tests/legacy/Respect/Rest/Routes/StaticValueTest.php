@@ -1,17 +1,14 @@
 <?php
 namespace Respect\Rest\Routes;
 
+use Nyholm\Psr7\ServerRequest;
+use Respect\Rest\Request;
+
 /**
  * @covers Respect\Rest\Routes\StaticValue
  */
 class StaticValueTest extends \PHPUnit\Framework\TestCase
 {
-    function setUp(): void 
-    {
-        $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
-        $_SERVER['REQUEST_URI'] = '/';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-    }
     /**
      * @covers Respect\Rest\Routes\StaticValue::getReflection
      */
@@ -27,7 +24,8 @@ class StaticValueTest extends \PHPUnit\Framework\TestCase
     function test_runTarget_returns_value()
     {
         $route = new StaticValue('any', '/', ['foo']);
-        $p=[''];
-        $this->assertEquals(['foo'], $route->runTarget('get', $p));
+        $p = [''];
+        $request = new Request(new ServerRequest('GET', '/'));
+        $this->assertEquals(['foo'], $route->runTarget('get', $p, $request));
     }
 }
