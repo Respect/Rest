@@ -194,11 +194,15 @@ class Router
 
     public function dispatch(ServerRequestInterface $serverRequest): Request
     {
-        return $this->dispatchRequest(new Request($serverRequest));
+        $request = new Request($serverRequest);
+        $request->responseFactory = $this->responseFactory;
+
+        return $this->dispatchRequest($request);
     }
 
     public function dispatchRequest(Request $request): Request
     {
+        $request->responseFactory ??= $this->responseFactory;
         $this->isRoutelessDispatch($request);
 
         if ($this->request->route === null) {

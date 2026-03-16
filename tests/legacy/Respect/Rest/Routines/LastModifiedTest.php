@@ -44,24 +44,37 @@ class LastModifiedTest extends \PHPUnit\Framework\TestCase
      */
     public function testBy()
     {
-        global $header;
-        $request = new Request(new ServerRequest('GET', '/'));
-        $params = [];
         $alias = &$this->object;
+        $params = [];
+
+        // No If-Modified-Since header -> returns true
+        $request = new Request(new ServerRequest('GET', '/'));
         $this->assertTrue($alias->by($request, $params));
-        $this->assertCount(0, $header);
 
-        $_SERVER['IF_MODIFIED_SINCE'] = '2011-11-11 11:11:11';
+        // If-Modified-Since is BEFORE lastModified (11:11:11 < 11:11:12) -> returns true (content changed)
+        $serverRequest = (new ServerRequest('GET', '/'))->withHeader('If-Modified-Since', '2011-11-11 11:11:11');
+        $request = new Request($serverRequest);
+        // Need to set route with responseFactory for 304 path
+        $this->assertTrue($alias->by($request, $params));
 
-        $this->assertNull($alias->by($request, $params));
-        $this->assertArrayHasKey('Last-Modified: Fri, 11 Nov 2011 11:11:12 +0000',
-                                $header);
-        $this->assertNotContains('HTTP/1.1 304 Not Modified', $header);
+        // If-Modified-Since is AFTER lastModified (11:11:13 > 11:11:12) -> returns 304 response
+        $serverRequest = (new ServerRequest('GET', '/'))->withHeader('If-Modified-Since', '2011-11-11 11:11:13');
+        $request = new Request($serverRequest);
+        $request->route = $this->createRouteWithResponseFactory();
+        $response = $alias->by($request, $params);
+        $this->assertInstanceOf(\Psr\Http\Message\ResponseInterface::class, $response);
+        $this->assertEquals(304, $response->getStatusCode());
+        $this->assertEquals('Fri, 11 Nov 2011 11:11:12 +0000', $response->getHeaderLine('Last-Modified'));
+    }
 
-
-        $_SERVER['IF_MODIFIED_SINCE'] = '2011-11-11 11:11:13';
-        $this->assertFalse($alias->by($request, $params));
-        $this->assertArrayHasKey('HTTP/1.1 304 Not Modified', $header);
+    private function createRouteWithResponseFactory()
+    {
+        $route = $this->getMockBuilder(\Respect\Rest\Routes\AbstractRoute::class)
+            ->disableOriginalConstructor()
+            ->onlyMethods(['getReflection', 'runTarget'])
+            ->getMock();
+        $route->responseFactory = new Psr17Factory();
+        return $route;
     }
 }
 

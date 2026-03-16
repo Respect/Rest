@@ -1,10 +1,6 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
@@ -14,31 +10,38 @@ use Respect\Rest\Request;
 /** Handles content type content negotiation */
 class ContentType extends AbstractCallbackMediator implements ProxyableBy, Unique
 {
-    protected $contentMap = [];
-    protected $negotiated = null;
+    protected array $contentMap = [];
+    protected SplObjectStorage|false|null $negotiated = null;
 
-    protected function identifyRequested(Request $request, $params)
+    protected function identifyRequested(Request $request, array $params): array
     {
-        return isset($_SERVER['CONTENT_TYPE']) ? [$_SERVER['CONTENT_TYPE']] : [];
+        $contentType = $request->serverRequest->getHeaderLine('Content-Type');
+
+        return $contentType !== '' ? [$contentType] : [];
     }
-    protected function considerProvisions($requested)
+
+    protected function considerProvisions(string $requested): array
     {
         return $this->getKeys();
     }
-    protected function notifyApproved($requested, $provided, Request $request, $params)
+
+    protected function notifyApproved(string $requested, string $provided, Request $request, array $params): void
     {
         $this->negotiated = new SplObjectStorage();
         $this->negotiated[$request] = $this->getCallback($provided);
     }
-    protected function notifyDeclined($requested, $provided, Request $request, $params)
+
+    protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
     {
         $this->negotiated = false;
     }
 
-    public function by(Request $request, $params)
+    public function by(Request $request, array $params): mixed
     {
         if (false !== $this->negotiated) {
             return ($this->negotiated[$request])();
         }
+
+        return null;
     }
 }

@@ -1,10 +1,6 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
@@ -13,12 +9,14 @@ use InvalidArgumentException;
 /** Base class for callback routines */
 abstract class AbstractRoutine implements Routinable
 {
-    protected $callback;
+    protected mixed $callback;
 
-    public function __construct($callback)
+    public function __construct(mixed $callback)
     {
         if (is_string($callback) && class_exists($callback) && method_exists($callback, '__invoke')) {
-            return $this->callback = $callback;
+            $this->callback = $callback;
+
+            return;
         }
 
         if (!is_callable($callback)) {
@@ -28,7 +26,7 @@ abstract class AbstractRoutine implements Routinable
         $this->callback = $callback;
     }
 
-    protected function getCallback()
+    protected function getCallback(): mixed
     {
         return $this->callback;
     }

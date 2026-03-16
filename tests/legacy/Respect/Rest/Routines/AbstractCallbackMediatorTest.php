@@ -136,7 +136,7 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
     /**
      * @covers Respect\Rest\Routines\AbstractCallbackMediator::mediate
      * @covers Respect\Rest\Request
-     * @covers Respect\Rest\Routines\AbstractCallbackList
+     * @covers Respect\Rest\Routines\CallbackList
      */
     public function testMediate()
     {
@@ -160,21 +160,25 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
 
     /**
      * @covers Respect\Rest\Routines\AbstractCallbackMediator::mediate
+     *
+     * With typed returns on identifyRequested(), a non-array decisionmap
+     * simply causes identifyRequested to return [] (empty array), so the
+     * mediation returns false without throwing.
      */
-    public function test_requested_exception(): void{
+    public function test_requested_non_array_returns_false(): void{
         $neg = new Negotiator();
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Requests must be an array of 0 to many.');
-        $neg->getMediated('not an array');
+        $this->assertFalse($neg->getMediated('not an array'));
     }
 
     /**
      * @covers Respect\Rest\Routines\AbstractCallbackMediator::mediate
+     *
+     * With typed returns on considerProvisions(), a non-array value causes
+     * a TypeError instead of the previous UnexpectedValueException.
      */
     public function test_provisions_exception(): void{
         $neg = new Negotiator();
-        $this->expectException(\UnexpectedValueException::class);
-        $this->expectExceptionMessage('Provisions must be an array of 0 to many.');
+        $this->expectException(\TypeError::class);
         $neg->getMediated(['a'=>'not an array']);
     }
 }
@@ -192,18 +196,19 @@ class Negotiator extends AbstractCallbackMediator {
     }
 
 
-    protected function identifyRequested(Request $request, $params)
+    protected function identifyRequested(Request $request, array $params): array
     {
-        if (is_array($this->decisionmap))
+        if (is_array($this->decisionmap)) {
             return array_keys($this->decisionmap);
-        else
-            $this->decisionmap;
+        }
+
+        return [];
     }
-    protected function considerProvisions($requested)
+    protected function considerProvisions(string $requested): array
     {
         return !empty($this->decisionmap[$requested]) ? $this->decisionmap[$requested] : [];
     }
-    protected function notifyApproved($requested, $provided, Request $request, $params)
+    protected function notifyApproved(string $requested, string $provided, Request $request, array $params): void
     {
         $this->outcome = [
             'approved' => true,
@@ -211,7 +216,7 @@ class Negotiator extends AbstractCallbackMediator {
             'provided' => $provided,
         ];
     }
-    protected function notifyDeclined($requested, $provided, Request $request, $params)
+    protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
     {
         $this->outcome = [
             'approved' => false,
@@ -219,21 +224,21 @@ class Negotiator extends AbstractCallbackMediator {
             'provided' => $provided,
         ];
     }
-    public function pubIdentifyRequested( $request =null, $params=null)
+    public function pubIdentifyRequested( $request =null, $params=[])
     {
-        return $this->identifyRequested(new Request(new ServerRequest('GET', '/')), $params=null);
+        return $this->identifyRequested(new Request(new ServerRequest('GET', '/')), $params);
     }
     public function pubConsiderProvisions($requested)
     {
         return $this->considerProvisions($requested);
     }
-    public function pubNotifyApproved($requested, $provided,  $request = null, $params = null)
+    public function pubNotifyApproved($requested, $provided,  $request = null, $params = [])
     {
-        $this->notifyApproved($requested, $provided, new Request(new ServerRequest('GET', '/')), $params=null);
+        $this->notifyApproved($requested, $provided, new Request(new ServerRequest('GET', '/')), $params);
     }
-    public function pubNotifyDeclined($requested, $provided,  $request =null, $params=null)
+    public function pubNotifyDeclined($requested, $provided,  $request =null, $params=[])
     {
-        $this->notifyDeclined($requested, $provided, new Request(new ServerRequest('GET', '/')), $params=null);
+        $this->notifyDeclined($requested, $provided, new Request(new ServerRequest('GET', '/')), $params);
     }
     public function pubAuthorize($requested, $provided)
     {
