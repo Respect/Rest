@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest\Routines;
 
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Respect\Rest\Request;
 /**
  * @covers Respect\Rest\Routines\UserAgent
@@ -38,7 +40,7 @@ class UserAgentTest extends \PHPUnit\Framework\TestCase
 
     public function testThrough()
     {
-        $request = @new Request();
+        $request = new Request(new ServerRequest('GET', '/'));
         $params = [];
         $alias = &$this->object;
 
@@ -53,7 +55,7 @@ class UserAgentTest extends \PHPUnit\Framework\TestCase
     }
     public function testThroughInvalid()
     {
-        $request = @new Request();
+        $request = new Request(new ServerRequest('GET', '/'));
         $params = [];
         $alias = &$this->object;
         $_SERVER['HTTP_USER_AGENT'] = 'CHROME';

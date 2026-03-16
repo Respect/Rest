@@ -2,6 +2,7 @@
 namespace Respect\Rest;
 
 use Exception;
+use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
@@ -20,15 +21,15 @@ class RequestTest extends TestCase
         $_SERVER['REQUEST_URI'] = '/users';
         $_SERVER['REQUEST_METHOD'] = 'GET';
 
-        $request = new Request;
+        $request = new Request(new ServerRequest('GET', '/users'));
 
         $this->assertEquals(
-            '/users', 
-            $request->uri, 
+            '/users',
+            $request->uri,
             'Should inherit the path from $_SERVER'
         );
         $this->assertEquals(
-            'GET', 
+            'GET',
             $request->method,
             'Should inherit the method from $_SERVER'
         );
@@ -44,7 +45,7 @@ class RequestTest extends TestCase
         $_SERVER['REQUEST_URI'] = '/documents';
         $_SERVER['REQUEST_METHOD'] = 'NOTPATCH';
 
-        $request = new Request('PATCH');
+        $request = new Request(new ServerRequest('PATCH', '/documents'));
 
         $this->assertNotEquals(
             'NOTPATCH', 
@@ -66,7 +67,7 @@ class RequestTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['REQUEST_URI'] = '/videos';
 
-        $request = new Request(null, '/images');
+        $request = new Request(new ServerRequest('POST', '/images'));
 
         $this->assertNotEquals(
             '/videos', 
@@ -88,16 +89,16 @@ class RequestTest extends TestCase
     {
         $_SERVER['REQUEST_URI'] = 'http://google.com/search?q=foo';
 
-        $request = new Request('GET');
+        $request = new Request(new ServerRequest('GET', 'http://google.com/search?q=foo'));
 
         $this->assertNotEquals(
-            'http://google.com/search?q=foo', 
+            'http://google.com/search?q=foo',
             $request->uri,
             'Absolute URI should not be on path' //See TODO below
         );
 
         $this->assertEquals(
-            '/search', 
+            '/search',
             $request->uri,
             'Path should be extracted from absolute URI'
         );
@@ -232,7 +233,7 @@ class RequestTest extends TestCase
                 $this->fail('Unknown provider scenario');
         }
 
-        $request = new Request('GET', '/cupcakes');
+        $request = new Request(new ServerRequest('GET', '/cupcakes'));
         $request->route = $userImplementedRoute;
         $response = $request->response();
         
@@ -252,7 +253,7 @@ class RequestTest extends TestCase
      */
     public function testDeveloperCanAbortRequestReturningFalseOnByRoutine()
     {
-        $request = new Request('GET', '/protected-area');
+        $request = new Request(new ServerRequest('GET', '/protected-area'));
         $route = $this->getMockForRoute('GET', '/protected-area', 'Protected Content!!!');
         $routine = $this->getMockForRoutine('ProxyableBy');
         $routine->expects($this->once())
@@ -276,7 +277,7 @@ class RequestTest extends TestCase
      */
     public function testDeveloperCanReturnCallablesToProcessOutputAfterTargetRuns()
     {
-        $request = new Request('GET', '/logs');
+        $request = new Request(new ServerRequest('GET', '/logs'));
         $route = $this->getMockForRoute(
             'GET', 
             '/logs', 
@@ -309,7 +310,7 @@ class RequestTest extends TestCase
     public function testParamSyncedRoutinesShouldAllReferenceTheSameValuesByTheirNames(
         $scenario, array $params)
     {
-        $request = new Request('GET', '/version');
+        $request = new Request(new ServerRequest('GET', '/version'));
         $request->params = $params;
 
         $route = $this->getMockForRoute(
@@ -475,7 +476,7 @@ class RequestTest extends TestCase
             $mockedMethods[] = 'response';
         }
 
-        $constructorParams = [$method, $uri];
+        $constructorParams = [new ServerRequest($method, $uri)];
 
         $builder = $this->getMockBuilder('Respect\\Rest\\Request')
             ->setConstructorArgs($constructorParams);

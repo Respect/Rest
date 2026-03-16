@@ -2,6 +2,8 @@
 namespace Respect\Rest\Routines;
 
 use Exception;
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 
@@ -12,13 +14,13 @@ class RelTest extends TestCase
 {
 	public function testSimpleTextRelationPassesThroughData()
 	{
-		$router = new \Respect\Rest\Router;
+		$router = new \Respect\Rest\Router(new Psr17Factory());
 		$router->get('/', function() {
 			return [];
 		})->rel([
 			'item' => '/foo'
 		]);
-		$response = $router->dispatch('GET', '/')->response();
+		$response = $router->dispatch(new ServerRequest('GET', '/'))->response();
 
 		$this->assertArrayHasKey(
 			'links',
@@ -40,7 +42,7 @@ class RelTest extends TestCase
 	}
 	public function testSimpleCallbackRelationPassesThroughData()
 	{
-		$router = new \Respect\Rest\Router;
+		$router = new \Respect\Rest\Router(new Psr17Factory());
 		$router->get('/', function() {
 			return ['foo'];
 		})->rel([
@@ -48,7 +50,7 @@ class RelTest extends TestCase
 				return "/".$data[0];
 			}
 		]);
-		$response = $router->dispatch('GET', '/')->response();
+		$response = $router->dispatch(new ServerRequest('GET', '/'))->response();
 		
 		$this->assertArrayHasKey(
 			'links',
@@ -71,13 +73,13 @@ class RelTest extends TestCase
 
 	public function testMultipleTextRelationPassesThroughData()
 	{
-		$router = new \Respect\Rest\Router;
+		$router = new \Respect\Rest\Router(new Psr17Factory());
 		$router->get('/', function() {
 			return [];
 		})->rel([
 			'item' => ['/foo', '/bar']
 		]);
-		$response = $router->dispatch('GET', '/')->response();
+		$response = $router->dispatch(new ServerRequest('GET', '/'))->response();
 
 		$this->assertCount(
 			2,
@@ -99,7 +101,7 @@ class RelTest extends TestCase
 	}
 	public function testNonUniqueMultipleTextRelationPassesThroughData()
 	{
-		$router = new \Respect\Rest\Router;
+		$router = new \Respect\Rest\Router(new Psr17Factory());
 		$router->get('/', function() {
 			return [];
 		})->rel([
@@ -107,7 +109,7 @@ class RelTest extends TestCase
 		])->rel([
 			'item' => ['/baz']
 		]);
-		$response = $router->dispatch('GET', '/')->response();
+		$response = $router->dispatch(new ServerRequest('GET', '/'))->response();
 
 		$this->assertCount(
 			3,

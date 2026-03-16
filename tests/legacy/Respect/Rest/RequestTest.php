@@ -2,6 +2,9 @@
 
 namespace Respect\Rest;
 
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
+
 /**
  * @covers Respect\Rest\Request
  */
@@ -16,7 +19,7 @@ class LegacyRequestTest extends \PHPUnit\Framework\TestCase
 
     function test_casting_to_string_returns_response()
     {
-        $request = new Request;
+        $request = new Request(new ServerRequest('GET', '/'));
         $request->route = new Routes\Callback('GET', '/', function() {
             return 'ok';
         });
@@ -25,7 +28,7 @@ class LegacyRequestTest extends \PHPUnit\Framework\TestCase
 
     function test_unsynced_param_comes_as_null()
     {
-        $request = new Request;
+        $request = new Request(new ServerRequest('GET', '/'));
         $request->route = new Routes\Callback('GET', '/', function($bar) {
             return 'ok';
         });

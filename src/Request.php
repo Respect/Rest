@@ -8,6 +8,7 @@
 
 namespace Respect\Rest;
 
+use Psr\Http\Message\ServerRequestInterface;
 use ReflectionFunctionAbstract;
 use ReflectionParameter;
 use Respect\Rest\Routes\AbstractRoute;
@@ -16,7 +17,7 @@ use Respect\Rest\Routines\ProxyableBy;
 use Respect\Rest\Routines\ProxyableThrough;
 use Respect\Rest\Routines\ParamSynced;
 
-/** A routed HTTP Request */
+/** A routed HTTP Request — internal routing context wrapping a PSR-7 server request */
 class Request
 {
     /** @var string The HTTP method (commonly GET, POST, PUT, DELETE, HEAD) */
@@ -35,28 +36,14 @@ class Request
     /** @var string The called URI */
     public $uri = '';
 
-    /**
-     * @param string $method The HTTP method
-     * @param string $uri    The called URI
-     */
-    public function __construct($method = null, $uri = null)
+    /** @var ServerRequestInterface The wrapped PSR-7 server request */
+    public $serverRequest;
+
+    public function __construct(ServerRequestInterface $serverRequest)
     {
-        //Tries to infer request variables only if null
-        if ($method === null) {
-            $method = isset($_SERVER['REQUEST_METHOD'])
-                ? $_SERVER['REQUEST_METHOD']
-                : 'GET';
-        }
-
-        if ($uri === null) {
-            $uri = isset($_SERVER['REQUEST_URI'])
-                ? $_SERVER['REQUEST_URI']
-                : '/';
-        }
-
-        $uri = parse_url($uri, PHP_URL_PATH);
-        $this->uri = rtrim($uri, ' /');       //We always ignore the last /
-        $this->method = strtoupper($method);  //normalizing the HTTP method
+        $this->serverRequest = $serverRequest;
+        $this->uri = rtrim(rawurldecode($serverRequest->getUri()->getPath()), ' /');
+        $this->method = strtoupper($serverRequest->getMethod());
     }
 
     /**
