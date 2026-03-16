@@ -23,7 +23,7 @@ class WhenTest extends TestCase
 		})->when(function () {
 			return false;
 		});
-		$response = $router->dispatch(new ServerRequest('GET', '/'))->response();
+		$response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response()->getBody();
 
 		$this->assertEquals(
 			'Oh yeah!',
@@ -48,7 +48,7 @@ class WhenTest extends TestCase
 			$phpUnit->assertEquals('alganet', $speakerName);
 			return strlen($speakerName) >= 3;
 		});
-		$response = $router->dispatch(new ServerRequest('GET', '/speakers/alganet'))->response();
+		$response = (string) $router->dispatch(new ServerRequest('GET', '/speakers/alganet'))->response()->getBody();
 
 		$this->assertEquals(
 			'Hello alganet',

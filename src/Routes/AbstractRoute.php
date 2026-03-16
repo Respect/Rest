@@ -1,110 +1,100 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
 use ReflectionClass;
+use ReflectionFunctionAbstract;
+use Respect\Rest\Stream;
 use Respect\Rest\Request;
-use Respect\Rest\Routines\Routinable;
-use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\IgnorableFileExtension;
+use Respect\Rest\Routines\ProxyableWhen;
+use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\Unique;
 
 /**
  * Base class for all Routes
  *
- * @method \Respect\Rest\Routes\AbstractRoute abstractAccept()
- * @method \Respect\Rest\Routes\AbstractRoute abstractRoutine()
- * @method \Respect\Rest\Routes\AbstractRoute abstractSyncedRoutine()
- * @method \Respect\Rest\Routes\AbstractRoute acceptCharset()
- * @method \Respect\Rest\Routes\AbstractRoute acceptEncoding()
- * @method \Respect\Rest\Routes\AbstractRoute acceptLanguage()
- * @method \Respect\Rest\Routes\AbstractRoute accept()
- * @method \Respect\Rest\Routes\AbstractRoute authBasic()
- * @method \Respect\Rest\Routes\AbstractRoute by()
- * @method \Respect\Rest\Routes\AbstractRoute contentType()
- * @method \Respect\Rest\Routes\AbstractRoute ignorableFileExtension()
- * @method \Respect\Rest\Routes\AbstractRoute lastModified()
- * @method \Respect\Rest\Routes\AbstractRoute paramSynced()
- * @method \Respect\Rest\Routes\AbstractRoute proxyableBy()
- * @method \Respect\Rest\Routes\AbstractRoute proxyableThrough()
- * @method \Respect\Rest\Routes\AbstractRoute proxyableWhen()
- * @method \Respect\Rest\Routes\AbstractRoute routinable()
- * @method \Respect\Rest\Routes\AbstractRoute through()
- * @method \Respect\Rest\Routes\AbstractRoute unique()
- * @method \Respect\Rest\Routes\AbstractRoute userAgent()
- * @method \Respect\Rest\Routes\AbstractRoute when()
- * ...
+ * @method self accept(mixed ...$args)
+ * @method self acceptCharset(mixed ...$args)
+ * @method self acceptEncoding(mixed ...$args)
+ * @method self acceptLanguage(mixed ...$args)
+ * @method self authBasic(mixed ...$args)
+ * @method self by(mixed ...$args)
+ * @method self contentType(mixed ...$args)
+ * @method self lastModified(mixed ...$args)
+ * @method self through(mixed ...$args)
+ * @method self userAgent(mixed ...$args)
+ * @method self when(mixed ...$args)
  */
 abstract class AbstractRoute
 {
-    /** @const string Identifier for catch-all parameters in a route path */
-    const CATCHALL_IDENTIFIER = '/**';
-    /** @const string Identifier for normal parameters in a route path */
-    const PARAM_IDENTIFIER = '/*';
-    /** @const string Quoted version of the normal parameter identifier */
-    const QUOTED_PARAM_IDENTIFIER = '/\*';
-    /** @const string A regular expression that cathes from a / to the end */
-    const REGEX_CATCHALL = '(/.*)?';
-    /** @const string A regular expression that cathes one parameter */
-    const REGEX_SINGLE_PARAM = '/([^/]+)';
-    /** @const string A regular expression that cathes one ending parameter */
-    const REGEX_ENDING_PARAM = '#/\(\[\^/\]\+\)#';
-    /** @const string A regular expression that cathes one optional parameter */
-    const REGEX_OPTIONAL_PARAM = '(?:/([^/]+))?';
-    /** @const string A regular expression that identifies invalid parameters */
-    const REGEX_INVALID_OPTIONAL_PARAM = '#\(\?\:/\(\[\^/\]\+\)\)\?/#';
+    const string CATCHALL_IDENTIFIER = '/**';
+    const string PARAM_IDENTIFIER = '/*';
+    const string QUOTED_PARAM_IDENTIFIER = '/\*';
+    const string REGEX_CATCHALL = '(/.*)?';
+    const string REGEX_SINGLE_PARAM = '/([^/]+)';
+    const string REGEX_ENDING_PARAM = '#/\(\[\^/\]\+\)#';
+    const string REGEX_OPTIONAL_PARAM = '(?:/([^/]+))?';
+    const string REGEX_INVALID_OPTIONAL_PARAM = '#\(\?\:/\(\[\^/\]\+\)\)\?/#';
 
-    /** @var string The HTTP method for this route (GET, POST, ANY, etc) */
-    public $method = '';
-    /** @var string The pattern for this route (like /users/*) */
-    public $pattern = '';
-    /** @var string The generated regex to match the route pattern */
-    public $regexForMatch = '';
-    /**
-     * @var string The generated regex for creating URIs from parameters
-     * @see Respect\Rest\AbstractRoute::createURI
-     */
-    public $regexForReplace = '';
-    /**
-     * @var array A list of routines appended to this route
-     * @see Respect\Rest\Routines\AbstractRoutine
-     */
-    public $routines = [];
-    /**
-     * @var array A list of side routes to be used
-     * @see Respect\Rest\Routes\AbstractRoute
-     */
-    public $sideRoutes = [];
+    public string $method = '';
+    public string $pattern = '';
+    public string $regexForMatch = '';
+    public string $regexForReplace = '';
+    /** @var array<string, Routinable> */
+    public array $routines = [];
+    /** @var array<int, AbstractRoute> */
+    public array $sideRoutes = [];
+    public ?string $virtualHost = null;
+    public ?ResponseFactoryInterface $responseFactory = null;
 
-    /** @var array A virtualhost applied to this route (deprecated) */
-    public $virtualHost = null;
+    abstract public function getReflection(string $method): ?ReflectionFunctionAbstract;
+
+    abstract public function runTarget(string $method, array &$params): mixed;
 
     /**
-     * Returns the RelfectionFunctionAbstract object for the passed method
-     *
-     * @param string $method The HTTP method (GET, POST, etc)
+     * Calls runTarget() and wraps the result into a ResponseInterface.
+     * Returns AbstractRoute if the handler wants to forward to another route.
      */
-    abstract public function getReflection($method);
+    public function handleTarget(string $method, array &$params): ResponseInterface|AbstractRoute
+    {
+        $result = $this->runTarget($method, $params);
 
-    /**
-     * Runs the target method/params into this route
-     *
-     * @param string $method The HTTP method (GET, POST, etc)
-     * @param array  $params A list of params to pass to the target
-     */
-    abstract public function runTarget($method, &$params);
+        if ($result instanceof AbstractRoute) {
+            return $result;
+        }
 
-    /**
-     * @param string $method  The HTTP method (GET, POST, etc)
-     * @param string $pattern The pattern for this route path
-     */
-    public function __construct($method, $pattern)
+        return $this->wrapResponse($result);
+    }
+
+    /** Wraps a mixed value into a PSR-7 ResponseInterface */
+    public function wrapResponse(mixed $result): ResponseInterface
+    {
+        if ($result instanceof ResponseInterface) {
+            return $result;
+        }
+
+        $response = $this->responseFactory->createResponse();
+
+        if (is_resource($result)) {
+            return $response->withBody(new Stream($result));
+        }
+
+        if (is_array($result) || $result instanceof \JsonSerializable) {
+            $response->getBody()->write(json_encode($result));
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
+        $response->getBody()->write((string) $result);
+
+        return $response;
+    }
+
+    public function __construct(string $method, string $pattern)
     {
         $this->pattern = $pattern;
         $this->method = strtoupper($method);
@@ -114,32 +104,21 @@ abstract class AbstractRoute
     }
 
     /**
-     * A magic routine builder and composite appender
+     * Magic routine builder — instantiates a Routine by name and appends it.
      *
-     * @param string $method    The HTTP method (GET, POST, etc)
-     * @param array  $arguments Arguments to pass to this routine constructor
-     * @see   Respect\Rest\Routes\AbstractRoute::appendRoutine
-     *
-     * @return AbstractRoute The route itselt
+     * @return static
      */
-    public function __call($method, $arguments)
+    public function __call(string $method, array $arguments): static
     {
         $reflection = new ReflectionClass(
-            'Respect\\Rest\\Routines\\'.ucfirst($method)
+            'Respect\\Rest\\Routines\\' . ucfirst($method)
         );
 
         return $this->appendRoutine($reflection->newInstanceArgs($arguments));
     }
 
-    /**
-     * Appends a pre-built routine to this route
-     *
-     * @param Routinable $routine A routine to be appended
-     * @see   Respect\Rest\Routes\AbstractRoute::__call
-     *
-     * @return AbstractRoute The route itselt
-     */
-    public function appendRoutine(Routinable $routine)
+    /** @return static */
+    public function appendRoutine(Routinable $routine): static
     {
         $key = $routine instanceof Unique
             ? get_class($routine)
@@ -150,48 +129,28 @@ abstract class AbstractRoute
         return $this;
     }
 
-    /**
-     * Creates an URI for this route with the passed parameters, replacing
-     * them in the declared pattern. /hello/* with ['tom'] returns /hello/tom
-     *
-     * @param mixed $param1 Some parameter
-     * @param mixed $etc    This route accepts as many parameters you can pass
-     *
-     * @see Respect\Rest\Request::$params
-     *
-     * @return string the created URI
-     */
-    public function createUri($param1 = null, $etc = null)
+    public function createUri(mixed ...$params): string
     {
-        $params = func_get_args();
         array_unshift($params, $this->regexForReplace);
 
         $params = preg_replace('#(?<!^)/? *$#', '', $params);
 
-        return rtrim((string) $this->virtualHost, ' /').sprintf(...$params);
+        return rtrim((string) $this->virtualHost, ' /') . sprintf(...$params);
     }
 
-    /**
-     * Passes a request through all this routes ProxyableWhen routines
-     *
-     * @param Request $request The request you want to process
-     * @param array   $params  Parameters for the processed request
-     * @see   Respect\Rest\Routines\ProxyableWhen
-     *
-     * @see Respect\Rest\Request::$params
-     *
-     * @return bool always true \,,/
-     */
-    public function matchRoutines(Request $request, $params = [])
+    /** @param array<int, mixed> $params */
+    public function matchRoutines(Request $request, array $params = []): bool
     {
         foreach ($this->routines as $routine) {
-            if ($routine instanceof ProxyableWhen
-                    && !$request->routineCall(
-                        'when',
-                        $request->method,
-                        $routine,
-                        $params
-                    )) {
+            if (
+                $routine instanceof ProxyableWhen
+                && !$request->routineCall(
+                    'when',
+                    $request->method,
+                    $routine,
+                    $params
+                )
+            ) {
                 return false;
             }
         }
@@ -199,17 +158,8 @@ abstract class AbstractRoute
         return true;
     }
 
-    /**
-     * Checks if a request passes for this route
-     *
-     * @param Request $request The request you want to process
-     * @param array   $params  Parameters for the processed request
-     *
-     * @see Respect\Rest\Request::$params
-     *
-     * @return bool as true as xkcd (always true)
-     */
-    public function match(Request $request, &$params = [])
+    /** @param array<int, mixed> $params */
+    public function match(Request $request, array &$params = []): bool
     {
         $params = [];
         $matchUri = $request->uri;
@@ -230,30 +180,24 @@ abstract class AbstractRoute
 
         array_shift($params);
 
+        $lastParam = end($params);
         if (
             false !== stripos($this->pattern, '/**')
-            && false !== stripos(end($params), '/')
+            && is_string($lastParam) && false !== stripos($lastParam, '/')
         ) {
             $lastParam = array_pop($params);
             $params[] = explode('/', ltrim($lastParam, '/'));
         } elseif (
             false !== stripos($this->pattern, '/**') && !isset($params[0])
         ) {
-            $params[] = []; // callback expects a parameter give it
+            $params[] = [];
         }
 
         return true;
     }
 
-    /**
-     * This creates a regular expression that matches a route pattern and
-     * extracts it's parameters
-     *
-     * @param string $pattern The pattern for the regex creation
-     *
-     * @return array A matcher regex and a replacer regex for createUri()
-     */
-    protected function createRegexPatterns($pattern)
+    /** @return array{string, string} */
+    protected function createRegexPatterns(string $pattern): array
     {
         $extra = $this->extractCatchAllPattern($pattern);
 
@@ -277,15 +221,7 @@ abstract class AbstractRoute
         return [$matchRegex, $replacePattern];
     }
 
-    /**
-     * Extracts the catch-all parameter from a pattern and modifies the passed
-     * parameter to remove that. Yes, we're modifying by reference.
-     *
-     * @param string $pattern The pattern for the regex creation
-     *
-     * @return string The catch-all parameter or empty string
-     */
-    protected function extractCatchAllPattern(&$pattern)
+    protected function extractCatchAllPattern(string &$pattern): string
     {
         $extra = static::REGEX_CATCHALL;
 
@@ -307,13 +243,7 @@ abstract class AbstractRoute
         return $extra;
     }
 
-    /**
-     * Identifies using regular expressions a sequence of parameters in the end
-     * of a pattern and make the latest ones optional for the matcher regex
-     *
-     * @param string $quotedPattern a preg_quoted route pattern
-     */
-    protected function fixOptionalParams($quotedPattern)
+    protected function fixOptionalParams(string $quotedPattern): string
     {
         if (
             strlen($quotedPattern) - strlen(static::REGEX_SINGLE_PARAM)
@@ -328,7 +258,7 @@ abstract class AbstractRoute
 
         $quotedPattern = preg_replace(
             static::REGEX_INVALID_OPTIONAL_PARAM,
-            static::REGEX_SINGLE_PARAM.'/',
+            static::REGEX_SINGLE_PARAM . '/',
             $quotedPattern
         );
 

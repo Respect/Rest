@@ -10,9 +10,7 @@ parameters:
     - message: '/Call to an undefined static method Respect\\Rest\\Router::comparePatternSimilarity/'
       path: src/Router.php
     - message: '/should return .+ but return statement is missing/'
-      paths:
-        - src/Router.php
-        - src/Routes/ClassName.php
+      path: src/Router.php
     - message: '/Access to undefined constant static\(Respect\\Rest\\Routines\\AbstractAccept\)::ACCEPT_HEADER/'
       path: src/Routines/AbstractAccept.php
     # Pre-existing test issues — will be fixed during test modernization batch

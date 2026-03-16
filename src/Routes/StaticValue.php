@@ -1,40 +1,35 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
+use ReflectionFunctionAbstract;
 use ReflectionMethod;
 
-/** A callback-based route */
 class StaticValue extends AbstractRoute
 {
-    protected $value;
-    /** @var ReflectionFunctionAbstract */
-    protected $reflection;
+    protected mixed $value;
+    protected ReflectionMethod $reflection;
 
-    public function __construct($method, $pattern, $value)
+    public function __construct(string $method, string $pattern, mixed $value)
     {
         $this->value = $value;
         parent::__construct($method, $pattern);
         $this->reflection = new ReflectionMethod($this, 'returnValue');
     }
 
-    public function getReflection($method)
+    public function getReflection(string $method): ReflectionFunctionAbstract
     {
         return $this->reflection;
     }
 
-    public function runTarget($method, &$params)
+    public function runTarget(string $method, array &$params): mixed
     {
-        return $this->returnValue($method, $params);
+        return $this->returnValue();
     }
 
-    public function returnValue()
+    public function returnValue(): mixed
     {
         return $this->value;
     }

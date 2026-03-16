@@ -64,9 +64,9 @@ class AbstractRouteTest extends \PHPUnit\Framework\TestCase
 
         ]);
 
-        $response = $r->dispatch(new ServerRequest('get', "/route1/$with"))->response();
+        $response = (string) $r->dispatch(new ServerRequest('get', "/route1/$with"))->response()->getBody();
         $this->assertEquals($with, $response);
-        $response = $r->dispatch(new ServerRequest('get', "/route2/$with"))->response();
+        $response = (string) $r->dispatch(new ServerRequest('get', "/route2/$with"))->response()->getBody();
         $this->assertEquals("$without.accepted", $response);
     }
 

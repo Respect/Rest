@@ -33,7 +33,7 @@ class ExceptionTest extends TestCase
         $router->get('/', function () {
             throw new \RuntimeException('Oops');
         });
-        $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response();
+        $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response()->getBody();
 
         $this->assertTrue($called, 'The exception route must have been called');
 

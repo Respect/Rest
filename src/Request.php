@@ -8,6 +8,7 @@
 
 namespace Respect\Rest;
 
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionFunctionAbstract;
 use ReflectionParameter;
@@ -46,24 +47,17 @@ class Request
         $this->method = strtoupper($serverRequest->getMethod());
     }
 
-    /**
-     * Converting this request to string dispatch
-     */
     public function __toString()
     {
-        return $this->response();
+        $response = $this->response();
+
+        if ($response === null) {
+            return '';
+        }
+
+        return (string) $response->getBody();
     }
 
-    /**
-     * Declares an error handler for a single Router::errorRoute instance on the
-     * fly before dispatching the request, so the application can capture the
-     * errors. These are cleaned after dispatching by forwardErrors()
-     *
-     * @see    Respect\Rest\Request::forwardErrors
-     * @see    http://php.net/set_error_handler
-     *
-     * @return mixed The previous error handler
-     */
     protected function prepareForErrorForwards()
     {
        foreach ($this->route->sideRoutes as $sideRoute) {
@@ -77,50 +71,33 @@ class Request
         }
     }
 
-    /**
-     * Iterates over routines to find instances of
-     * Respect\Rest\Routines\ProxyableBy and call them, forwarding if
-     * necessary
-     *
-     * @see    Respect\Rest\Routines\ProxyableBy
-     * @see    Respect\Rest\Request::routineCall
-     *
-     * @return mixed A route forwarding or false
-     */
     protected function processPreRoutines()
     {
         foreach ($this->route->routines as $routine) {
             if (!$routine instanceof ProxyableBy) {
                 continue;
-            } else {
-                $result = $this->routineCall(
-                    'by',
-                    $this->method,
-                    $routine,
-                    $this->params
-                );
+            }
 
-                //Routine returned an instance, let's forward it
-                if ($result instanceof AbstractRoute) {
-                    return $this->forward($result);
-                } elseif (false === $result) {
-                    return false;
-                }
+            $result = $this->routineCall(
+                'by',
+                $this->method,
+                $routine,
+                $this->params
+            );
+
+            if ($result instanceof AbstractRoute) {
+                return $this->forward($result);
+            } elseif (false === $result) {
+                return false;
             }
         }
     }
 
     /**
-     * Iterates over routines to find instances of
-     * Respect\Rest\Routines\ProxyableThrough and call them, forwarding if
-     * necessary
-     *
-     * @see    Respect\Rest\Routines\ProxyableThrough
-     * @see    Respect\Rest\Request::routineCall
-     *
-     * @return mixed A route forwarding or false
+     * Processes post-routines on the raw handler result.
+     * Routines still receive raw values (arrays, strings, etc.) — not ResponseInterface.
      */
-    protected function processPosRoutines($response)
+    protected function processPosRoutines(mixed $response): mixed
     {
         $proxyResults = [];
 
@@ -135,9 +112,6 @@ class Request
             }
         }
 
-        //Some routine returned a callback as its result. Let's run
-        //these callbacks on our actual response.
-        //This is mainly used by accept() and similar ones.
         foreach ($proxyResults as $proxyCallback) {
             if (is_callable($proxyCallback)) {
                 $response = $proxyCallback($response);
@@ -147,15 +121,6 @@ class Request
         return $response;
     }
 
-    /**
-     * Restores the previous error handler if present then check error routes
-     * for logged errors, forwarding them or returning null silently
-     *
-     * @param mixed $errorHandler Some error handler (internal or external to
-     *                            Respect)
-     *
-     * @return mixed A route forwarding or a silent null
-     */
     protected function forwardErrors($errorHandler)
     {
         if (isset($errorHandler)) {
@@ -173,14 +138,6 @@ class Request
         }
     }
 
-    /**
-     * Does a catch-like operation on an exception based on previously
-     * declared instances from Router::exceptionRoute
-     *
-     * @param Exception $e Any exception
-     *
-     * @return mixed A route forwarding or a silent null
-     */
     protected function catchExceptions($e)
     {
         foreach ($this->route->sideRoutes as $sideRoute) {
@@ -197,66 +154,60 @@ class Request
         }
     }
 
-    /**
-     * Generates and returns the response from the current route
-     *
-     * @return string A response!
-     */
-    public function response()
+    /** Generates the PSR-7 response from the current route */
+    public function response(): ?ResponseInterface
     {
         try {
-            //No routes, get out
             if (!$this->route instanceof AbstractRoute) {
-                return;
+                return null;
             }
 
             $errorHandler = $this->prepareForErrorForwards();
             $preRoutineResult = $this->processPreRoutines();
 
             if ($preRoutineResult !== null) {
-                return $preRoutineResult;
+                if ($preRoutineResult instanceof ResponseInterface) {
+                    return $preRoutineResult;
+                }
+                if ($preRoutineResult === false) {
+                    return $this->route->wrapResponse('');
+                }
+                return $this->route->wrapResponse($preRoutineResult);
             }
 
-            $response = $this->route->runTarget($this->method, $this->params);
+            $rawResult = $this->route->runTarget($this->method, $this->params);
 
-            //The code returned another route, this is a forward
-            if ($response instanceof AbstractRoute) {
-                return $this->forward($response);
+            if ($rawResult instanceof AbstractRoute) {
+                return $this->forward($rawResult);
             }
 
-            $possiblyModifiedResponse = $this->processPosRoutines($response);
+            $processedResult = $this->processPosRoutines($rawResult);
             $errorResponse = $this->forwardErrors($errorHandler);
 
             if ($errorResponse !== null) {
-                return $errorResponse;
+                if ($errorResponse instanceof ResponseInterface) {
+                    return $errorResponse;
+                }
+                return $this->route->wrapResponse($errorResponse);
             }
 
-            return $possiblyModifiedResponse;
+            return $this->route->wrapResponse($processedResult);
         } catch (\Exception $e) {
-            //Tries to catch it using catchExceptions()
             if (!$exceptionResponse = $this->catchExceptions($e)) {
                 throw $e;
             }
 
-            //Returns whatever the exception routes returned
-            return (string) $exceptionResponse;
+            if ($exceptionResponse instanceof ResponseInterface) {
+                return $exceptionResponse;
+            }
+
+            return $this->route->wrapResponse($exceptionResponse);
         }
     }
 
-    /**
-     * Calls a routine on the current route and returns its result
-     *
-     * @param string     $type    The name of the routine (accept, when, etc)
-     * @param string     $method  The method name (GET, HEAD, POST, etc)
-     * @param Routinable $routine Some routine instance
-     * @param array      $params  Params from the routine
-     *
-     * @return mixed Whatever the routine returns
-     */
     public function routineCall($type, $method, Routinable $routine, &$params)
     {
         $reflection = $this->route->getReflection(
-            //GET and HEAD are the same for routines
             $method == 'HEAD' ? 'GET' : $method
         );
 
@@ -277,22 +228,12 @@ class Request
         return $routine->{$type}($this, $callbackParameters);
     }
 
-    /**
-     * Extracts a parameter value from the current route
-     *
-     * @param ReflectionFunctionAbstract $callback   Any function reflection
-     * @param ReflectionParameter        $routeParam Any parameter reflection
-     * @param array                      $params     Request URI params
-     *
-     * @return mixed a value from the reflected param
-     */
     protected function extractRouteParam(
         ReflectionFunctionAbstract $callback,
         ReflectionParameter $routeParam,
         &$params
     ) {
         foreach ($callback->getParameters() as $callbackParamReflection) {
-            //Check if parameters have same name and present (not filtered)
             if (
                 $callbackParamReflection->getName() === $routeParam->getName()
                 && isset($params[$callbackParamReflection->getPosition()])
@@ -305,16 +246,9 @@ class Request
             return $routeParam->getDefaultValue();
         }
 
-        return;
+        return null;
     }
 
-    /**
-     * Forwards a route
-     *
-     * @param AbstractRoute $route Any route
-     *
-     * @return Response from the forwarded route
-     */
     public function forward(AbstractRoute $route)
     {
         $this->route = $route;

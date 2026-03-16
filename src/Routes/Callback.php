@@ -1,38 +1,28 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
 use ReflectionFunction;
+use ReflectionFunctionAbstract;
 use ReflectionMethod;
 
-/** A callback-based route */
 class Callback extends AbstractRoute
 {
-    /** @var callable The actual callback this route holds */
+    /** @var callable */
     protected $callback;
 
-    /** @var array String argument parameters from the Request */
-    public $arguments;
+    /** @var array<int, mixed> */
+    public array $arguments;
 
-    /** @var ReflectionFunctionAbstract The reflection for the callback */
-    protected $reflection;
+    protected ?ReflectionFunctionAbstract $reflection = null;
 
-    /**
-     * @param string   $method    The HTTP method (GET, POST, etc)
-     * @param string   $pattern   The URI pattern for this route
-     * @param callable $callback  The callback this route holds
-     * @param array    $arguments Additional arguments for this callback
-     */
+    /** @param array<int, mixed> $arguments */
     public function __construct(
-        $method,
-        $pattern,
-        $callback,
+        string $method,
+        string $pattern,
+        callable $callback,
         array $arguments = []
     ) {
         $this->callback = $callback;
@@ -40,48 +30,25 @@ class Callback extends AbstractRoute
         parent::__construct($method, $pattern);
     }
 
-    /**
-     * Returns an appropriate Reflection for any callable object
-     *
-     * @return ReflectionFunctionAbstract The returned reflection object
-     */
-    public function getCallbackReflection()
+    public function getCallbackReflection(): ReflectionFunctionAbstract
     {
         if (is_array($this->callback)) {
             return new ReflectionMethod($this->callback[0], $this->callback[1]);
-        } else {
-            return new ReflectionFunction($this->callback);
         }
+
+        return new ReflectionFunction($this->callback);
     }
 
-    /**
-     * Gets the reflection for a specific method. For callables, the reflection
-     * is always the same. This follows the AbstractRoute implementation
-     *
-     * @param string $method The irrelevant HTTP method for this implementation
-     *
-     * @return ReflectionFunctionAbstract The returned reflection object
-     */
-    public function getReflection($method)
+    public function getReflection(string $method): ReflectionFunctionAbstract
     {
-        if (empty($this->reflection)) {
+        if ($this->reflection === null) {
             $this->reflection = $this->getCallbackReflection();
         }
 
         return $this->reflection;
     }
 
-    /**
-     * Runs the callback when this route is matched with params
-     *
-     * @param string $method The irrelevant HTTP method for this implementation
-     * @param array  $params An array of params for this request
-     *
-     * @see Respect\Rest\Request::$params
-     *
-     * @return mixed Whatever the callback returns
-     */
-    public function runTarget($method, &$params)
+    public function runTarget(string $method, array &$params): mixed
     {
         return ($this->callback)(...array_merge($params, $this->arguments));
     }

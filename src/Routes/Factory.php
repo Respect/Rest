@@ -1,36 +1,32 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
-use ReflectionMethod;
 use InvalidArgumentException;
+use ReflectionFunctionAbstract;
+use ReflectionMethod;
 use Respect\Rest\Routable;
 
 class Factory extends AbstractRoute
 {
-    public $class = '';
-    protected $instance = null;
-    public $factory = null;
+    public string $class = '';
+    protected ?object $instance = null;
+    /** @var callable */
+    public $factory;
+    protected ?ReflectionMethod $reflection = null;
 
-    /** @var ReflectionMethod */
-    protected $reflection;
-
-    public function __construct($method, $pattern, $class, $factory)
+    public function __construct(string $method, string $pattern, string $class, callable $factory)
     {
         $this->factory = $factory;
         $this->class = $class;
         parent::__construct($method, $pattern);
     }
 
-    public function getReflection($method)
+    public function getReflection(string $method): ?ReflectionFunctionAbstract
     {
-        if (empty($this->reflection)) {
+        if ($this->reflection === null) {
             $this->reflection = new ReflectionMethod(
                 $this->class,
                 $method
@@ -40,14 +36,16 @@ class Factory extends AbstractRoute
         return $this->reflection;
     }
 
-    public function runTarget($method, &$params)
+    public function runTarget(string $method, array &$params): mixed
     {
         if ($this->instance === null) {
             $this->instance = ($this->factory)($method, $params);
         }
 
         if (!$this->instance instanceof Routable) {
-            throw new InvalidArgumentException('Routed classes must implement the Respect\\Rest\\Routable interface');
+            throw new InvalidArgumentException(
+                'Routed classes must implement the Respect\\Rest\\Routable interface'
+            );
         }
 
         return $this->instance->$method(...$params);
