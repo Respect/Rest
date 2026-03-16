@@ -6,18 +6,12 @@ parameters:
     - src/
     - tests/
   ignoreErrors:
-    # Pre-existing bugs — will be fixed during PSR migration batches
-    - message: '/Call to an undefined static method Respect\\Rest\\Router::comparePatternSimilarity/'
-      path: src/Router.php
-    - message: '/should return .+ but return statement is missing/'
-      path: src/Router.php
+    # Pre-existing bugs — will be fixed during Routines batch
     - message: '/Access to undefined constant static\(Respect\\Rest\\Routines\\AbstractAccept\)::ACCEPT_HEADER/'
       path: src/Routines/AbstractAccept.php
     # Pre-existing test issues — will be fixed during test modernization batch
     - message: '/Result of function header \(void\) is used/'
-      paths:
-        - tests/legacy/Respect/Rest/OldRouterTest.php
-        - tests/library/Respect/Rest/RouterTest.php
+      path: tests/legacy/Respect/Rest/OldRouterTest.php
     - message: '/Call to an undefined static method Respect\\Rest\\Routes\\Factory::respond/'
       path: tests/legacy/Respect/Rest/Routes/AbstractRouteTest.php
     - message: '/Call to static method mediaType\(\) on an unknown class/'
