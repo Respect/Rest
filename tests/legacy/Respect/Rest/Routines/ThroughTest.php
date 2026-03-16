@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest\Routines;
 
 use Nyholm\Psr7\ServerRequest;
@@ -9,7 +11,7 @@ use Respect\Rest\Request;
  * @covers Respect\Rest\Routines\Through
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class ThroughTest extends \PHPUnit\Framework\TestCase
+final class ThroughTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var Through
@@ -44,7 +46,7 @@ class ThroughTest extends \PHPUnit\Framework\TestCase
         $request = new Request(new ServerRequest('GET', '/'));
         $params = [];
         $alias = &$this->object;
-        $this->assertEquals('from through callback',
+        self::assertEquals('from through callback',
                 $alias->through($request, $params));
     }
 }

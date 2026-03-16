@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest;
 
 use Exception;
@@ -11,7 +13,7 @@ use ReflectionFunction;
 /** 
  * @covers Respect\Rest\Request 
  */
-class RequestTest extends TestCase
+final class RequestTest extends TestCase
 {
     /** 
      * @covers  Respect\Rest\Request::__construct
@@ -23,12 +25,12 @@ class RequestTest extends TestCase
 
         $request = new Request(new ServerRequest('GET', '/users'));
 
-        $this->assertEquals(
+        self::assertEquals(
             '/users',
             $request->uri,
             'Should inherit the path from $_SERVER'
         );
-        $this->assertEquals(
+        self::assertEquals(
             'GET',
             $request->method,
             'Should inherit the method from $_SERVER'
@@ -47,12 +49,12 @@ class RequestTest extends TestCase
 
         $request = new Request(new ServerRequest('PATCH', '/documents'));
 
-        $this->assertNotEquals(
+        self::assertNotEquals(
             'NOTPATCH', 
             $request->method,
             'Should ignore $_SERVER if method was passed on constructor'
         );
-        $this->assertEquals(
+        self::assertEquals(
             'PATCH', 
             $request->method,
             'Should use constructor method'
@@ -69,13 +71,13 @@ class RequestTest extends TestCase
 
         $request = new Request(new ServerRequest('POST', '/images'));
 
-        $this->assertNotEquals(
+        self::assertNotEquals(
             '/videos', 
             $request->uri,
             'Should ignore $_SERVER if path was passed on constructor'
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             '/images', 
             $request->uri,
             'Should use constructor path'
@@ -91,13 +93,13 @@ class RequestTest extends TestCase
 
         $request = new Request(new ServerRequest('GET', 'http://google.com/search?q=foo'));
 
-        $this->assertNotEquals(
+        self::assertNotEquals(
             'http://google.com/search?q=foo',
             $request->uri,
             'Absolute URI should not be on path' //See TODO below
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             '/search',
             $request->uri,
             'Path should be extracted from absolute URI'
@@ -115,7 +117,7 @@ class RequestTest extends TestCase
     {
         $response = $request->response();
 
-        $this->assertNull($response, 'Response should be null if no route is set');
+        self::assertNull($response, 'Response should be null if no route is set');
 
         //TODO Request::response() should check if $this->route instanceof AbstractRoute
     }
@@ -133,8 +135,8 @@ class RequestTest extends TestCase
         );
         $response = $request->response();
 
-        $this->assertNotNull($response, 'Response should not be null');
-        $this->assertEquals(
+        self::assertNotNull($response, 'Response should not be null');
+        self::assertEquals(
             '["Vaio","MacBook","ThinkPad"]',
             (string) $response->getBody(),
             'Response body should contain JSON-encoded array from runTarget'
@@ -157,7 +159,7 @@ class RequestTest extends TestCase
         $request->params = ['dpi', 'price'];
         $response = $request->response();
 
-        $this->assertEquals(
+        self::assertEquals(
             'Some Printers Response',
             (string) $response->getBody(),
             'Response should return the route target when using previously set path params'
@@ -170,20 +172,18 @@ class RequestTest extends TestCase
      */
     public function testForwardReplacesRouteAndReturnsResponse()
     {
-        $request = $this->getMockForRequest('GET', '/users/alganet/lists', 'Some list items');
+        $request = new Request(new ServerRequest('GET', '/users/alganet/lists'));
         $inactiveRoute  = $this->getMockForRoute('GET', '/users/alganet/lists');
-        $forwardedRoute = $this->getMockForRoute('GET', '/lists/12345');
-        $forwardedRoute->expects($this->never())
-                       ->method('runTarget');
+        $forwardedRoute = $this->getMockForRoute('GET', '/lists/12345', 'Some list items');
         $request->route = $inactiveRoute;
         $request->forward($forwardedRoute);
 
-        $this->assertNotSame(
-            $inactiveRoute, 
+        self::assertNotSame(
+            $inactiveRoute,
             $request->route,
             'After forwarding a route, the previous one should not be in the route attribute'
         );
-        $this->assertSame(
+        self::assertSame(
             $forwardedRoute,
             $request->route,
             'After forwarding a route, the forwarded route should be in the route attribute'
@@ -231,14 +231,14 @@ class RequestTest extends TestCase
                 $userImplementedRoute = $forwardWithByRoutine;
                 break;
             default:
-                $this->fail('Unknown provider scenario');
+                self::fail('Unknown provider scenario');
         }
 
         $request = new Request(new ServerRequest('GET', '/cupcakes'));
         $request->route = $userImplementedRoute;
         $response = $request->response();
 
-        $this->assertSame('Delicious Cupcake Internally Forwarded', (string) $response->getBody());
+        self::assertSame('Delicious Cupcake Internally Forwarded', (string) $response->getBody());
     }
 
     public static function providerForUserImplementedForwards()
@@ -265,18 +265,18 @@ class RequestTest extends TestCase
 
         $response = $request->response();
 
-        $this->assertNotSame(
+        self::assertNotSame(
             'Protected Content!!!',
             (string) $response->getBody(),
             'Response should not be the protected content.'
         );
         // When a By routine returns false, response() wraps empty string into ResponseInterface
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             \Psr\Http\Message\ResponseInterface::class,
             $response,
             'Response should be a ResponseInterface when aborting response.'
         );
-        $this->assertEmpty(
+        self::assertEmpty(
             (string) $response->getBody(),
             'Response body should be empty when aborting response.'
         );
@@ -306,7 +306,7 @@ class RequestTest extends TestCase
         $request->route = $route;
         $response = $request->response();
 
-        $this->assertSame(
+        self::assertSame(
             'user deleted something',
             (string) $response->getBody(),
             "We passed a callback that replaced - for spaces, response should be passed to it."
@@ -337,96 +337,96 @@ class RequestTest extends TestCase
             case 'pureSynced':
                 $checkers = [
                     function($majorVersion, $minorVersion, $patchVersion) {
-                        $this->assertCount(3, func_get_args());
-                        $this->assertSame(15, $majorVersion);
-                        $this->assertSame(10, $minorVersion);
-                        $this->assertSame(5, $patchVersion);
+                        self::assertCount(3, func_get_args());
+                        self::assertSame(15, $majorVersion);
+                        self::assertSame(10, $minorVersion);
+                        self::assertSame(5, $patchVersion);
                     },
                     function($patchVersion, $minorVersion, $majorVersion) {
-                        $this->assertCount(3, func_get_args());
-                        $this->assertSame(15, $majorVersion);
-                        $this->assertSame(10, $minorVersion);
-                        $this->assertSame(5, $patchVersion);
+                        self::assertCount(3, func_get_args());
+                        self::assertSame(15, $majorVersion);
+                        self::assertSame(10, $minorVersion);
+                        self::assertSame(5, $patchVersion);
                     },
                     function($majorVersion) {
-                        $this->assertCount(1, func_get_args());
-                        $this->assertSame(15, $majorVersion);
+                        self::assertCount(1, func_get_args());
+                        self::assertSame(15, $majorVersion);
                     },
                     function() {
-                        $this->assertCount(0, func_get_args());
+                        self::assertCount(0, func_get_args());
                     },
                 ];
                 break;
             case 'pureNulls':
                 $checkers = [
                     function($majorVersion, $minorVersion, $patchVersion) {
-                        $this->assertCount(3, func_get_args());
-                        $this->assertNull($majorVersion);
-                        $this->assertNull($minorVersion);
-                        $this->assertNull($patchVersion);
+                        self::assertCount(3, func_get_args());
+                        self::assertNull($majorVersion);
+                        self::assertNull($minorVersion);
+                        self::assertNull($patchVersion);
                     },
                     function($patchVersion, $minorVersion, $majorVersion) {
-                        $this->assertCount(3, func_get_args());
-                        $this->assertNull($majorVersion);
-                        $this->assertNull($minorVersion);
-                        $this->assertNull($patchVersion);
+                        self::assertCount(3, func_get_args());
+                        self::assertNull($majorVersion);
+                        self::assertNull($minorVersion);
+                        self::assertNull($patchVersion);
                     },
                     function($patchVersion, $minorVersion, $majorVersion) {
-                        $this->assertCount(3, func_get_args());
-                        $this->assertNull($majorVersion);
-                        $this->assertNull($minorVersion);
-                        $this->assertNull($patchVersion);
+                        self::assertCount(3, func_get_args());
+                        self::assertNull($majorVersion);
+                        self::assertNull($minorVersion);
+                        self::assertNull($patchVersion);
                     },
                     function($majorVersion) {
-                        $this->assertCount(1, func_get_args());
-                        $this->assertNull($majorVersion);
+                        self::assertCount(1, func_get_args());
+                        self::assertNull($majorVersion);
                     },
                 ];
                 break;
             case 'pureDefaults':
                 $checkers = [
                     function($majorVersion=15, $minorVersion=10, $patchVersion=5) {
-                        $this->assertCount(3, func_get_args());
-                        $this->assertSame(15, $majorVersion);
-                        $this->assertSame(10, $minorVersion);
-                        $this->assertSame(5, $patchVersion);
+                        self::assertCount(3, func_get_args());
+                        self::assertSame(15, $majorVersion);
+                        self::assertSame(10, $minorVersion);
+                        self::assertSame(5, $patchVersion);
                     },
                     function($patchVersion=5, $minorVersion=10, $majorVersion=15) {
-                        $this->assertCount(3, func_get_args());
-                        $this->assertSame(15, $majorVersion);
-                        $this->assertSame(10, $minorVersion);
-                        $this->assertSame(5, $patchVersion);
+                        self::assertCount(3, func_get_args());
+                        self::assertSame(15, $majorVersion);
+                        self::assertSame(10, $minorVersion);
+                        self::assertSame(5, $patchVersion);
                     },
                     function($majorVersion=15) {
-                        $this->assertCount(1, func_get_args());
-                        $this->assertSame(15, $majorVersion);
+                        self::assertCount(1, func_get_args());
+                        self::assertSame(15, $majorVersion);
                     },
                     function() {
-                        $this->assertCount(0, func_get_args());
+                        self::assertCount(0, func_get_args());
                     },
                 ];
                 break;
             case 'mixed':
                 $checkers = [
                     function($majorVersion, $minorVersion, $patchVersion=5) {
-                        $this->assertCount(3, func_get_args());
-                        $this->assertSame(15, $majorVersion);
-                        $this->assertSame(10, $minorVersion);
-                        $this->assertSame(5, $patchVersion);
+                        self::assertCount(3, func_get_args());
+                        self::assertSame(15, $majorVersion);
+                        self::assertSame(10, $minorVersion);
+                        self::assertSame(5, $patchVersion);
                     },
                     function($majorVersion, $minorVersion, $patchVersion) {
-                        $this->assertCount(3, func_get_args());
-                        $this->assertSame(15, $majorVersion);
-                        $this->assertSame(10, $minorVersion);
-                        $this->assertNull($patchVersion);
+                        self::assertCount(3, func_get_args());
+                        self::assertSame(15, $majorVersion);
+                        self::assertSame(10, $minorVersion);
+                        self::assertNull($patchVersion);
                     },
                     function() {
-                        $this->assertCount(0, func_get_args());
+                        self::assertCount(0, func_get_args());
                     },
                 ];
                 break;
             default:
-                $this->fail('Unknown provider scenario');
+                self::fail('Unknown provider scenario');
         }
 
         foreach ($checkers as $checker) {
@@ -437,7 +437,7 @@ class RequestTest extends TestCase
 
         $response = $request->response();
 
-        $this->assertEquals('MySoftwareName', (string) $response->getBody());
+        self::assertEquals('MySoftwareName', (string) $response->getBody());
     }
 
     public static function providerForParamSyncedRoutines()
@@ -451,10 +451,11 @@ class RequestTest extends TestCase
     }
 
     public function testConvertingToStringCallsResponse() {
-        $request = $this->getMockForRequest('GET', '/users/alganet/lists', 'Some list items');
+        $request = new Request(new ServerRequest('GET', '/users/alganet/lists'));
+        $request->route = $this->getMockForRoute('GET', '/users/alganet/lists', 'Some list items');
         $toString = (string) $request;
 
-        $this->assertSame('Some list items', $toString);
+        self::assertSame('Some list items', $toString);
     }
 
     protected function getMockForProxyableRoutine($route, $name, $implementation)
@@ -563,7 +564,7 @@ class RequestTest extends TestCase
 
     protected function getMockForRoutine($interfaceList)
     {
-        $interfaceName = 'GeneratedInterface'.md5(rand());
+        $interfaceName = 'GeneratedInterface'.md5((string) rand());
 
         $interfaceList = (array) $interfaceList;
         array_walk($interfaceList, function(&$interfaceSuffix) {

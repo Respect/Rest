@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest\Routines;
 
 use Nyholm\Psr7\ServerRequest;
@@ -11,7 +13,7 @@ use Stubs\Routines\ByClassWithInvoke;
  * @covers Respect\Rest\Routines\By
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class ByTest extends \PHPUnit\Framework\TestCase
+final class ByTest extends \PHPUnit\Framework\TestCase
 {
     private By $object;
 
@@ -43,7 +45,7 @@ class ByTest extends \PHPUnit\Framework\TestCase
         $request = new Request(new ServerRequest('GET', '/'));
         $params  = [];
         $routine = new By(function() { return 'from by callback'; });
-        $this->assertEquals('from by callback', $routine->by($request, $params));
+        self::assertEquals('from by callback', $routine->by($request, $params));
     }
 
     /**
@@ -56,7 +58,7 @@ class ByTest extends \PHPUnit\Framework\TestCase
         $router->get('/', function() { return 'route'; })
                ->by(function() { return 'by'; });
         // By does not affect the output of the route.
-        $this->assertEquals(
+        self::assertEquals(
             $expected = 'route',
             (string) $router->dispatch(new ServerRequest('GET', '/'))
         );
@@ -72,7 +74,7 @@ class ByTest extends \PHPUnit\Framework\TestCase
         $router->get('/', function() { return 'route'; })
                ->by('Stubs\Routines\ByClassWithInvoke');
         // By does not affect the output of the route.
-        $this->assertEquals(
+        self::assertEquals(
             $expected = 'route',
             (string) $router->dispatch(new ServerRequest('GET', '/'))
         );
@@ -89,12 +91,12 @@ class ByTest extends \PHPUnit\Framework\TestCase
         $router->get('/', function() { return 'route'; })
                ->by($routine);
         // By does not affect the output of the route.
-        $this->assertEquals(
+        self::assertEquals(
             $expected = 'route',
             (string) $router->dispatch(new ServerRequest('GET', '/'))
         );
         $ref = new \ReflectionObject($routine);
         $prop = $ref->getProperty('invoked');
-        $this->assertEquals(true, $prop->getValue($routine), 'Routine was not invoked!');
+        self::assertEquals(true, $prop->getValue($routine), 'Routine was not invoked!');
     }
 }

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest\Routines;
 
 use Exception;
@@ -10,7 +12,7 @@ use ReflectionFunction;
 /** 
  * @covers Respect\Rest\Routines\When
  */
-class WhenTest extends TestCase
+final class WhenTest extends TestCase
 {
 	public function testRoutineWhenShouldBlockRouteFromMatchIfTheCallbackReturnIsFalse()
 	{
@@ -25,13 +27,13 @@ class WhenTest extends TestCase
 		});
 		$response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response()->getBody();
 
-		$this->assertEquals(
+		self::assertEquals(
 			'Oh yeah!',
 			$response,
 			'For two identical routes, a failed When routine should not dispatch, the other one should'
 		);
 
-		$this->assertNotEquals(
+		self::assertNotEquals(
 			'Oh noes!',
 			$response,
 			'For two identical routes, a failed When routine should not dispatch, the other one should'
@@ -50,7 +52,7 @@ class WhenTest extends TestCase
 		});
 		$response = (string) $router->dispatch(new ServerRequest('GET', '/speakers/alganet'))->response()->getBody();
 
-		$this->assertEquals(
+		self::assertEquals(
 			'Hello alganet',
 			$response,
 			'This When routine accepts parameters longer than 3 chars, alganet is, so it should pass'

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest\Routes;
 
 use Nyholm\Psr7\ServerRequest;
@@ -9,7 +11,7 @@ use Respect\Rest\Router;
 /** 
  * @covers Respect\Rest\Routes\Exception
  */
-class ExceptionTest extends TestCase
+final class ExceptionTest extends TestCase
 {
     /**
      * @covers Respect\Rest\Routes\Exception::getReflection
@@ -35,9 +37,9 @@ class ExceptionTest extends TestCase
         });
         $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response()->getBody();
 
-        $this->assertTrue($called, 'The exception route must have been called');
+        self::assertTrue($called, 'The exception route must have been called');
 
-        $this->assertEquals(
+        self::assertEquals(
             'There has been a runtime error.',
             $response,
             'An exception should be caught by the router and forwarded'

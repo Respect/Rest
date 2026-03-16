@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest;
 
 use Nyholm\Psr7\ServerRequest;
@@ -9,20 +11,14 @@ use PHPUnit\Framework\TestCase;
 /**
  * @covers Respect\Rest\Router
  */
-class RouterTest extends TestCase
+final class RouterTest extends TestCase
 {
-    public function setUp(): void
-    {
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['REQUEST_URI'] = '/';
-    }
-
     /**
      * @covers            Respect\Rest\Router::__call
      */
     public function testMagicConstructorWarnsIfNoSufficientParametersWerePassed()
     {
-        $this->expectException('InvalidArgumentException');
+        self::expectException('InvalidArgumentException');
         $router = new Router(new Psr17Factory());
         $router->thisIsInsufficientForMagicConstruction();
     }
@@ -31,7 +27,7 @@ class RouterTest extends TestCase
      */
     public function testMagicConstructorWarnsIfNoSufficientParametersWerePassed2()
     {
-        $this->expectException('InvalidArgumentException');
+        self::expectException('InvalidArgumentException');
         $router = new Router(new Psr17Factory());
         $router->thisIsInsufficientForMagicConstruction('/magicians');
     }
@@ -46,18 +42,18 @@ class RouterTest extends TestCase
         $callbackRoute = $router->get('/', $target = function() {});
         $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target);
 
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             'Respect\\Rest\\Routes\\Callback',
             $callbackRoute,
             'Returned result from a magic constructor in this case should return a Routes\Callback'
         );
 
-        $this->assertEmpty(
+        self::assertEmpty(
             $callbackRoute->arguments,
             'When there are no arguments the Routes\Callback should have none as well'
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             $callbackRoute,
             $concreteCallbackRoute,
             'The magic and concrete instances of Routes\Callback should be equivalent'
@@ -75,19 +71,19 @@ class RouterTest extends TestCase
         $callbackRoute = $router->get('/', $target = function() {}, ['extra']);
         $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target, ['extra']);
 
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             'Respect\\Rest\\Routes\\Callback',
             $callbackRoute,
             'Returned result from a magic constructor in this case should return a Routes\Callback'
         );
 
-        $this->assertContains(
+        self::assertContains(
             'extra',
             $callbackRoute->arguments,
             'The "extra" appended to the magic constructor should be present on the arguments list'
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             $callbackRoute,
             $concreteCallbackRoute,
             'The magic and concrete instances of Routes\Callback should be equivalent'
@@ -107,13 +103,13 @@ class RouterTest extends TestCase
         $instanceRoute = $router->get('/', $myInstance);
         $concreteInstanceRoute = $router->instanceRoute('GET', '/', $myInstance);
 
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             'Respect\\Rest\\Routes\\Instance',
             $instanceRoute,
             'Returned result from a magic constructor in this case should return a Routes\Instance'
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             $instanceRoute,
             $concreteInstanceRoute,
             'The magic and concrete instances of Routes\Instance should be equivalent'
@@ -132,13 +128,13 @@ class RouterTest extends TestCase
         $staticRoute = $router->get('/', $staticValue);
         $concreteStaticRoute = $router->staticRoute('GET','/', $staticValue);
 
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             'Respect\\Rest\\Routes\\StaticValue',
             $staticRoute,
             $reason
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             $staticRoute,
             $concreteStaticRoute,
             'The magic and concrete instances of Routes\Static should be equivalent'
@@ -161,13 +157,13 @@ class RouterTest extends TestCase
     #[DataProvider('provideForNonStaticRoutableValues')]
     public function testMagicConstructorCannotRouteSomeStaticValues($staticValue, $reason)
     {
-        $this->expectException(\InvalidArgumentException::class);
+        self::expectException(\InvalidArgumentException::class);
         $router = new Router(new Psr17Factory());
         $nonStaticRoute = $router->get('/', $staticValue);
 
         $router->run(new Request(new ServerRequest('GET', '/'))); // __toString is not allowed to throw exceptions
 
-        $this->assertNotInstanceOf(
+        self::assertNotInstanceOf(
             'Respect\\Rest\\Routes\\StaticValue',
             $nonStaticRoute,
             $reason
@@ -193,13 +189,13 @@ class RouterTest extends TestCase
         $classRoute = $router->get('/', $className);
         $concreteClassRoute = $router->classRoute('GET', '/', $className);
 
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             'Respect\\Rest\\Routes\\ClassName',
             $classRoute,
             'Returned result from a magic constructor in this case should return a Routes\ClassName'
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             $classRoute,
             $concreteClassRoute,
             'The magic and concrete instances of Routes\ClassName should be equivalent'
@@ -217,19 +213,19 @@ class RouterTest extends TestCase
         $classRoute = $router->get('/', $className, ['some', 'constructor', 'params']);
         $concreteClassRoute = $router->classRoute('GET', '/', $className, ['some', 'constructor', 'params']);
 
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             'Respect\\Rest\\Routes\\ClassName',
             $classRoute,
             'Returned result from a magic constructor in this case should return a Routes\ClassName'
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             ['some', 'constructor', 'params'],
             $classRoute->constructorParams,
             'The constructor params should be available on the instance of Routes\ClassName'
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             $classRoute,
             $concreteClassRoute,
             'The magic and concrete instances of Routes\ClassName should be equivalent'
@@ -248,13 +244,13 @@ class RouterTest extends TestCase
         $factoryRoute = $router->get('/', 'FactoryClass', ['FactoryClass', 'factoryMethod']);
         $concreteFactoryRoute = $router->factoryRoute('GET', '/', 'FactoryClass', ['FactoryClass', 'factoryMethod']);
 
-        $this->assertInstanceOf(
+        self::assertInstanceOf(
             'Respect\\Rest\\Routes\\Factory',
             $factoryRoute,
             'Returned result from a magic constructor in this case should return a Routes\Factory'
         );
 
-        $this->assertEquals(
+        self::assertEquals(
             $factoryRoute,
             $concreteFactoryRoute,
             'The magic and concrete instances of Routes\Factory should be equivalent'
@@ -277,7 +273,7 @@ class RouterTest extends TestCase
         $response = $router->dispatch(new ServerRequest('OPTIONS', '*'))->response();
 
         // Global OPTIONS returns null route — no response body
-        $this->assertNull($response);
+        self::assertNull($response);
     }
 
     /**
@@ -295,13 +291,13 @@ class RouterTest extends TestCase
         $serverRequest = (new ServerRequest('POST', '/bulbs'))->withParsedBody(['_method' => 'PUT']);
         $result = (string) $router->dispatch($serverRequest)->response()->getBody();
 
-        $this->assertSame(
+        self::assertSame(
             'Some Bulbs Put Response',
             $result,
             'Router should dispatch to PUT (overriden) instead of POST'
         );
 
-        $this->assertNotSame(
+        self::assertNotSame(
             'Some Bulbs Post Response',
             $result,
             'Router NOT dispatch to POST when method is overriden'
@@ -322,13 +318,13 @@ class RouterTest extends TestCase
         $serverRequest = (new ServerRequest('POST', '/bulbs'))->withParsedBody(['_method' => 'PUT']);
         $result = (string) $router->dispatch($serverRequest)->response()->getBody();
 
-        $this->assertSame(
+        self::assertSame(
             'Some Bulbs Post Response',
             $result,
             'Router should dispatch to POST (not overriden) instead of PUT'
         );
 
-        $this->assertNotSame(
+        self::assertNotSame(
             'Some Bulbs Put Response',
             $result,
             'Router NOT dispatch to PUT when method is overriden'
@@ -346,7 +342,7 @@ class RouterTest extends TestCase
         $router->get('/products', 'Some Products!');
         $response = (string) $router->dispatch(new ServerRequest('GET', '/store/products'))->response()->getBody();
 
-        $this->assertSame(
+        self::assertSame(
             'Some Products!',
             $response,
             'Router should match using the virtual host combined URI'
@@ -363,7 +359,7 @@ class RouterTest extends TestCase
         $router->dispatch(new ServerRequest('GET', '/'));
         unset($router);
 
-        $this->expectOutputString('');
+        self::expectOutputString('');
     }
 
     /**
@@ -375,7 +371,7 @@ class RouterTest extends TestCase
         $router = new Router(new Psr17Factory());
         $response = $router->dispatch(new ServerRequest('GET', '/'))->response();
 
-        $this->assertNull($response, 'No routes — response should be null (404)');
+        self::assertNull($response, 'No routes — response should be null (404)');
     }
 
     /**
@@ -388,7 +384,7 @@ class RouterTest extends TestCase
         $router->get('/foo', 'This exists.');
         $response = $router->dispatch(new ServerRequest('GET', '/'))->response();
 
-        $this->assertNull($response, 'No route matched — response should be null (404)');
+        self::assertNull($response, 'No route matched — response should be null (404)');
     }
 
     /**
@@ -401,9 +397,9 @@ class RouterTest extends TestCase
         $response = (string) $router->dispatch(new ServerRequest('GET', '/members'))->response()->getBody();
 
         $ref = new \ReflectionObject($router);
-        $this->assertTrue($ref->hasProperty('allMembers'), 'There must be an attribute set for that key');
+        self::assertTrue($ref->hasProperty('allMembers'), 'There must be an attribute set for that key');
 
-        $this->assertEquals(
+        self::assertEquals(
             'John, Carl',
             $response,
             'The route must be declared anyway'
@@ -419,7 +415,7 @@ class RouterTest extends TestCase
         $router = new Router(new Psr17Factory(), '/my/virtual/host');
         $catsRoute = $router->any('/cats/*', 'Meow');
         $virtualHostUri = $catsRoute->createUri('mittens');
-        $this->assertEquals(
+        self::assertEquals(
             '/my/virtual/host/cats/mittens',
             $virtualHostUri,
             'Virtual host should be prepended to the path on createUri()'
@@ -441,7 +437,7 @@ class RouterTest extends TestCase
         $response = $router->dispatch(new ServerRequest('OPTIONS', '/asian'))->response();
 
         // assert: OPTIONS without explicit OPTIONS handler returns null route
-        $this->assertNull(
+        self::assertNull(
             $response,
             'OPTIONS request should not call any of the other registered handlers.'
         );
@@ -462,8 +458,8 @@ class RouterTest extends TestCase
         $response = $router->dispatch(new ServerRequest('OPTIONS', '/asian'))->response();
 
         // assert: explicit OPTIONS handler should be dispatched
-        $this->assertNotNull($response);
-        $this->assertEquals(
+        self::assertNotNull($response);
+        self::assertEquals(
             'OPTIONS: Asian Food!',
             (string) $response->getBody(),
             'OPTIONS request should call the correct custom OPTIONS handler.'

@@ -1,15 +1,36 @@
 parameters:
   fileExtensions:
     - php
-  level: 0
+  level: 5
   paths:
     - src/
     - tests/
   ignoreErrors:
-    # Pre-existing bugs — will be fixed during Routines batch
-    - message: '/Access to undefined constant static\(Respect\\Rest\\Routines\\AbstractAccept\)::ACCEPT_HEADER/'
-      path: src/Routines/AbstractAccept.php
-    # Pre-existing test issues — will be fixed during test modernization batch
+    # By-ref param type narrowing in match() — preg_match output type varies
+    - message: '/Parameter &\$params by-ref type of method .+::match\(\)/'
+      path: src/Routes/AbstractRoute.php
+    # getReflection() null return required by abstract parent signature
+    - message: '/never returns null so it can be removed from the return type/'
+      paths:
+        - src/Routes/Factory.php
+        - src/Routes/Instance.php
+    # Test issues — will be fixed during test modernization batch
+    - message: '/Call to an undefined method/'
+      path: tests/
+    - message: '/Access to an undefined property/'
+      path: tests/
+    - message: '/will always evaluate to/'
+      path: tests/
+    - message: '/with return type void returns/'
+      path: tests/
+    - message: '/is unused/'
+      path: tests/
+    - message: '/Parameter #1 .+ expects resource/'
+      path: tests/
+    - message: '/invoked with 3 parameters, 2 required/'
+      path: tests/
+    - message: '/Anonymous function has an unused use/'
+      path: tests/
     - message: '/Result of function header \(void\) is used/'
       path: tests/legacy/Respect/Rest/OldRouterTest.php
     - message: '/Call to an undefined static method Respect\\Rest\\Routes\\Factory::respond/'
@@ -18,5 +39,3 @@ parameters:
       path: tests/legacy/Respect/Rest/Routes/AbstractRouteTest.php
     - message: '/Class Respect\\Rest\\Routes\\Factory referenced with incorrect case/'
       path: tests/legacy/Respect/Rest/Routes/AbstractRouteTest.php
-    - message: '/Cannot unset property .+ because it might have hooks in a subclass/'
-      path: tests/legacy/

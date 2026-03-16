@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Respect\Rest\Routines;
 
 /** Handles mime type content negotiation */
-class Accept extends AbstractAccept
+final class Accept extends AbstractAccept
 {
     const string ACCEPT_HEADER = 'HTTP_ACCEPT';
 

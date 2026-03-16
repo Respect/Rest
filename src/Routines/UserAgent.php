@@ -8,7 +8,7 @@ use SplObjectStorage;
 use Respect\Rest\Request;
 
 /** Handles User Agent filters */
-class UserAgent extends AbstractCallbackMediator implements ProxyableThrough, Unique
+final class UserAgent extends AbstractCallbackMediator implements ProxyableThrough, Unique
 {
     const string ACCEPT_HEADER = 'HTTP_USER_AGENT';
     private SplObjectStorage|false $negotiated = false;

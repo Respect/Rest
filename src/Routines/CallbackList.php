@@ -24,11 +24,7 @@ class CallbackList extends ArrayObject implements Routinable
         }
 
         foreach ($callbackList as $acceptSpec => $callback) {
-            if (true === is_callable($callback)) {
-                $this[$acceptSpec] = $callback;
-            } else {
-                error_log("The $acceptSpec entry does not have a valid callback configured, it has been ignored.\n", 1);
-            }
+            $this[$acceptSpec] = $callback;
         }
     }
 

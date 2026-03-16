@@ -7,7 +7,7 @@ namespace Respect\Rest\Routines;
 use Respect\Rest\Request;
 
 /** Generic routine executed before the route */
-class By extends AbstractSyncedRoutine implements ProxyableBy
+final class By extends AbstractSyncedRoutine implements ProxyableBy
 {
     public function by(Request $request, array $params): mixed
     {

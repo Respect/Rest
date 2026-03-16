@@ -1,8 +1,9 @@
 <?php
+declare(strict_types=1);
 
 namespace Stubs\Routines;
 
-class WhenAlwaysTrue
+final class WhenAlwaysTrue
 {
     public $invoked = false;
 

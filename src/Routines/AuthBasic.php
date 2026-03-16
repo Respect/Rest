@@ -6,13 +6,10 @@ namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
 
-class AuthBasic extends AbstractRoutine implements ProxyableBy
+final class AuthBasic extends AbstractRoutine implements ProxyableBy
 {
-    public string $realm;
-
-    public function __construct(string $realm, mixed $callback)
+    public function __construct(public string $realm, mixed $callback)
     {
-        $this->realm = $realm;
         parent::__construct($callback);
     }
 

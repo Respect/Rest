@@ -8,14 +8,12 @@ use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use Respect\Rest\Request;
 
-class StaticValue extends AbstractRoute
+final class StaticValue extends AbstractRoute
 {
-    protected mixed $value;
     protected ReflectionMethod $reflection;
 
-    public function __construct(string $method, string $pattern, mixed $value)
+    public function __construct(string $method, string $pattern, protected mixed $value)
     {
-        $this->value = $value;
         parent::__construct($method, $pattern);
         $this->reflection = new ReflectionMethod($this, 'returnValue');
     }

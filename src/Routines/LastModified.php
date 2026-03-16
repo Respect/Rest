@@ -7,7 +7,7 @@ namespace Respect\Rest\Routines;
 use DateTime;
 use Respect\Rest\Request;
 
-class LastModified extends AbstractRoutine implements ProxyableBy, Unique
+final class LastModified extends AbstractRoutine implements ProxyableBy, Unique
 {
     public function by(Request $request, array $params): mixed
     {

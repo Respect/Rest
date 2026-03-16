@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest {
 
 use Nyholm\Psr7\ServerRequest;
@@ -39,7 +41,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
  * @covers Respect\Rest\Routines\UserAgent
  * @covers Respect\Rest\Routines\When
  */
-class OldRouterTest extends \PHPUnit\Framework\TestCase
+final class OldRouterTest extends \PHPUnit\Framework\TestCase
 {
 
     protected $object;
@@ -48,7 +50,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
 
     public function setUp(): void
     {
-//        $this->markTestSkipped();
+//        self::markTestSkipped();
         $this->object = new Router(new Psr17Factory());
         $this->result = null;
         $result = &$this->result;
@@ -61,7 +63,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
      */
     public function testInsufficientParams()
     {
-        $this->expectException('InvalidArgumentException');
+        self::expectException('InvalidArgumentException');
         $this->object->invalid();
     }
 
@@ -69,7 +71,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
      */
     public function testNotRoutableController()
     {
-        $this->expectException('InvalidArgumentException');
+        self::expectException('InvalidArgumentException');
         $this->object->instanceRoute('ANY', '/', new \stdClass);
         (string) $this->object->dispatch(new ServerRequest('get', '/'))->response()->getBody();
     }
@@ -78,7 +80,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
      */
     public function testNotRoutableControllerByName()
     {
-        $this->expectException('InvalidArgumentException');
+        self::expectException('InvalidArgumentException');
         $this->object->classRoute('ANY', '/', '\\stdClass');
         (string) $this->object->dispatch(new ServerRequest('get', '/'))->response()->getBody();
     }
@@ -90,7 +92,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
         $r = $this->object->dispatch(new ServerRequest('get', $path));
         if ($r)
             $r->response();
-        $this->assertEquals($expectedParams, $this->result);
+        self::assertEquals($expectedParams, $this->result);
     }
 
     #[DataProvider('providerForLargeParams')]
@@ -101,7 +103,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
         $r = $this->object->dispatch(new ServerRequest('get', $path));
         if ($r)
             $r->response();
-        $this->assertEquals($expectedParams, $this->result);
+        self::assertEquals($expectedParams, $this->result);
     }
 
     #[DataProvider('providerForSpecialChars')]
@@ -112,7 +114,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
         $r = $this->object->dispatch(new ServerRequest('get', $path));
         if ($r)
             $r->response();
-        $this->assertEquals($expectedParams, $this->result);
+        self::assertEquals($expectedParams, $this->result);
     }
 
     public static function providerForSingleRoutes()
@@ -272,21 +274,21 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
     {
         $this->object->any('/users/*', new MyController);
         $result = (string) $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response()->getBody();
-        $this->assertEquals(json_encode(['alganet', 'get', []]), $result);
+        self::assertEquals(json_encode(['alganet', 'get', []]), $result);
     }
 
     public function testBindControllerParams()
     {
         $this->object->any('/users/*', 'Respect\\Rest\\MyController', ['ok']);
         $result = (string) $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response()->getBody();
-        $this->assertEquals(json_encode(['alganet', 'get', ['ok']]), $result);
+        self::assertEquals(json_encode(['alganet', 'get', ['ok']]), $result);
     }
 
     public function testBindControllerInstance()
     {
         $this->object->instanceRoute('ANY', '/users/*', new MyController('ok'));
         $result = (string) $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response()->getBody();
-        $this->assertEquals(json_encode(['alganet', 'get', ['ok']]), $result);
+        self::assertEquals(json_encode(['alganet', 'get', ['ok']]), $result);
     }
     public function testBindControllerFactory()
     {
@@ -294,31 +296,31 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
             return  new MyController('ok');
         });
         $result = (string) $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response()->getBody();
-        $this->assertEquals(json_encode(['alganet', 'get', ['ok']]), $result);
+        self::assertEquals(json_encode(['alganet', 'get', ['ok']]), $result);
     }
 
     public function testBindControllerParams2()
     {
         $this->object->instanceRoute('ANY', '/users/*', new MyController('ok', 'foo', 'bar'));
         $result = (string) $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response()->getBody();
-        $this->assertEquals(json_encode(['alganet', 'get', ['ok', 'foo', 'bar']]), $result);
+        self::assertEquals(json_encode(['alganet', 'get', ['ok', 'foo', 'bar']]), $result);
     }
 
     public function testBindControllerSpecial()
     {
         $this->object->instanceRoute('ANY', '/users/*', new MyController);
         $result = $this->object->dispatch(new ServerRequest('__construct', '/users/alganet'))->response();
-        $this->assertEquals(null, $result);
+        self::assertEquals(null, $result);
     }
 
     public function testBindControllerMultiMethods()
     {
         $this->object->instanceRoute('ANY', '/users/*', new MyController);
         $result = (string) $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response()->getBody();
-        $this->assertEquals(json_encode(['alganet', 'get', []]), $result);
+        self::assertEquals(json_encode(['alganet', 'get', []]), $result);
 
         $result = (string) $this->object->dispatch(new ServerRequest('post', '/users/alganet'))->response()->getBody();
-        $this->assertEquals(json_encode(['alganet', 'post', []]), $result);
+        self::assertEquals(json_encode(['alganet', 'post', []]), $result);
     }
 
     public function testProxyBy()
@@ -331,7 +333,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
 
             })->by($proxy);
         $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response();
-        $this->assertEquals('ok', $result);
+        self::assertEquals('ok', $result);
     }
 
     /**
@@ -348,7 +350,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
 
             });
         $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response();
-        $this->assertEquals('ok', $result);
+        self::assertEquals('ok', $result);
     }
 
     /**
@@ -365,7 +367,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
             });
         $this->object->always('by', $proxy);
         $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response();
-        $this->assertEquals('ok', $result);
+        self::assertEquals('ok', $result);
     }
 
     public function testProxyThrough()
@@ -378,7 +380,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
 
             })->through($proxy);
         $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response();
-        $this->assertEquals('ok', $result);
+        self::assertEquals('ok', $result);
     }
 
     public function testProxyThroughOutput()
@@ -392,7 +394,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 'ok';
             })->through($proxy);
         $result = (string) $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response()->getBody();
-        $this->assertEquals('okok', $result);
+        self::assertEquals('okok', $result);
     }
 
     public function testMultipleProxies()
@@ -411,7 +413,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 $result[] = 'main';
             })->by($proxy1)->through($proxy2)->through($proxy3);
         $this->object->dispatch(new ServerRequest('get', '/users/abc/def/ghi'))->response();
-        $this->assertSame(
+        self::assertSame(
             ['abc', 'main', 'def', 'ghi'], $result
         );
     }
@@ -428,8 +430,8 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
             };
         $this->object->get('/users/*/*', $callback)->by($proxy1);
         $this->object->dispatch(new ServerRequest('get', '/users/abc/def'))->response();
-        $this->assertEquals(['def', null], $resultProxy);
-        $this->assertEquals(['abc', 'def'], $resultCallback);
+        self::assertEquals(['def', null], $resultProxy);
+        self::assertEquals(['abc', 'def'], $resultCallback);
     }
 
     public function testProxyReturnFalse()
@@ -449,7 +451,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 $result[] = 'main';
             })->by($proxy1)->through($proxy2)->through($proxy3);
         $this->object->dispatch(new ServerRequest('get', '/users/abc/def/ghi'))->response();
-        $this->assertSame(
+        self::assertSame(
             ['abc'], $result
         );
     }
@@ -464,7 +466,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 $result = null;
             })->when($condition);
         $this->object->dispatch(new ServerRequest('get', '/users/alganet'));
-        $this->assertEquals('ok', $result);
+        self::assertEquals('ok', $result);
     }
 
     public function testWildcardOrdering()
@@ -477,10 +479,10 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 5;
             }
         );
-        $this->assertEquals(
+        self::assertEquals(
             '10', (string) $this->object->dispatch(new ServerRequest('get', '/posts/2010/20'))->response()->getBody()
         );
-        $this->assertEquals(
+        self::assertEquals(
             '5', (string) $this->object->dispatch(new ServerRequest('get', '/anything'))->response()->getBody()
         );
     }
@@ -495,10 +497,10 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 10;
             }
         );
-        $this->assertEquals(
+        self::assertEquals(
             '5', (string) $this->object->dispatch(new ServerRequest('get', '/users/alganet'))->response()->getBody()
         );
-        $this->assertEquals(
+        self::assertEquals(
             '10', (string) $this->object->dispatch(new ServerRequest('get', '/users/2010/20'))->response()->getBody()
         );
     }
@@ -513,10 +515,10 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 5;
             }
         );
-        $this->assertEquals(
+        self::assertEquals(
             '5', (string) $this->object->dispatch(new ServerRequest('get', '/users/lists/alganet'))->response()->getBody()
         );
-        $this->assertEquals(
+        self::assertEquals(
             '10', (string) $this->object->dispatch(new ServerRequest('get', '/users/foobar/alganet'))->response()->getBody()
         );
     }
@@ -543,19 +545,19 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 6;
             }
         );
-        $this->assertEquals(
+        self::assertEquals(
             '2', (string) $this->object->dispatch(new ServerRequest('get', '/'))->response()->getBody()
         );
-        $this->assertEquals(
+        self::assertEquals(
             '3', (string) $this->object->dispatch(new ServerRequest('get', '/foo'))->response()->getBody()
         );
-        $this->assertEquals(
+        self::assertEquals(
             '4', (string) $this->object->dispatch(new ServerRequest('get', '/foo/versions'))->response()->getBody()
         );
-        $this->assertEquals(
+        self::assertEquals(
             '5', (string) $this->object->dispatch(new ServerRequest('get', '/foo/versions/1.0'))->response()->getBody()
         );
-        $this->assertEquals(
+        self::assertEquals(
             '6', (string) $this->object->dispatch(new ServerRequest('get', '/foo/bar'))->response()->getBody()
         );
     }
@@ -572,7 +574,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
         $output = (string) $router->dispatch(
                 new ServerRequest(array_shift($commandArgs), '/' . implode('/', $commandArgs))
             )->response()->getBody();
-        $this->assertEquals('Installed apache, php, mysql', $output);
+        self::assertEquals('Installed apache, php, mysql', $output);
     }
 
     public function testAccept()
@@ -584,7 +586,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return range(0, 10);
             })->accept(['application/json' => 'json_encode']);
         $r = (string) $this->object->dispatchRequest($request)->response()->getBody();
-        $this->assertEquals(json_encode(range(0, 10)), $r);
+        self::assertEquals(json_encode(range(0, 10)), $r);
     }
 
 
@@ -597,7 +599,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 'açaí';
             })->acceptCharset(['utf-8' => fn ($data) => mb_convert_encoding($data, 'ISO-8859-1', 'UTF-8')]);
         $r = (string) $this->object->dispatchRequest($request)->response()->getBody();
-        $this->assertEquals(mb_convert_encoding('açaí', 'ISO-8859-1', 'UTF-8'), $r);
+        self::assertEquals(mb_convert_encoding('açaí', 'ISO-8859-1', 'UTF-8'), $r);
     }
 
 
@@ -610,7 +612,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 'foobar';
             })->acceptEncoding(['myenc' => 'strrev']);
         $r = (string) $this->object->dispatchRequest($request)->response()->getBody();
-        $this->assertEquals(strrev('foobar'), $r);
+        self::assertEquals(strrev('foobar'), $r);
     }
 
     public function testAcceptUrl()
@@ -624,7 +626,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return range(0, 10);
             })->accept(['.json' => 'json_encode']);
         $r = (string) $this->object->dispatchRequest($request)->response()->getBody();
-        $this->assertEquals(json_encode(range(0, 10)), $r);
+        self::assertEquals(json_encode(range(0, 10)), $r);
     }
     public function testAcceptUrlNoParameters()
     {
@@ -635,7 +637,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return range(0, 10);
             })->accept(['.json' => 'json_encode']);
         $r = (string) $this->object->dispatchRequest($request)->response()->getBody();
-        $this->assertEquals(json_encode(range(0, 10)), $r);
+        self::assertEquals(json_encode(range(0, 10)), $r);
     }
     public function testFileExtension()
     {
@@ -645,7 +647,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return range($min, $max);
             });
         $r = (string) $this->object->dispatchRequest($request)->response()->getBody();
-        $this->assertEquals(json_encode(range(10, 20)), $r);
+        self::assertEquals(json_encode(range(10, 20)), $r);
     }
 
     public function notestAcceptGeneric()
@@ -656,7 +658,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return range(0, 10);
             })->accept(['application/json' => 'json_encode']);
         $r = (string) $this->object->dispatchRequest($request)->response()->getBody();
-        $this->assertEquals(json_encode(range(0, 10)), $r);
+        self::assertEquals(json_encode(range(0, 10)), $r);
     }
 
     public function testAcceptGeneric2()
@@ -668,7 +670,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return range(0, 10);
             })->accept(['application/json' => 'json_encode']);
         $r = (string) $this->object->dispatchRequest($request)->response()->getBody();
-        $this->assertEquals(json_encode(range(0, 10)), $r);
+        self::assertEquals(json_encode(range(0, 10)), $r);
     }
 
     public function notestAcceptGeneric3()
@@ -679,7 +681,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return range(0, 10);
             })->accept(['application/json' => 'json_encode']);
         $r = (string) $this->object->dispatchRequest($request)->response()->getBody();
-        $this->assertEquals('', $r);
+        self::assertEquals('', $r);
     }
 
     public function testAcceptLanguage()
@@ -697,7 +699,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 'Olá!';
             }]);
         $r = (string) $this->object->dispatchRequest($request)->response()->getBody();
-        $this->assertEquals('Hi there', $r);
+        self::assertEquals('Hi there', $r);
     }
 
     public function testAcceptLanguage2()
@@ -715,7 +717,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 'Olá!';
             }]);
         $r = (string) $this->object->dispatchRequest($request)->response()->getBody();
-        $this->assertEquals('Olá!', $r);
+        self::assertEquals('Olá!', $r);
     }
 
     public function testAcceptOrder()
@@ -733,7 +735,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 'Olá!';
             }]);
         $r = (string) $this->object->dispatchRequest($requestBoth)->response()->getBody();
-        $this->assertEquals('Olá!', $r);
+        self::assertEquals('Olá!', $r);
     }
     public function testUniqueRoutine()
     {
@@ -757,7 +759,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 'sdfsdfsdfdf!';
             }]);
         $r = $this->object->dispatchRequest($requestBoth)->response();
-        $this->assertFalse($neverRun);
+        self::assertFalse($neverRun);
     }
 
     public function testAcceptMulti()
@@ -778,7 +780,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
             'application/json' => 'json_encode'
         ]);
         $r = (string) $this->object->dispatchRequest($requestBoth)->response()->getBody();
-        $this->assertEquals('"Ol\u00e1!"', $r);
+        self::assertEquals('"Ol\u00e1!"', $r);
     }
 
     public function testAcceptOrderX()
@@ -796,7 +798,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 'nuqneH';
             }]);
         $r = (string) $this->object->dispatchRequest($requestBoth)->response()->getBody();
-        $this->assertEquals('nuqneH', $r);
+        self::assertEquals('nuqneH', $r);
     }
 
     public function testAcceptOrderQuality()
@@ -814,7 +816,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return 'Olá!';
             }]);
         $r = (string) $this->object->dispatchRequest($requestBoth)->response()->getBody();
-        $this->assertEquals('Hi there', $r);
+        self::assertEquals('Hi there', $r);
     }
 
     public function testLastModifiedSince()
@@ -830,7 +832,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return new \DateTime('2011-11-11 11:11:12');
             });
         $r = (string) $this->object->dispatchRequest($requestBoth)->response()->getBody();
-        $this->assertEquals('hi!', $r);
+        self::assertEquals('hi!', $r);
     }
 
     public function testLastModifiedSince2()
@@ -846,8 +848,8 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return new \DateTime('2011-11-11 11:11:10');
             });
         $response = $this->object->dispatchRequest($requestBoth)->response();
-        $this->assertEquals(304, $response->getStatusCode());
-        $this->assertEquals('Fri, 11 Nov 2011 11:11:10 +0000', $response->getHeaderLine('Last-Modified'));
+        self::assertEquals(304, $response->getStatusCode());
+        self::assertEquals('Fri, 11 Nov 2011 11:11:10 +0000', $response->getHeaderLine('Last-Modified'));
     }
 
     public function testLastModifiedSince3()
@@ -863,8 +865,8 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 return new \DateTime('2011-11-11 11:11:11');
             });
         $response = $this->object->dispatchRequest($requestBoth)->response();
-        $this->assertEquals(304, $response->getStatusCode());
-        $this->assertEquals('Fri, 11 Nov 2011 11:11:11 +0000', $response->getHeaderLine('Last-Modified'));
+        self::assertEquals(304, $response->getStatusCode());
+        self::assertEquals('Fri, 11 Nov 2011 11:11:11 +0000', $response->getHeaderLine('Last-Modified'));
     }
 
     public function testContenType()
@@ -883,7 +885,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
                 $result = 'ok';
             }]);
         $r = $this->object->dispatchRequest($requestBoth)->response();
-        $this->assertEquals('ok', $result);
+        self::assertEquals('ok', $result);
     }
 
     public function testVirtualHost()
@@ -895,7 +897,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
             }
         );
         $router->dispatch(new ServerRequest('get', '/myvh/alganet'))->response();
-        $this->assertTrue($ok);
+        self::assertTrue($ok);
     }
 
     public function testVirtualHostEmpty()
@@ -907,7 +909,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
             }
         );
         $router->dispatch(new ServerRequest('get', '/myvh'))->response();
-        $this->assertTrue($ok);
+        self::assertTrue($ok);
     }
 
     public function testVirtualHostIndex()
@@ -919,7 +921,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
             }
         );
         $router->dispatch(new ServerRequest('get', '/myvh/index.php'))->response();
-        $this->assertTrue($ok);
+        self::assertTrue($ok);
     }
 
     public function testCreateUri()
@@ -928,7 +930,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
         $ro = $r->any('/users/*/test/*', function() {
 
             });
-        $this->assertEquals(
+        self::assertEquals(
             '/users/alganet/test/php', $ro->createUri("alganet", "php")
         );
         $r->isAutoDispatched = false;
@@ -943,7 +945,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
             return $ro1;
         });
         $response = (string) $r->dispatch(new ServerRequest('get', '/alganet'))->response()->getBody();
-        $this->assertEquals('alganet', $response);
+        self::assertEquals('alganet', $response);
     }
 
     /**
@@ -955,7 +957,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
         $r = new Router(new Psr17Factory());
         $r->any('/optional/*', 'Respect\Rest\MyOptionalParamRoute');
         $response = (string) $r->dispatch(new ServerRequest('get', '/optional'))->response()->getBody();
-        $this->assertEquals('John Doe', $response);
+        self::assertEquals('John Doe', $response);
     }
 }
 if (!function_exists(__NAMESPACE__.'\\header')) {

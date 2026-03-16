@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Respect\Rest {
 
@@ -42,18 +43,13 @@ namespace Respect\Rest {
      * @covers Respect\Rest\Routines\UserAgent
      * @covers Respect\Rest\Routines\When
      */
-    class NewRouterTest extends \PHPUnit\Framework\TestCase
+    final class NewRouterTest extends \PHPUnit\Framework\TestCase
     {
         private $expectedHeader;
         private $router;
 
         function setUp(): void
         {
-            $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
-            $_SERVER['REQUEST_URI'] = '/';
-            $_SERVER['REQUEST_METHOD'] = 'GET';
-            $_SERVER['CONTENT_TYPE'] = 'text/html';
-            $_REQUEST['_method'] = '';
             $this->router = new Router(new Psr17Factory());
             $this->router->isAutoDispatched = false;
             $this->router->methodOverriding = false;
@@ -65,60 +61,60 @@ namespace Respect\Rest {
         }
         function test_magic_call_should_throw_exception_with_just_one_arg()
         {
-            $this->expectException('InvalidArgumentException');
+            self::expectException('InvalidArgumentException');
             $this->router->thisIsAnInvalidMagicCallWithOnlyOneArg('foo');
         }
 
         function test_magic_call_should_throw_exception_with_zero_args()
         {
-            $this->expectException('InvalidArgumentException');
+            self::expectException('InvalidArgumentException');
             $this->router->thisIsAnInvalidMagicCallWithOnlyOneArg();
         }
 
         function test_magic_call_with_closure_should_create_callback_route()
         {
             $route = $this->router->thisIsAMagicCall('/some/path', function() {});
-            $this->assertInstanceOf('Respect\Rest\Routes\Callback', $route);
+            self::assertInstanceOf('Respect\Rest\Routes\Callback', $route);
         }
         function test_magic_call_with_func_name_should_create_callback_route()
         {
             $route = $this->router->thisIsAMagicCall('/some/path', 'strlen');
-            $this->assertInstanceOf('Respect\Rest\Routes\Callback', $route);
+            self::assertInstanceOf('Respect\Rest\Routes\Callback', $route);
         }
         function test_magic_call_with_object_instance_should_create_instance_route()
         {
             $route = $this->router->thisIsAMagicCall(
                 '/some/path', new DummyRoute
             );
-            $this->assertInstanceOf('Respect\Rest\Routes\Instance', $route);
+            self::assertInstanceOf('Respect\Rest\Routes\Instance', $route);
         }
         function test_magic_call_with_class_name_should_return_classname_route()
         {
             $route = $this->router->thisIsAMagicCall(
                 '/some/path', 'DateTime'
             );
-            $this->assertInstanceOf('Respect\Rest\Routes\ClassName', $route);
+            self::assertInstanceOf('Respect\Rest\Routes\ClassName', $route);
         }
         function test_magic_call_with_class_callback_should_return_factory_route()
         {
             $route = $this->router->thisIsAMagicCall(
                 '/some/path', 'DateTime', [new \Datetime, 'format']
             );
-            $this->assertInstanceOf('Respect\Rest\Routes\Factory', $route);
+            self::assertInstanceOf('Respect\Rest\Routes\Factory', $route);
         }
         function test_magic_call_with_class_with_constructor_should_return_class_route()
         {
             $route = $this->router->thisIsAMagicCall(
                 '/some/path', 'DateTime', ['2989374983']
             );
-            $this->assertInstanceOf('Respect\Rest\Routes\ClassName', $route);
+            self::assertInstanceOf('Respect\Rest\Routes\ClassName', $route);
         }
         function test_magic_call_with_some_static_value()
         {
             $route = $this->router->thisIsAMagicCall(
                 '/some/path', ['foo']
             );
-            $this->assertInstanceOf('Respect\Rest\Routes\StaticValue', $route);
+            self::assertInstanceOf('Respect\Rest\Routes\StaticValue', $route);
         }
         function test_destructor_does_not_auto_dispatch_after_manual_dispatch()
         {
@@ -128,34 +124,34 @@ namespace Respect\Rest {
             ob_start();
             unset($this->router);
             $response = ob_get_clean();
-            $this->assertEquals('', $response);
+            self::assertEquals('', $response);
         }
         function test_dispatch_non_existing_route()
         {
             $this->router->any('/', function() {});
             $response = $this->router->dispatch(new ServerRequest('get', '/my/name/is/hall'))->response();
-            $this->assertNull($response, 'No route matched — response should be null');
+            self::assertNull($response, 'No route matched — response should be null');
         }
         function test_method_not_allowed_header()
         {
             $this->router->get('/', function() { return 'ok'; });
             $this->router->put('/', function() { return 'ok'; });
             $response = $this->router->dispatch(new ServerRequest('delete', '/'))->response();
-            $this->assertNull($response, 'Method not allowed — route should be null');
+            self::assertNull($response, 'Method not allowed — route should be null');
         }
         function test_bad_request_header()
         {
             // When routine returns false — route doesn't match
             $this->router->get('/', function() { return 'ok'; })->when(function(){return false;});
             $response = $this->router->dispatch(new ServerRequest('get', '/'))->response();
-            $this->assertNull($response);
+            self::assertNull($response);
         }
         function test_method_not_allowed_header_with_conneg()
         {
             $this->router->get('/', function() { return 'ok'; })
                          ->accept(['text/html' => function($d) {return $d;}]);
             $response = $this->router->dispatch(new ServerRequest('delete', '/'))->response();
-            $this->assertNull($response, 'Method not allowed — route should be null');
+            self::assertNull($response, 'Method not allowed — route should be null');
         }
         function test_transparent_options_allow_methods()
         {
@@ -163,14 +159,14 @@ namespace Respect\Rest {
             $this->router->post('/', function() { return 'ok'; });
             $response = $this->router->dispatch(new ServerRequest('options', '/'))->response();
             // OPTIONS without an explicit OPTIONS handler returns null route
-            $this->assertNull($response);
+            self::assertNull($response);
         }
         function test_transparent_global_options_allow_methods()
         {
             $this->router->get('/', function() { return 'ok'; });
             $this->router->post('/', function() { return 'ok'; });
             $response = $this->router->dispatch(new ServerRequest('options', '*'))->response();
-            $this->assertNull($response);
+            self::assertNull($response);
         }
         /**
          * @ticket 45
@@ -181,7 +177,7 @@ namespace Respect\Rest {
             $this->router->put('/', function() { return 'ok'; });
             $serverRequest = (new ServerRequest('POST', '/'))->withParsedBody(['_method' => 'PUT']);
             $response = $this->router->run(new Request($serverRequest));
-            $this->assertEquals('ok', (string) $response->getBody());
+            self::assertEquals('ok', (string) $response->getBody());
         }
         /**
          * @ticket 45
@@ -193,7 +189,7 @@ namespace Respect\Rest {
             $serverRequest = (new ServerRequest('GET', '/'))->withParsedBody(['_method' => 'PUT']);
             $response = $this->router->run(new Request($serverRequest));
             // GET requests should not allow method overriding (only POST)
-            $this->assertNull($response);
+            self::assertNull($response);
         }
         function test_method_not_acceptable()
         {
@@ -201,8 +197,8 @@ namespace Respect\Rest {
             $this->router->get('/', function() { return 'ok'; })
                          ->accept(['foo/bar' => function($d) {return $d;}]);
             $response = $this->router->dispatch(new ServerRequest('get', '/'))->response();
-            $this->assertNotNull($response);
-            $this->assertEquals(406, $response->getStatusCode());
+            self::assertNotNull($response);
+            self::assertEquals(406, $response->getStatusCode());
         }
         function test_append_routine_honours_routine_chaining()
         {
@@ -210,7 +206,7 @@ namespace Respect\Rest {
                 ->appendRoutine(new Routines\Through(function ($data) {return function ($data) { return "$data-through1";};}))
                 ->through(function ($data) {return function ($data) {return "$data-through2";};});
             $response = $this->router->dispatch(new ServerRequest('GET', '/one-time'));
-            $this->assertEquals('one-time-through1-through2', $response);
+            self::assertEquals('one-time-through1-through2', $response);
         }
         function test_callback_gets_param_array()
         {
@@ -218,7 +214,7 @@ namespace Respect\Rest {
                 return "one-time-$frag-$param1-$param2";
             }, ['addl','add2']);
             $response = $this->router->dispatch(new ServerRequest('GET', '/one-time/1'));
-            $this->assertEquals('one-time-1-addl-add2', $response);
+            self::assertEquals('one-time-1-addl-add2', $response);
         }
         function test_http_method_head()
         {
@@ -230,8 +226,8 @@ namespace Respect\Rest {
             });
             $headResponse = $this->router->dispatch(new ServerRequest('HEAD', '/'));
             $getResponse  = $this->router->dispatch(new ServerRequest('GET', '/'));
-            $this->assertEquals('ok', (string) $getResponse);
-            $this->assertContains($expectedHeader, $header);
+            self::assertEquals('ok', (string) $getResponse);
+            self::assertContains($expectedHeader, $header);
         }
         function test_http_method_head_with_classes_and_routines()
         {
@@ -241,8 +237,8 @@ namespace Respect\Rest {
                          ->when(function(){return true;});
             $headResponse = $this->router->dispatch(new ServerRequest('HEAD', '/'));
             $getResponse  = $this->router->dispatch(new ServerRequest('GET', '/'));
-            $this->assertEquals('ok', (string) $getResponse->response()->getBody());
-            $this->assertContains($expectedHeader, $header);
+            self::assertEquals('ok', (string) $getResponse->response()->getBody());
+            self::assertContains($expectedHeader, $header);
         }
         function test_user_agent_class()
         {
@@ -250,11 +246,11 @@ namespace Respect\Rest {
         //        print_r(\func_get_args());
             }]);
 
-            $this->assertFalse($u->knowsCompareItems('a','b'));
-            $this->assertFalse($u->knowsCompareItems('c','b'));
-            $this->assertTrue($u->knowsCompareItems(1,'1'));
-            $this->assertTrue($u->knowsCompareItems('0',''));
-            $this->assertTrue($u->knowsCompareItems('a','*'));
+            self::assertFalse($u->knowsCompareItems('a','b'));
+            self::assertFalse($u->knowsCompareItems('c','b'));
+            self::assertTrue($u->knowsCompareItems(1,'1'));
+            self::assertTrue($u->knowsCompareItems('0',''));
+            self::assertTrue($u->knowsCompareItems('a','*'));
         }
 
         function test_user_agent_content_negotiation()
@@ -267,7 +263,7 @@ namespace Respect\Rest {
             ]);
             $serverRequest = (new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX');
             $response = $this->router->dispatch($serverRequest);
-            $this->assertEquals('FIREFOX', $response);
+            self::assertEquals('FIREFOX', $response);
         }
         function test_user_agent_content_negotiation_fallback()
         {
@@ -278,7 +274,7 @@ namespace Respect\Rest {
             ]);
             $serverRequest = (new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX');
             $response = $this->router->dispatch($serverRequest);
-            $this->assertEquals('IE', $response);
+            self::assertEquals('IE', $response);
         }
         function test_stream_routine()
         {
@@ -298,8 +294,8 @@ namespace Respect\Rest {
                          ]);
 
             $response = $this->router->run($request);
-            $this->assertTrue($done);
-            $this->assertInstanceOf(\Psr\Http\Message\ResponseInterface::class, $response);
+            self::assertTrue($done);
+            self::assertInstanceOf(\Psr\Http\Message\ResponseInterface::class, $response);
         }
 
 
@@ -311,7 +307,7 @@ namespace Respect\Rest {
             $r = new Router(new Psr17Factory());
             $r->any('/optional/*', __NAMESPACE__.'\\MyOptionalParamRoute');
             $response = $r->dispatch(new ServerRequest('get', '/optional'))->response();
-            $this->assertEquals('John Doe', (string) $response->getBody());
+            self::assertEquals('John Doe', (string) $response->getBody());
         }
 
         function test_optional_parameter_in_function_routes(){
@@ -320,7 +316,7 @@ namespace Respect\Rest {
                 return $user ?: 'John Doe';
             });
             $response = $r->dispatch(new ServerRequest('get', '/optional'))->response();
-            $this->assertEquals('John Doe', (string) $response->getBody());
+            self::assertEquals('John Doe', (string) $response->getBody());
         }
 
         function test_optional_parameter_in_function_routes_multiple(){
@@ -332,7 +328,7 @@ namespace Respect\Rest {
                 return $user ?: 'John Doe';
             });
             $response = $r->dispatch(new ServerRequest('get', '/optional'))->response();
-            $this->assertEquals('No User', (string) $response->getBody());
+            self::assertEquals('No User', (string) $response->getBody());
         }
         function test_two_optional_parameters_in_function_routes(){
             $r = new Router(new Psr17Factory());
@@ -340,7 +336,7 @@ namespace Respect\Rest {
                 return $user . $list;
             });
             $response = $r->dispatch(new ServerRequest('get', '/optional/Foo/Bar'))->response();
-            $this->assertEquals('FooBar', (string) $response->getBody());
+            self::assertEquals('FooBar', (string) $response->getBody());
         }
         function test_two_optional_parameters_one_passed_in_function_routes(){
             $r = new Router(new Psr17Factory());
@@ -348,7 +344,7 @@ namespace Respect\Rest {
                 return $user . $list;
             });
             $response = $r->dispatch(new ServerRequest('get', '/optional/Foo'))->response();
-            $this->assertEquals('Foo', (string) $response->getBody());
+            self::assertEquals('Foo', (string) $response->getBody());
         }
         function test_single_last_param()
         {
@@ -358,7 +354,7 @@ namespace Respect\Rest {
                 $args = func_get_args();
             });
             $r->dispatch(new ServerRequest('get', '/documents/1234'))->response();
-            $this->assertEquals(['1234'], $args);
+            self::assertEquals(['1234'], $args);
         }
         function test_single_last_param2()
         {
@@ -368,7 +364,7 @@ namespace Respect\Rest {
                 $args = func_get_args();
             });
             $r->dispatch(new ServerRequest('get', '/documents/foo/bar'))->response();
-            $this->assertEquals([['foo', 'bar']], $args);
+            self::assertEquals([['foo', 'bar']], $args);
         }
         /**
          * Unit test for Commit: 3e8d536
@@ -384,7 +380,7 @@ namespace Respect\Rest {
                 $args = func_get_args();
             });
             $r->dispatch(new ServerRequest('get', '/'))->response();
-            $this->assertIsArray($args[0]);
+            self::assertIsArray($args[0]);
         }
 
         /**
@@ -401,7 +397,7 @@ namespace Respect\Rest {
               ]);
             $serverRequest = (new ServerRequest('get', '/'))->withHeader('Accept', 'text/html');
             $response = $r->dispatch($serverRequest)->response();
-            $this->assertEquals($e, (string) $response->getBody());
+            self::assertEquals($e, (string) $response->getBody());
         }
 
         static function provider_content_type()
@@ -421,8 +417,8 @@ namespace Respect\Rest {
             $r->get('/auto', '')->accept([$ctype=>'json_encode']);
             $serverRequest = (new ServerRequest('get', '/auto'))->withHeader('Accept', $ctype);
             $response = $r->dispatch($serverRequest)->response();
-            $this->assertNotNull($response);
-            $this->assertEquals($ctype, $response->getHeaderLine('Content-Type'));
+            self::assertNotNull($response);
+            self::assertEquals($ctype, $response->getHeaderLine('Content-Type'));
         }
         /**
          * @ticket 44
@@ -434,21 +430,21 @@ namespace Respect\Rest {
             $r->get('/auto', '')->accept([$ctype=>'json_encode']);
             $serverRequest = (new ServerRequest('get', '/auto'))->withHeader('Accept', '*/*');
             $response = $r->dispatch($serverRequest)->response();
-            $this->assertNotNull($response);
-            $this->assertEquals($ctype, $response->getHeaderLine('Content-Type'));
+            self::assertNotNull($response);
+            self::assertEquals($ctype, $response->getHeaderLine('Content-Type'));
         }
         function test_request_forward()
         {
             $r = new Router(new Psr17Factory());
             $r1 = $r->get('/route1', 'route1');
             $response = (string) $r->dispatch(new ServerRequest('get', '/route1'))->response()->getBody();
-            $this->assertEquals('route1',$response);
+            self::assertEquals('route1',$response);
             $r2 = $r->get('/route2', 'route2');
             $response = (string) $r->dispatch(new ServerRequest('get', '/route2'))->response()->getBody();
-            $this->assertEquals('route2',$response);
+            self::assertEquals('route2',$response);
             $r2->by(function() use ($r1) { return $r1;});
             $response = (string) $r->dispatch(new ServerRequest('get', '/route2'))->response()->getBody();
-            $this->assertEquals('route1',$response);
+            self::assertEquals('route1',$response);
         }
         static function provider_content_type_extension()
         {
@@ -467,13 +463,13 @@ namespace Respect\Rest {
                 ->withHeader('Accept', 'foo/bar')
                 ->withHeader('Accept-Language', '13375p34|<');
             $response = $this->router->dispatch($serverRequest)->response();
-            $this->assertNotNull($response);
-            $this->assertEquals('ok', (string) $response->getBody());
-            $this->assertEquals('foo/bar', $response->getHeaderLine('Content-Type'));
-            $this->assertStringContainsString('accept-language', $response->getHeaderLine('Vary'));
-            $this->assertEquals('/accept', $response->getHeaderLine('Content-Location'));
-            $this->assertNotEmpty($response->getHeaderLine('Expires'));
-            $this->assertNotEmpty($response->getHeaderLine('Cache-Control'));
+            self::assertNotNull($response);
+            self::assertEquals('ok', (string) $response->getBody());
+            self::assertEquals('foo/bar', $response->getHeaderLine('Content-Type'));
+            self::assertStringContainsString('accept-language', $response->getHeaderLine('Vary'));
+            self::assertEquals('/accept', $response->getHeaderLine('Content-Location'));
+            self::assertNotEmpty($response->getHeaderLine('Expires'));
+            self::assertNotEmpty($response->getHeaderLine('Cache-Control'));
         }
         function test_accept_content_type_header()
         {
@@ -481,8 +477,8 @@ namespace Respect\Rest {
                          ->accept(['foo/bar' => function($d) {return $d;}]);
             $serverRequest = (new ServerRequest('get', '/'))->withHeader('Accept', 'foo/bar');
             $response = $this->router->dispatch($serverRequest)->response();
-            $this->assertNotNull($response);
-            $this->assertEquals('foo/bar', $response->getHeaderLine('Content-Type'));
+            self::assertNotNull($response);
+            self::assertEquals('foo/bar', $response->getHeaderLine('Content-Type'));
         }
         function test_accept_content_language_header()
         {
@@ -490,8 +486,8 @@ namespace Respect\Rest {
                          ->acceptLanguage(['13375p34|<' => function($d) {return $d;}]);
             $serverRequest = (new ServerRequest('get', '/'))->withHeader('Accept-Language', '13375p34|<');
             $response = $this->router->dispatch($serverRequest)->response();
-            $this->assertNotNull($response);
-            $this->assertStringContainsString('accept-language', $response->getHeaderLine('Vary'));
+            self::assertNotNull($response);
+            self::assertStringContainsString('accept-language', $response->getHeaderLine('Vary'));
         }
         /**
          * @ticket 44
@@ -507,7 +503,7 @@ namespace Respect\Rest {
 
 
             $r = $r->dispatch(new ServerRequest('get', '/auto'.$ext))->response();
-            $this->assertEmpty($header);
+            self::assertEmpty($header);
         }
 
         /**
@@ -521,7 +517,7 @@ namespace Respect\Rest {
             });
             $psrResponse = $r->dispatch(new ServerRequest('get', '/users/photos'))->response();
             $response = $psrResponse !== null ? (string) $psrResponse->getBody() : '';
-            $this->assertNotEquals('match', $response);
+            self::assertNotEquals('match', $response);
         }
         function test_route_ordering_with_when()
         {
@@ -545,8 +541,8 @@ namespace Respect\Rest {
             $r->get('/docs', function() {return 'DOCS!';});
             $response = (string) $r->dispatch(new ServerRequest('get', '/users/1'))->response()->getBody();
 
-            $this->assertTrue($when);
-            $this->assertEquals('user-1', $response);
+            self::assertTrue($when);
+            self::assertEquals('user-1', $response);
         }
         function test_when_should_be_called_only_on_existent_methods()
         {
@@ -563,7 +559,7 @@ namespace Respect\Rest {
             $serverRequest = (new ServerRequest('get', '/meow/blub'))->withHeader('Accept', 'application/json');
             $out = (string) $router->run(new \Respect\Rest\Request($serverRequest))->getBody(); // ReflectionException
 
-            $this->assertEquals('"ok: blub"', $out);
+            self::assertEquals('"ok: blub"', $out);
 
         }
         
@@ -578,7 +574,7 @@ namespace Respect\Rest {
                 return spl_object_hash($router->request);
             });
             $out = (string) $router->run($request)->getBody();
-            $this->assertEquals($out, spl_object_hash($request));
+            self::assertEquals($out, spl_object_hash($request));
         }
 
     }
@@ -590,9 +586,16 @@ namespace Respect\Rest {
     class RouteKnowsNothing implements \Respect\Rest\Routable {
     }
 
-    class KnowsUserAgent extends Routines\UserAgent {
+    class KnowsUserAgent {
+        private Routines\UserAgent $userAgent;
+
+        public function __construct(array $list) {
+            $this->userAgent = new Routines\UserAgent($list);
+        }
+
         public function knowsCompareItems($requested, $provided) {
-            return $this->authorize($requested, $provided);
+            $ref = new \ReflectionMethod($this->userAgent, 'authorize');
+            return $ref->invoke($this->userAgent, $requested, $provided);
         }
     }
 
