@@ -276,7 +276,8 @@ class RouterTest extends TestCase
         $router->get('/asian', 'Asian Food!');
         $router->post('/eastern', 'Eastern Food!');
         $router->eat('/mongolian', 'Mongolian Food!');
-        $response = (string) $router->dispatch(new ServerRequest('OPTIONS', '*'))->response();
+        $psrResponse = $router->dispatch(new ServerRequest('OPTIONS', '*'))->response();
+        $response = $psrResponse !== null ? (string) $psrResponse->getBody() : '';
 
         $this->assertHeaderContains(
             'Allow: GET, POST, EAT',
@@ -297,7 +298,7 @@ class RouterTest extends TestCase
         $router->put('/bulbs', 'Some Bulbs Put Response');
         $router->post('/bulbs', 'Some Bulbs Post Response');
 
-        $result = (string) $router->dispatch(new ServerRequest('POST', '/bulbs'))->response();
+        $result = (string) $router->dispatch(new ServerRequest('POST', '/bulbs'))->response()->getBody();
 
         $this->assertSame(
             'Some Bulbs Put Response',
@@ -324,7 +325,7 @@ class RouterTest extends TestCase
     {
         $_REQUEST['_method'] = 'PUT';
         $router->methodOverriding = false;
-        $result = (string) $router->dispatch(new ServerRequest('POST', '/bulbs'))->response();
+        $result = (string) $router->dispatch(new ServerRequest('POST', '/bulbs'))->response()->getBody();
 
         $this->assertSame(
             'Some Bulbs Post Response',
@@ -348,7 +349,7 @@ class RouterTest extends TestCase
     {
         $router = new Router(new Psr17Factory(), '/store');
         $router->get('/products', 'Some Products!');
-        $response = $router->dispatch(new ServerRequest('GET', '/store/products'))->response();
+        $response = (string) $router->dispatch(new ServerRequest('GET', '/store/products'))->response()->getBody();
 
         $this->assertSame(
             'Some Products!',
@@ -377,7 +378,8 @@ class RouterTest extends TestCase
     public function testReturns404WhenNoRoutesExist()
     {
         $router = new Router(new Psr17Factory());
-        $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response();
+        $psrResponse = $router->dispatch(new ServerRequest('GET', '/'))->response();
+        $response = $psrResponse !== null ? (string) $psrResponse->getBody() : '';
 
         $this->assertEquals(
             '404',
@@ -394,7 +396,8 @@ class RouterTest extends TestCase
     {
         $router = new Router(new Psr17Factory());
         $router->get('/foo', 'This exists.');
-        $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response();
+        $psrResponse = $router->dispatch(new ServerRequest('GET', '/'))->response();
+        $response = $psrResponse !== null ? (string) $psrResponse->getBody() : '';
 
         $this->assertEquals(
             '404',
@@ -410,7 +413,7 @@ class RouterTest extends TestCase
     {
         $router = new Router(new Psr17Factory());
         $router->allMembers = $router->any('/members', 'John, Carl');
-        $response = (string) $router->dispatch(new ServerRequest('GET', '/members'))->response();
+        $response = (string) $router->dispatch(new ServerRequest('GET', '/members'))->response()->getBody();
 
         $ref = new \ReflectionObject($router);
         $this->assertTrue($ref->hasProperty('allMembers'), 'There must be an attribute set for that key');
@@ -450,7 +453,8 @@ class RouterTest extends TestCase
         $router->post('/asian', 'POST: Asian Food!');
 
         // act
-        $response = (string) $router->dispatch(new ServerRequest('OPTIONS', '/asian'))->response();
+        $psrResponse = $router->dispatch(new ServerRequest('OPTIONS', '/asian'))->response();
+        $response = $psrResponse !== null ? (string) $psrResponse->getBody() : '';
 
         // assert
         $this->assertHeaderContains(
@@ -478,7 +482,7 @@ class RouterTest extends TestCase
         $router->post('/asian', 'POST: Asian Food!');
 
         // act
-        $response = (string) $router->dispatch(new ServerRequest('OPTIONS', '/asian'))->response();
+        $response = (string) $router->dispatch(new ServerRequest('OPTIONS', '/asian'))->response()->getBody();
 
         // assert
         $this->assertHeaderContains(

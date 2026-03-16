@@ -16,4 +16,14 @@ $request = new ServerRequest(
     $_SERVER['REQUEST_METHOD'] ?? 'GET',
     $_SERVER['REQUEST_URI'] ?? '/',
 );
-echo $r3->dispatch($request)->response();
+$response = $r3->dispatch($request)->response();
+
+if ($response !== null) {
+    http_response_code($response->getStatusCode());
+    foreach ($response->getHeaders() as $name => $values) {
+        foreach ($values as $value) {
+            header("$name: $value", false);
+        }
+    }
+    echo (string) $response->getBody();
+}

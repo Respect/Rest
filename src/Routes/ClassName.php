@@ -1,43 +1,29 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
 use ReflectionClass;
+use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use Respect\Rest\Routable;
 
-/** A route that builds an instance of a class to run it */
 class ClassName extends AbstractRoute
 {
-    /** @var string The class name this route will instantiate */
-    public $class = '';
+    public string $class = '';
 
-    /** @var array Constructor params for the built instance */
-    public $constructorParams = [];
+    /** @var array<int, mixed> */
+    public array $constructorParams = [];
 
-    /** @var object The built class instance */
-    protected $instance = null;
+    protected ?object $instance = null;
 
-    /**
-     * @param string $method  The HTTP method (GET, POST, etc)
-     * @param string $pattern The URI pattern for this route (like /users/*)
-     * @param string $class   The class name
-     * @param array  $params  Constructor params for the class
-     *
-     * @see Respect\Rest\Routes\ClassName::$class
-     * @see Respect\Rest\Routes\ClassName::$constructorParams
-     */
+    /** @param array<int, mixed> $params */
     public function __construct(
-        $method,
-        $pattern,
-        $class,
+        string $method,
+        string $pattern,
+        string $class,
         array $params = []
     ) {
         $this->class = $class;
@@ -45,17 +31,12 @@ class ClassName extends AbstractRoute
         parent::__construct($method, $pattern);
     }
 
-    /**
-     * Creates an instance of the class this route builds
-     *
-     * @return object The created instance
-     */
-    protected function createInstance()
+    protected function createInstance(): Routable
     {
         $className = $this->class;
         $reflection = new ReflectionClass($className);
 
-        if (!$reflection->implementsInterface('Respect\\Rest\\Routable')) {
+        if (!$reflection->implementsInterface(Routable::class)) {
             throw new InvalidArgumentException(
                 'Routed classes must implement Respect\\Rest\\Routable'
             );
@@ -68,39 +49,21 @@ class ClassName extends AbstractRoute
             return new $className();
         }
 
-        $reflection = new ReflectionClass($this->class);
-
         return $reflection->newInstanceArgs($this->constructorParams);
     }
 
-    /**
-     * Gets the reflection for a specific method. For this route, the reflection
-     * is given for the class method having the same name as the HTTP method.
-     *
-     * @param string $method The HTTP method for this implementation
-     *
-     * @return ReflectionMethod The returned reflection object
-     */
-    public function getReflection($method)
+    public function getReflection(string $method): ?ReflectionFunctionAbstract
     {
         $mirror = new ReflectionClass($this->class);
 
         if ($mirror->hasMethod($method)) {
             return new ReflectionMethod($this->class, $method);
         }
+
+        return null;
     }
 
-    /**
-     * Runs the class method when this route is matched with params
-     *
-     * @param string $method The HTTP method for this implementation
-     * @param array  $params An array of params for this request
-     *
-     * @see Respect\Rest\Request::$params
-     *
-     * @return mixed Whatever the class method returns
-     */
-    public function runTarget($method, &$params)
+    public function runTarget(string $method, array &$params): mixed
     {
         if ($this->instance === null) {
             $this->instance = $this->createInstance();

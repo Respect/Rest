@@ -10,6 +10,7 @@ namespace Respect\Rest;
 
 use Exception;
 use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
 use InvalidArgumentException;
@@ -235,16 +236,20 @@ class Router
             return;
         }
 
-        echo $this->request->response();
+        $response = $this->request->response();
+        if ($response !== null) {
+            echo (string) $response->getBody();
+        }
     }
 
-    /** Returns the response string from the last dispatched request */
+    /** Returns the response body string from the last dispatched request */
     public function __toString()
     {
         $string = '';
         try {
-            if ($this->request) {
-                $string = (string) $this->request->response();
+            $response = $this->request?->response();
+            if ($response !== null) {
+                $string = (string) $response->getBody();
             }
         } catch (\Exception $exception) {
             trigger_error($exception->getMessage(), E_USER_ERROR);
@@ -291,9 +296,10 @@ class Router
      */
     public function appendRoute(AbstractRoute $route)
     {
-        $this->routes[]     = $route;
-        $route->sideRoutes  = &$this->sideRoutes;
-        $route->virtualHost = $this->virtualHost;
+        $this->routes[]          = $route;
+        $route->sideRoutes       = &$this->sideRoutes;
+        $route->virtualHost      = $this->virtualHost;
+        $route->responseFactory  = $this->responseFactory;
 
         foreach ($this->globalRoutines as $routine) {
             $route->appendRoutine($routine);
@@ -314,6 +320,7 @@ class Router
     public function appendSideRoute(AbstractRoute $route)
     {
         $this->sideRoutes[] = $route;
+        $route->responseFactory = $this->responseFactory;
 
         foreach ($this->globalRoutines as $routine) {
             $route->appendRoutine($routine);
@@ -558,7 +565,7 @@ class Router
      *
      * @return string the response string
      */
-    public function run(Request $request)
+    public function run(Request $request): ?ResponseInterface
     {
         $route = $this->dispatchRequest($request);
 
@@ -567,18 +574,10 @@ class Router
             || (isset($request->method)
                 && $request->method === 'HEAD')
         ) {
-            return;
+            return null;
         }
 
-        $response = $route->response();
-
-        if (is_resource($response)) {
-            fpassthru($response);
-
-            return '';
-        }
-
-        return (string) $response;
+        return $route->response();
     }
 
     /**
@@ -642,6 +641,7 @@ class Router
         $matched = new \SplObjectStorage();
 
         foreach ($this->routes as $route) {
+            $params = [];
             if ($this->matchRoute($this->request, $route, $params)) {
                 $matched[$route] = $params;
             }

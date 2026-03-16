@@ -133,10 +133,11 @@ class RequestTest extends TestCase
         );
         $response = $request->response();
 
+        $this->assertNotNull($response, 'Response should not be null');
         $this->assertEquals(
-            ['Vaio', 'MacBook', 'ThinkPad'],
-            $response,
-            'Response should have data returned from runTarget'
+            '["Vaio","MacBook","ThinkPad"]',
+            (string) $response->getBody(),
+            'Response body should contain JSON-encoded array from runTarget'
         );
     }
 
@@ -158,7 +159,7 @@ class RequestTest extends TestCase
 
         $this->assertEquals(
             'Some Printers Response',
-            $response,
+            (string) $response->getBody(),
             'Response should return the route target when using previously set path params'
         );
     }
@@ -236,8 +237,8 @@ class RequestTest extends TestCase
         $request = new Request(new ServerRequest('GET', '/cupcakes'));
         $request->route = $userImplementedRoute;
         $response = $request->response();
-        
-        $this->assertSame('Delicious Cupcake Internally Forwarded', $response);
+
+        $this->assertSame('Delicious Cupcake Internally Forwarded', (string) $response->getBody());
     }
 
     public static function providerForUserImplementedForwards()
@@ -266,10 +267,19 @@ class RequestTest extends TestCase
 
         $this->assertNotSame(
             'Protected Content!!!',
-            $response,
+            (string) $response->getBody(),
             'Response should not be the protected content.'
         );
-        $this->assertFalse($response, 'Response should false when aborting response.');
+        // When a By routine returns false, response() wraps empty string into ResponseInterface
+        $this->assertInstanceOf(
+            \Psr\Http\Message\ResponseInterface::class,
+            $response,
+            'Response should be a ResponseInterface when aborting response.'
+        );
+        $this->assertEmpty(
+            (string) $response->getBody(),
+            'Response body should be empty when aborting response.'
+        );
     }
 
     /**
@@ -295,10 +305,10 @@ class RequestTest extends TestCase
         $route->appendRoutine($routine);
         $request->route = $route;
         $response = $request->response();
-        
+
         $this->assertSame(
             'user deleted something',
-            $response,
+            (string) $response->getBody(),
             "We passed a callback that replaced - for spaces, response should be passed to it."
         );
     }
@@ -427,7 +437,7 @@ class RequestTest extends TestCase
 
         $response = $request->response();
 
-        $this->assertEquals('MySoftwareName', $response);
+        $this->assertEquals('MySoftwareName', (string) $response->getBody());
     }
 
     public static function providerForParamSyncedRoutines()
@@ -500,9 +510,13 @@ class RequestTest extends TestCase
         $request = $builder->getMock();
 
         if ($hasResponse) {
+            // Wrap string responses in a ResponseInterface to match new return type
+            $psr17Factory = new \Nyholm\Psr7\Factory\Psr17Factory();
+            $psrResponse = $psr17Factory->createResponse();
+            $psrResponse->getBody()->write((string) $response);
             $request->expects($this->once())
                     ->method('response')
-                    ->willReturn($response);
+                    ->willReturn($psrResponse);
         }
 
         return $request;
@@ -524,6 +538,8 @@ class RequestTest extends TestCase
             ->setConstructorArgs($constructorParams)
             ->onlyMethods(['getReflection', 'runTarget'])
             ->getMock();
+
+        $route->responseFactory = new \Nyholm\Psr7\Factory\Psr17Factory();
 
         if ($hasTarget) {
             if ($targetParams) {

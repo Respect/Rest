@@ -20,9 +20,11 @@ class LegacyRequestTest extends \PHPUnit\Framework\TestCase
     function test_casting_to_string_returns_response()
     {
         $request = new Request(new ServerRequest('GET', '/'));
-        $request->route = new Routes\Callback('GET', '/', function() {
+        $route = new Routes\Callback('GET', '/', function() {
             return 'ok';
         });
+        $route->responseFactory = new Psr17Factory();
+        $request->route = $route;
         $this->assertEquals('ok', (string) $request);
     }
 

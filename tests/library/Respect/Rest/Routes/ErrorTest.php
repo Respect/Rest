@@ -35,7 +35,7 @@ class ErrorTest extends TestCase
         $router->get('/', function () {
             trigger_error('Oops', E_USER_WARNING);
         });
-        $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response();
+        $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response()->getBody();
 
         $this->assertTrue($called, 'The error route must have been called');
 

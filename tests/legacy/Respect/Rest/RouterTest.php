@@ -190,7 +190,7 @@ namespace Respect\Rest {
             $_REQUEST['_method'] = 'PUT';
             $this->router->put('/', function() { return 'ok'; });
             $response = $this->router->run(new Request(new ServerRequest('POST', '/')));
-            $this->assertEquals('ok', (string) $response);
+            $this->assertEquals('ok', (string) $response->getBody());
             $this->router->methodOverriding = false;
         }
         /**
@@ -203,7 +203,8 @@ namespace Respect\Rest {
             $_REQUEST['_method'] = 'PUT';
             $this->router->put('/', function() { return 'ok'; });
             $response = $this->router->run(new Request(new ServerRequest('GET', '/')));
-            $this->assertNotEquals('ok', (string) $response);
+            $body = $response !== null ? (string) $response->getBody() : '';
+            $this->assertNotEquals('ok', $body);
             $this->assertContains('HTTP/1.1 405', $header);
             $this->router->methodOverriding = false;
         }
@@ -253,7 +254,7 @@ namespace Respect\Rest {
                          ->when(function(){return true;});
             $headResponse = $this->router->dispatch(new ServerRequest('HEAD', '/'));
             $getResponse  = $this->router->dispatch(new ServerRequest('GET', '/'));
-            $this->assertEquals('ok', $getResponse->response());
+            $this->assertEquals('ok', (string) $getResponse->response()->getBody());
             $this->assertContains($expectedHeader, $header);
         }
         function test_user_agent_class()
@@ -310,8 +311,7 @@ namespace Respect\Rest {
 
             $response = $this->router->run($request);
             $this->assertTrue($done);
-            //var_dump((string)$response);
-            $this->assertEmpty((string) $response);
+            $this->assertInstanceOf(\Psr\Http\Message\ResponseInterface::class, $response);
         }
 
 
@@ -323,7 +323,7 @@ namespace Respect\Rest {
             $r = new Router(new Psr17Factory());
             $r->any('/optional/*', __NAMESPACE__.'\\MyOptionalParamRoute');
             $response = $r->dispatch(new ServerRequest('get', '/optional'))->response();
-            $this->assertEquals('John Doe', (string) $response);
+            $this->assertEquals('John Doe', (string) $response->getBody());
         }
 
         function test_optional_parameter_in_function_routes(){
@@ -332,7 +332,7 @@ namespace Respect\Rest {
                 return $user ?: 'John Doe';
             });
             $response = $r->dispatch(new ServerRequest('get', '/optional'))->response();
-            $this->assertEquals('John Doe', (string) $response);
+            $this->assertEquals('John Doe', (string) $response->getBody());
         }
 
         function test_optional_parameter_in_function_routes_multiple(){
@@ -344,7 +344,7 @@ namespace Respect\Rest {
                 return $user ?: 'John Doe';
             });
             $response = $r->dispatch(new ServerRequest('get', '/optional'))->response();
-            $this->assertEquals('No User', (string) $response);
+            $this->assertEquals('No User', (string) $response->getBody());
         }
         function test_two_optional_parameters_in_function_routes(){
             $r = new Router(new Psr17Factory());
@@ -352,7 +352,7 @@ namespace Respect\Rest {
                 return $user . $list;
             });
             $response = $r->dispatch(new ServerRequest('get', '/optional/Foo/Bar'))->response();
-            $this->assertEquals('FooBar', (string) $response);
+            $this->assertEquals('FooBar', (string) $response->getBody());
         }
         function test_two_optional_parameters_one_passed_in_function_routes(){
             $r = new Router(new Psr17Factory());
@@ -360,7 +360,7 @@ namespace Respect\Rest {
                 return $user . $list;
             });
             $response = $r->dispatch(new ServerRequest('get', '/optional/Foo'))->response();
-            $this->assertEquals('Foo', (string) $response);
+            $this->assertEquals('Foo', (string) $response->getBody());
         }
         function test_single_last_param()
         {
@@ -413,7 +413,7 @@ namespace Respect\Rest {
                 'text/html' => [$f, 'getBar']
               ]);
             $response = $r->dispatch(new ServerRequest('get', '/'))->response();
-            $this->assertEquals($e, (string) $response);
+            $this->assertEquals($e, (string) $response->getBody());
         }
 
         static function provider_content_type()
@@ -457,13 +457,13 @@ namespace Respect\Rest {
         {
             $r = new Router(new Psr17Factory());
             $r1 = $r->get('/route1', 'route1');
-            $response = $r->dispatch(new ServerRequest('get', '/route1'))->response();
+            $response = (string) $r->dispatch(new ServerRequest('get', '/route1'))->response()->getBody();
             $this->assertEquals('route1',$response);
             $r2 = $r->get('/route2', 'route2');
-            $response = $r->dispatch(new ServerRequest('get', '/route2'))->response();
+            $response = (string) $r->dispatch(new ServerRequest('get', '/route2'))->response()->getBody();
             $this->assertEquals('route2',$response);
             $r2->by(function() use ($r1) { return $r1;});
-            $response = $r->dispatch(new ServerRequest('get', '/route2'))->response();
+            $response = (string) $r->dispatch(new ServerRequest('get', '/route2'))->response()->getBody();
             $this->assertEquals('route1',$response);
         }
         static function provider_content_type_extension()
@@ -538,7 +538,8 @@ namespace Respect\Rest {
             $r->get('/users/*/photos/*', function($username, $photoId=null) {
                 return 'match';
             });
-            $response = $r->dispatch(new ServerRequest('get', '/users/photos'))->response();
+            $psrResponse = $r->dispatch(new ServerRequest('get', '/users/photos'))->response();
+            $response = $psrResponse !== null ? (string) $psrResponse->getBody() : '';
             $this->assertNotEquals('match', $response);
         }
         function test_route_ordering_with_when()
@@ -561,7 +562,7 @@ namespace Respect\Rest {
             });
 
             $r->get('/docs', function() {return 'DOCS!';});
-            $response = $r->dispatch(new ServerRequest('get', '/users/1'))->response();
+            $response = (string) $r->dispatch(new ServerRequest('get', '/users/1'))->response()->getBody();
 
             $this->assertTrue($when);
             $this->assertEquals('user-1', $response);
@@ -578,7 +579,7 @@ namespace Respect\Rest {
 
             $router->any('/moo/*', __NAMESPACE__.'\\RouteKnowsNothing');
 
-            $out = (string) $router->run(new \Respect\Rest\Request(new ServerRequest('get', '/meow/blub'))); // ReflectionException
+            $out = (string) $router->run(new \Respect\Rest\Request(new ServerRequest('get', '/meow/blub')))->getBody(); // ReflectionException
 
             $this->assertEquals('"ok: blub"', $out);
 
@@ -594,7 +595,7 @@ namespace Respect\Rest {
                 $phpunit->assertSame($request, $router->request);
                 return spl_object_hash($router->request);
             });
-            $out = $router->run($request);
+            $out = (string) $router->run($request)->getBody();
             $this->assertEquals($out, spl_object_hash($request));
         }
 

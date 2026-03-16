@@ -1,24 +1,23 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
 class Error extends Callback
 {
+    /** @var callable */
     public $callback;
-    public $errors = [];
 
-    public function __construct($callback)
+    /** @var array<int, array<int, mixed>> */
+    public array $errors = [];
+
+    public function __construct(callable $callback)
     {
         parent::__construct('ANY', '^$', $callback);
     }
 
-    public function runTarget($method, &$params)
+    public function runTarget(string $method, array &$params): mixed
     {
         return ($this->callback)($this->errors);
     }

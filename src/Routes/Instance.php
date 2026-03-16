@@ -1,34 +1,30 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
-use ReflectionMethod;
 use InvalidArgumentException;
+use ReflectionFunctionAbstract;
+use ReflectionMethod;
 use Respect\Rest\Routable;
 
 class Instance extends AbstractRoute
 {
-    public $class = '';
-    protected $instance = null;
-    /** @var ReflectionMethod */
-    protected $reflection;
+    public string $class = '';
+    protected object $instance;
+    protected ?ReflectionMethod $reflection = null;
 
-    public function __construct($method, $pattern, $instance)
+    public function __construct(string $method, string $pattern, object $instance)
     {
         $this->instance = $instance;
         $this->class = get_class($instance);
         parent::__construct($method, $pattern);
     }
 
-    public function getReflection($method)
+    public function getReflection(string $method): ?ReflectionFunctionAbstract
     {
-        if (empty($this->reflection)) {
+        if ($this->reflection === null) {
             $this->reflection = new ReflectionMethod(
                 $this->instance,
                 $method
@@ -38,10 +34,12 @@ class Instance extends AbstractRoute
         return $this->reflection;
     }
 
-    public function runTarget($method, &$params)
+    public function runTarget(string $method, array &$params): mixed
     {
         if (!$this->instance instanceof Routable) {
-            throw new InvalidArgumentException('Route target must be an instance of Respect\Rest\Routable');
+            throw new InvalidArgumentException(
+                'Route target must be an instance of Respect\Rest\Routable'
+            );
         }
 
         return $this->instance->$method(...$params);
