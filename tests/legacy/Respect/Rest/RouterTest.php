@@ -2,6 +2,8 @@
 
 namespace Respect\Rest {
 
+    use PHPUnit\Framework\Attributes\DataProvider;
+
     class DummyRoute extends \DateTime implements Routable {}
     /**
      * @covers Respect\Rest\Router
@@ -419,9 +421,9 @@ namespace Respect\Rest {
             );
         }
         /**
-         * @dataProvider provider_content_type
          * @ticket 44
          */
+        #[DataProvider('provider_content_type')]
         function test_automatic_content_type_header($ctype)
         {
             global $header;
@@ -434,9 +436,9 @@ namespace Respect\Rest {
             $this->assertContains('Content-Type: '.$ctype, $header);
         }
         /**
-         * @dataProvider provider_content_type
          * @ticket 44
          */
+        #[DataProvider('provider_content_type')]
         function test_wildcard_automatic_content_type_header($ctype)
         {
             global $header;
@@ -508,9 +510,9 @@ namespace Respect\Rest {
             $this->assertMatchesRegularExpression('/Vary: negotiate,.*accept-language/', implode("\n", $header));
         }
         /**
-         * @dataProvider provider_content_type_extension
          * @ticket 44
          */
+        #[DataProvider('provider_content_type_extension')]
         function test_do_not_set_automatic_content_type_header_for_extensions($ctype, $ext)
         {
             global $header;

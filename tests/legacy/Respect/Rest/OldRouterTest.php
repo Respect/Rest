@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest {
 
+use PHPUnit\Framework\Attributes\DataProvider;
+
 /**
  * @covers Respect\Rest\Router
  * @covers Respect\Rest\Request
@@ -79,9 +81,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
         $this->object->dispatch('get', '/')->response();
     }
 
-    /**
-     * @dataProvider providerForSingleRoutes
-     */
+    #[DataProvider('providerForSingleRoutes')]
     public function testSingleRoutes($route, $path, $expectedParams)
     {
         $this->object->callbackRoute('get', $route, $this->callback);
@@ -91,9 +91,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($expectedParams, $this->result);
     }
 
-    /**
-     * @dataProvider providerForLargeParams
-     */
+    #[DataProvider('providerForLargeParams')]
     public function testLargeParams($route, $path, $expectedParams)
     {
 
@@ -104,9 +102,7 @@ class OldRouterTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals($expectedParams, $this->result);
     }
 
-    /**
-     * @dataProvider providerForSpecialChars
-     */
+    #[DataProvider('providerForSpecialChars')]
     public function testSpecialChars($route, $path, $expectedParams)
     {
 

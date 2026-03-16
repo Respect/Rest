@@ -63,7 +63,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
                          ->getMock();
         $stub->expects($this->any())
              ->method('getCallback')
-             ->will($this->returnValue($callback));
+             ->willReturn($callback);
 
         $this->assertContainsOnlyInstancesOf(
             $expected = 'ReflectionParameter',
@@ -89,7 +89,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
                          ->getMock();
         $stub->expects($this->any())
              ->method('getCallback')
-             ->will($this->returnValue($callback));
+             ->willReturn($callback);
 
         $this->assertContainsOnlyInstancesOf(
             $expected = 'ReflectionParameter',
@@ -117,7 +117,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
                          ->getMock();
         $routine->expects($this->any())
                 ->method('getCallback')
-                ->will($this->returnValue($stub));
+                ->willReturn($stub);
         $this->assertCount(
             $expected = 0,
             $result   = $routine->getParameters()

@@ -1,6 +1,7 @@
 <?php
 namespace Respect\Rest\Routes {
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Respect\Rest\Router;
 /**
  * @covers Respect\Rest\Routes\AbstractRoute
@@ -44,8 +45,8 @@ class AbstractRouteTest extends \PHPUnit\Framework\TestCase
     }
     /**
      * @covers Respect\Rest\Routes\AbstractRoute::match
-     * @dataProvider extensions_provider
      */
+    #[DataProvider('extensions_provider')]
     public function testIgnoreFileExtensions($with, $without)
     {
         $_SERVER['HTTP_ACCEPT'] = '*';

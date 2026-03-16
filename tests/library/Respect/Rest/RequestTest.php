@@ -2,6 +2,8 @@
 namespace Respect\Rest;
 
 use Exception;
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 
@@ -104,10 +106,10 @@ class RequestTest extends TestCase
         //TODO same behavior for env vars and constructor params regarding parse_url
     }
 
-    /** 
-     * @covers  Respect\Rest\Request::response 
-     * @depends testIsPossibleToConstructUsingValuesFromSuperglobals 
+    /**
+     * @covers  Respect\Rest\Request::response
      */
+    #[Depends('testIsPossibleToConstructUsingValuesFromSuperglobals')]
     public function testResponseIsNullWithoutSettingARoute(Request $request)
     {
         $response = $request->response();
@@ -117,10 +119,10 @@ class RequestTest extends TestCase
         //TODO Request::response() should check if $this->route instanceof AbstractRoute
     }
 
-    /** 
-     * @covers  Respect\Rest\Request::response 
-     * @depends testIsPossibleToConstructUsingValuesFromSuperglobals
+    /**
+     * @covers  Respect\Rest\Request::response
      */
+    #[Depends('testIsPossibleToConstructUsingValuesFromSuperglobals')]
     public function testRequestIsAbleToDeliverAResponseWithoutSettingPathParams(Request $request)
     {
         $request->route = $this->getMockForRoute(
@@ -137,10 +139,10 @@ class RequestTest extends TestCase
         );
     }
 
-    /** 
-     * @covers  Respect\Rest\Request::response 
-     * @depends testIsPossibleToConstructUsingValuesFromSuperglobals 
+    /**
+     * @covers  Respect\Rest\Request::response
      */
+    #[Depends('testIsPossibleToConstructUsingValuesFromSuperglobals')]
     public function testRequestIsAbleToDeliverAResponseUsingPreviouslySetPathParams(Request $request)
     {
         $request->route = $this->getMockForRoute(
@@ -188,9 +190,9 @@ class RequestTest extends TestCase
 
     /**
      * @covers       Respect\Rest\Request::response
-     * @depends      testForwardReplacesRouteAndReturnsResponse 
-     * @dataProvider providerForUserImplementedForwards
      */
+    #[Depends('testForwardReplacesRouteAndReturnsResponse')]
+    #[DataProvider('providerForUserImplementedForwards')]
     public function testDeveloperCanForwardRoutesByReturningThemOnTheirImplementation(
         $scenario)
     {
@@ -222,7 +224,7 @@ class RequestTest extends TestCase
                 $byRoutine = $this->getMockForRoutine('ProxyableBy');
                 $byRoutine->expects($this->once())
                           ->method('by')
-                          ->will($this->returnValue($internallyForwardedRoute));
+                          ->willReturn($internallyForwardedRoute);
                 $forwardWithByRoutine->appendRoutine($byRoutine);
                 $userImplementedRoute = $forwardWithByRoutine;
                 break;
@@ -255,7 +257,7 @@ class RequestTest extends TestCase
         $routine = $this->getMockForRoutine('ProxyableBy');
         $routine->expects($this->once())
                 ->method('by')
-                ->will($this->returnValue(false));
+                ->willReturn(false);
         $route->appendRoutine($routine);
         $request->route = $route;
 
@@ -285,10 +287,10 @@ class RequestTest extends TestCase
         $routine = $this->getMockForRoutine('ProxyableThrough');
         $routine->expects($this->once())
                 ->method('through')
-                ->will($this->returnValue(function($thatLogStubReturnedAbove) {
+                ->willReturn(function($thatLogStubReturnedAbove) {
                     // Remember the stub response?
                     return str_replace('-', ' ', $thatLogStubReturnedAbove);
-                }));
+                });
         $route->appendRoutine($routine);
         $request->route = $route;
         $response = $request->response();
@@ -302,8 +304,8 @@ class RequestTest extends TestCase
 
     /**
      * @covers       Respect\Rest\Request::response
-     * @dataProvider providerForParamSyncedRoutines
      */
+    #[DataProvider('providerForParamSyncedRoutines')]
     public function testParamSyncedRoutinesShouldAllReferenceTheSameValuesByTheirNames(
         $scenario, array $params)
     {
@@ -447,20 +449,19 @@ class RequestTest extends TestCase
     protected function getMockForProxyableRoutine($route, $name, $implementation)
     {
         $routine = $this->getMockForRoutine(array("Proxyable$name", "ParamSynced"));
+        $reflection = new ReflectionFunction($implementation);
         $route->expects($this->any())
           ->method('getReflection')
           ->with('GET')
-          ->will($this->returnValue(
-            $reflection = new ReflectionFunction($implementation)
-          ));
+          ->willReturn($reflection);
         $routine->expects($this->any())
                 ->method('getParameters')
-                ->will($this->returnValue($reflection->getParameters()));
+                ->willReturn($reflection->getParameters());
         $routine->expects($this->any())
           ->method(strtolower($name))
-          ->will($this->returnCallback(function($request, $params) use ($implementation) {
+          ->willReturnCallback(function($request, $params) use ($implementation) {
               return call_user_func_array($implementation, $params);
-          }));
+          });
 
         return $routine;
     }
@@ -500,7 +501,7 @@ class RequestTest extends TestCase
         if ($hasResponse) {
             $request->expects($this->once())
                     ->method('response')
-                    ->will($this->returnValue($response));
+                    ->willReturn($response);
         }
 
         return $request;
@@ -518,27 +519,25 @@ class RequestTest extends TestCase
 
         $constructorParams = array($method, $pattern);
 
-        $route = $this->getMockForAbstractClass(
-            'Respect\Rest\Routes\AbstractRoute',
-            $constructorParams
-        );
+        $route = $this->getMockBuilder('Respect\Rest\Routes\AbstractRoute')
+            ->setConstructorArgs($constructorParams)
+            ->onlyMethods(['getReflection', 'runTarget'])
+            ->getMock();
 
         if ($hasTarget) {
-            if (is_callable($target)){
-                $performAction = $this->returnCallback($target);
+            if ($targetParams) {
+                $expectation = $route->expects($this->any())
+                      ->method('runTarget')
+                      ->with($targetMethod, $targetParams);
             } else {
-                $performAction = $this->returnValue($target);
+                $expectation = $route->expects($this->any())
+                      ->method('runTarget');
             }
 
-            if ($targetParams) {
-                $route->expects($this->any())
-                      ->method('runTarget')
-                      ->with($targetMethod, $targetParams)
-                      ->will($performAction);
+            if (is_callable($target)){
+                $expectation->willReturnCallback($target);
             } else {
-                $route->expects($this->any())
-                      ->method('runTarget')
-                      ->will($performAction);
+                $expectation->willReturn($target);
             }
         }
 
@@ -558,7 +557,8 @@ class RequestTest extends TestCase
         $interfaceList = implode(',', $interfaceList);
         
         eval("interface $interfaceName extends $interfaceList{}");
-        $routine = $this->getMockForAbstractClass($interfaceName);
+        $routine = $this->getMockBuilder($interfaceName)
+            ->getMock();
 
         return $routine;
     }

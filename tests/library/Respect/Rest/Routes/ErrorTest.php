@@ -1,10 +1,11 @@
 <?php
 namespace Respect\Rest\Routes;
 
+use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\Router;
 
-/** 
+/**
  * @covers Respect\Rest\Routes\Error
  */
 class ErrorTest extends TestCase
@@ -14,6 +15,7 @@ class ErrorTest extends TestCase
      * @covers Respect\Rest\Routes\Error::runTarget
      * @covers Respect\Rest\Router::errorRoute
      */
+    #[RunInSeparateProcess]
     public function testMagicConstuctorCanCreateRoutesToErrors()
     {
         $router = new Router;

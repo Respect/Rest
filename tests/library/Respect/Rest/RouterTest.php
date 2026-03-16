@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest;
 
+use PHPUnit\Framework\Attributes\DataProvider;
+use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 /**
  * @covers Respect\Rest\Router
@@ -99,19 +101,9 @@ class RouterTest extends TestCase
     public function testMagicConstructorCanRouteToPreBuiltInstances()
     {
         $router = new Router;
-        $builder = $this->getMockBuilder('Respect\\Rest\\Routable')->disableOriginalConstructor();
-        try {
-            $builder->onlyMethods(['GET']);
-        } catch (\PHPUnit\Framework\MockObject\CannotUseOnlyMethodsException $e) {
-            if (method_exists($builder, 'addMethods')) {
-                $builder->addMethods(['GET']);
-            } elseif (method_exists($builder, 'setMethods')) {
-                $builder->setMethods(['GET']);
-            } else {
-                throw $e;
-            }
-        }
-        $myInstance = $builder->getMock();
+        $myInstance = new class implements Routable {
+            public function GET() { return 'mock response'; }
+        };
         $instanceRoute = $router->get('/', $myInstance);
         $concreteInstanceRoute = $router->instanceRoute('GET', '/', $myInstance);
 
@@ -131,8 +123,8 @@ class RouterTest extends TestCase
     /**
      * @covers       Respect\Rest\Router::__call
      * @covers       Respect\Rest\Router::staticRoute
-     * @dataProvider provideForStaticRoutableValues
      */
+    #[DataProvider('provideForStaticRoutableValues')]
     public function testMagicConstructorCanRouteToStaticValue($staticValue, $reason)
     {
         $router = new Router;
@@ -165,8 +157,8 @@ class RouterTest extends TestCase
     /**
      * @covers            Respect\Rest\Router::__call
      * @covers            Respect\Rest\Router::staticRoute
-     * @dataProvider      provideForNonStaticRoutableValues
      */
+    #[DataProvider('provideForNonStaticRoutableValues')]
     public function testMagicConstructorCannotRouteSomeStaticValues($staticValue, $reason)
     {
         $this->expectException(\InvalidArgumentException::class);
@@ -197,22 +189,7 @@ class RouterTest extends TestCase
     public function testMagicConstructorCanRouteToClasses()
     {
         $router = new Router;
-        $className = 'GeneratedClass'.md5(rand());
-        $builder = $this->getMockBuilder('Respect\\Rest\\Routable')
-            ->setMockClassName($className)
-            ->disableOriginalConstructor();
-        try {
-            $builder->onlyMethods(['GET']);
-        } catch (\PHPUnit\Framework\MockObject\CannotUseOnlyMethodsException $e) {
-            if (method_exists($builder, 'addMethods')) {
-                $builder->addMethods(['GET']);
-            } elseif (method_exists($builder, 'setMethods')) {
-                $builder->setMethods(['GET']);
-            } else {
-                throw $e;
-            }
-        }
-        $builder->getMock();
+        $className = StubRoutable::class;
         $classRoute = $router->get('/', $className);
         $concreteClassRoute = $router->classRoute('GET', '/', $className);
 
@@ -236,22 +213,7 @@ class RouterTest extends TestCase
     public function testMagicConstructorCanRouteToClassesUsingConstructorParams()
     {
         $router = new Router;
-        $className = 'GeneratedClass'.md5(rand());
-        $builder = $this->getMockBuilder('Respect\\Rest\\Routable')
-            ->setMockClassName($className)
-            ->disableOriginalConstructor();
-        try {
-            $builder->onlyMethods(['GET']);
-        } catch (\PHPUnit\Framework\MockObject\CannotUseOnlyMethodsException $e) {
-            if (method_exists($builder, 'addMethods')) {
-                $builder->addMethods(['GET']);
-            } elseif (method_exists($builder, 'setMethods')) {
-                $builder->setMethods(['GET']);
-            } else {
-                throw $e;
-            }
-        }
-        $builder->getMock();
+        $className = StubRoutable::class;
         $classRoute = $router->get('/', $className, array('some', 'constructor', 'params'));
         $concreteClassRoute = $router->classRoute('GET', '/', $className, array('some', 'constructor', 'params'));
 
@@ -354,8 +316,8 @@ class RouterTest extends TestCase
      * @covers  Respect\Rest\Router::dispatchRequest
      * @covers  Respect\Rest\Router::isRoutelessDispatch
      * @covers  Respect\Rest\Router::hasDispatchedOverridenMethod
-     * @depends testDeveloperCanOverridePostMethodWithQueryStringParameter
      */
+    #[Depends('testDeveloperCanOverridePostMethodWithQueryStringParameter')]
     public function testDeveloperCanTurnOffMethodOverriding(Router $router)
     {
         $_REQUEST['_method'] = 'PUT';
@@ -559,6 +521,10 @@ class RouterTest extends TestCase
             $message
         );
     }
+}
+
+class StubRoutable implements Routable {
+    public function GET() { return 'stub response'; }
 }
 
 if (!function_exists(__NAMESPACE__.'\\header')) {
