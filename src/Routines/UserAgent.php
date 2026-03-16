@@ -1,10 +1,6 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
@@ -14,28 +10,33 @@ use Respect\Rest\Request;
 /** Handles User Agent filters */
 class UserAgent extends AbstractCallbackMediator implements ProxyableThrough, Unique
 {
-    const ACCEPT_HEADER = 'HTTP_USER_AGENT';
-    private $negotiated = false;
+    const string ACCEPT_HEADER = 'HTTP_USER_AGENT';
+    private SplObjectStorage|false $negotiated = false;
 
-    protected function identifyRequested(Request $request, $params)
+    protected function identifyRequested(Request $request, array $params): array
     {
-        return [$_SERVER[self::ACCEPT_HEADER]];
+        $userAgent = $request->serverRequest->getHeaderLine('User-Agent');
+
+        return [$userAgent];
     }
-    protected function considerProvisions($requested)
+
+    protected function considerProvisions(string $requested): array
     {
         return $this->getKeys();
     }
-    protected function notifyApproved($requested, $provided, Request $request, $params)
+
+    protected function notifyApproved(string $requested, string $provided, Request $request, array $params): void
     {
         $this->negotiated = new SplObjectStorage();
         $this->negotiated[$request] = $this->getCallback($provided);
     }
-    protected function notifyDeclined($requested, $provided, Request $request, $params)
+
+    protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
     {
         $this->negotiated = false;
     }
 
-    protected function authorize($requested, $provided)
+    protected function authorize(string $requested, string $provided): mixed
     {
         if ($provided === '*' || preg_match("#$provided#", $requested)) {
             return true;
@@ -44,10 +45,12 @@ class UserAgent extends AbstractCallbackMediator implements ProxyableThrough, Un
         return false;
     }
 
-    public function through(Request $request, $params)
+    public function through(Request $request, array $params): mixed
     {
         if (false !== $this->negotiated) {
             return $this->negotiated[$request];
         }
+
+        return null;
     }
 }

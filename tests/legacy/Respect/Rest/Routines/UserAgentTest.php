@@ -40,25 +40,23 @@ class UserAgentTest extends \PHPUnit\Framework\TestCase
 
     public function testThrough()
     {
-        $request = new Request(new ServerRequest('GET', '/'));
         $params = [];
         $alias = &$this->object;
 
-        $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
+        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
         $this->assertTrue($alias->when($request, $params));
         $this->assertInstanceOf('Closure', $alias->through($request, $params));
 
-        $_SERVER['HTTP_USER_AGENT'] = 'InhernetExplorer';
+        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'InhernetExplorer'));
         $this->assertTrue($alias->when($request, $params));
         $this->assertInstanceOf('Closure', $alias->through($request, $params));
 
     }
     public function testThroughInvalid()
     {
-        $request = new Request(new ServerRequest('GET', '/'));
         $params = [];
         $alias = &$this->object;
-        $_SERVER['HTTP_USER_AGENT'] = 'CHROME';
+        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'CHROME'));
         $this->assertInstanceOf('Respect\\Rest\\Routines\\UserAgent', $alias);
         $this->assertFalse($alias->when($request, $params));
         $this->assertNull($alias->through($request, $params));

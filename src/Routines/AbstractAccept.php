@@ -1,10 +1,6 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
@@ -18,17 +14,40 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     Unique,
     IgnorableFileExtension
 {
-    protected $negotiated = null;
-    protected $request_uri;
+    protected SplObjectStorage|false|null $negotiated = null;
+    protected string $request_uri = '';
 
-    protected function identifyRequested(Request $request, $params)
+    /**
+     * Convert a $_SERVER-style header constant to a PSR-7 header name.
+     *
+     * HTTP_ACCEPT          -> Accept
+     * HTTP_ACCEPT_CHARSET  -> Accept-Charset
+     * HTTP_ACCEPT_ENCODING -> Accept-Encoding
+     * HTTP_ACCEPT_LANGUAGE -> Accept-Language
+     * HTTP_USER_AGENT      -> User-Agent
+     */
+    protected function getAcceptHeaderName(): string
+    {
+        $header = static::ACCEPT_HEADER;
+
+        if (!str_starts_with($header, 'HTTP_')) {
+            return $header;
+        }
+
+        return str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($header, 5)))));
+    }
+
+    protected function identifyRequested(Request $request, array $params): array
     {
         $this->request_uri = $request->uri;
 
-        if (!isset($_SERVER[static::ACCEPT_HEADER])) {
+        $headerName = $this->getAcceptHeaderName();
+        $acceptHeader = $request->serverRequest->getHeaderLine($headerName);
+
+        if ($acceptHeader === '') {
             return [];
         }
-        $acceptHeader = $_SERVER[static::ACCEPT_HEADER];
+
         $acceptParts = explode(',', $acceptHeader);
         $acceptList = [];
         foreach ($acceptParts as $k => &$acceptPart) {
@@ -41,44 +60,47 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
 
         return array_keys($acceptList);
     }
-    protected function considerProvisions($requested)
+
+    protected function considerProvisions(string $requested): array
     {
         return $this->getKeys(); // no need to split see authorize
     }
-    protected function notifyApproved($requested, $provided, Request $request, $params)
+
+    protected function notifyApproved(string $requested, string $provided, Request $request, array $params): void
     {
         $this->negotiated = new SplObjectStorage();
         $this->negotiated[$request] = $this->getCallback($provided);
+
         if (false === strpos($provided, '.')) {
-            $header_type = preg_replace(
+            $headerType = preg_replace(
                 [
-                    '/(^.*)(?=\w*$)/U', // select namespace to strip
-                    '/(?!^)([A-Z]+)/',   // select camels to add -
+                    '/(^.*)(?=\w*$)/U',
+                    '/(?!^)([A-Z]+)/',
                 ],
                 ['', '-$1'],
                 get_class($this)
             );
 
-            $content_header = 'Content-Type';
-
-            if (false !== strpos($header_type, '-')) {
-                $content_header = str_replace('Accept', 'Content', $header_type);
+            $contentHeader = 'Content-Type';
+            if (false !== strpos($headerType, '-')) {
+                $contentHeader = str_replace('Accept', 'Content', $headerType);
             }
 
-            header("$content_header: $provided");                   // RFC 2616
-            header("Vary: negotiate,".strtolower($header_type));    // RFC 2616/2295
-            header("Content-Location: {$_SERVER['REQUEST_URI']}");  // RFC 2616
-            header('Expires: Thu, 01 Jan 1980 00:00:00 GMT');       // RFC 2295
-            header('Cache-Control: max-age=86400');                 // RFC 2295
+            $request->responseHeaders[$contentHeader] = $provided;
+            $request->responseHeaders['Vary'] = 'negotiate,' . strtolower($headerType);
+            $request->responseHeaders['Content-Location'] = (string) $request->serverRequest->getUri()->getPath();
+            $request->responseHeaders['Expires'] = 'Thu, 01 Jan 1980 00:00:00 GMT';
+            $request->responseHeaders['Cache-Control'] = 'max-age=86400';
         }
     }
-    protected function notifyDeclined($requested, $provided, Request $request, $params)
+
+    protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
     {
         $this->negotiated = false;
-        header('HTTP/1.1 406');
+        $request->responseStatus = 406;
     }
 
-    protected function authorize($requested, $provided)
+    protected function authorize(string $requested, string $provided): mixed
     {
         // negotiate on file extension
         if (false !== strpos($provided, '.')) {
@@ -91,13 +113,13 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
         return $requested == $provided;
     }
 
-    public function by(Request $request, $params)
+    public function by(Request $request, array $params): mixed
     {
         $unsyncedParams = $request->params;
         $extensions = $this->filterKeysContain('.');
 
         if (empty($extensions) || empty($unsyncedParams)) {
-            return;
+            return null;
         }
 
         $unsyncedParams[] = str_replace(
@@ -106,13 +128,15 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
             array_pop($unsyncedParams)
         );
         $request->params = $unsyncedParams;
+
+        return null;
     }
 
-    public function through(Request $request, $params)
+    public function through(Request $request, array $params): mixed
     {
         if (!isset($this->negotiated[$request])
             || false === $this->negotiated[$request]) {
-            return;
+            return null;
         }
 
         return $this->negotiated[$request];

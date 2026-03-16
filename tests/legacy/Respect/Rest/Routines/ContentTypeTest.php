@@ -41,19 +41,18 @@ class ContentTypeTest extends \PHPUnit\Framework\TestCase
      */
     public function testBy()
     {
-        $request = new Request(new ServerRequest('GET', '/'));
         $params = [];
         $alias = &$this->object;
 
-        $_SERVER['CONTENT_TYPE'] = 'text/html';
+        $request = new Request((new ServerRequest('GET', '/'))->withHeader('Content-Type', 'text/html'));
         $this->assertTrue($alias->when($request, $params));
         $this->assertEquals('from html callback', $alias->by($request, $params));
 
-        $_SERVER['CONTENT_TYPE'] = 'application/json';
+        $request = new Request((new ServerRequest('GET', '/'))->withHeader('Content-Type', 'application/json'));
         $this->assertTrue($alias->when($request, $params));
         $this->assertEquals('from json callback', $alias->by($request, $params));
 
-        $_SERVER['CONTENT_TYPE'] = 'text/xml';
+        $request = new Request((new ServerRequest('GET', '/'))->withHeader('Content-Type', 'text/xml'));
         $this->assertFalse($alias->when($request, $params));
         $this->assertNull($alias->by($request, $params));
     }

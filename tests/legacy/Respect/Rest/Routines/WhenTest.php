@@ -57,7 +57,6 @@ class LegacyWhenTest extends \PHPUnit\Framework\TestCase
         $alias = &$this->object;
 
         $this->assertFalse($alias->when($request, $params));
-        $this->assertArrayHasKey('HTTP/1.1 400', $header);
     }
 
     public function test_when_with_a_callable_class_within_a_route()

@@ -28,6 +28,14 @@ class Request
 
     public ServerRequestInterface $serverRequest;
 
+    /** @var array<string, string> Headers to apply to the final response (set by routines) */
+    public array $responseHeaders = [];
+
+    /** HTTP status code override set by routines (e.g. 406 for content negotiation failure) */
+    public ?int $responseStatus = null;
+
+    public ?\Psr\Http\Message\ResponseFactoryInterface $responseFactory = null;
+
     public function __construct(ServerRequestInterface $serverRequest)
     {
         $this->serverRequest = $serverRequest;
@@ -78,6 +86,10 @@ class Request
 
             if ($result instanceof AbstractRoute) {
                 return $this->forward($result);
+            }
+
+            if ($result instanceof ResponseInterface) {
+                return $result;
             }
 
             if (false === $result) {
@@ -162,6 +174,11 @@ class Request
     {
         try {
             if (!$this->route instanceof AbstractRoute) {
+                if ($this->responseStatus !== null && $this->responseFactory !== null) {
+                    return $this->applyResponseMeta(
+                        $this->responseFactory->createResponse($this->responseStatus)
+                    );
+                }
                 return null;
             }
 
@@ -191,7 +208,7 @@ class Request
                 return $errorResponse;
             }
 
-            return $this->route->wrapResponse($processedResult);
+            return $this->applyResponseMeta($this->route->wrapResponse($processedResult));
         } catch (\Exception $e) {
             $exceptionResponse = $this->catchExceptions($e);
             if ($exceptionResponse === null) {
@@ -253,5 +270,19 @@ class Request
         $this->route = $route;
 
         return $this->response();
+    }
+
+    /** Applies pending headers and status code set by routines to a ResponseInterface */
+    protected function applyResponseMeta(ResponseInterface $response): ResponseInterface
+    {
+        if ($this->responseStatus !== null) {
+            $response = $response->withStatus($this->responseStatus);
+        }
+
+        foreach ($this->responseHeaders as $name => $value) {
+            $response = $response->withHeader($name, $value);
+        }
+
+        return $response;
     }
 }

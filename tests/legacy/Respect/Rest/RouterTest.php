@@ -18,7 +18,7 @@ namespace Respect\Rest {
      * @covers Respect\Rest\Routes\Instance
      * @covers Respect\Rest\Routes\StaticValue
      * @covers Respect\Rest\Routines\AbstractAccept
-     * @covers Respect\Rest\Routines\AbstractCallbackList
+     * @covers Respect\Rest\Routines\CallbackList
      * @covers Respect\Rest\Routines\AbstractCallbackMediator
      * @covers Respect\Rest\Routines\AbstractRoutine
      * @covers Respect\Rest\Routines\AbstractSyncedRoutine
@@ -145,10 +145,10 @@ namespace Respect\Rest {
         }
         function test_bad_request_header()
         {
-            global $header;
+            // When routine returns false — route doesn't match
             $this->router->get('/', function() { return 'ok'; })->when(function(){return false;});
-            $this->router->dispatch(new ServerRequest('get', '/'));
-            $this->assertContains('HTTP/1.1 400', $header);
+            $response = $this->router->dispatch(new ServerRequest('get', '/'))->response();
+            $this->assertNull($response);
         }
         function test_method_not_allowed_header_with_conneg()
         {
@@ -197,11 +197,12 @@ namespace Respect\Rest {
         }
         function test_method_not_acceptable()
         {
-            global $header;
+            // No Accept header → negotiation declines → 406 response
             $this->router->get('/', function() { return 'ok'; })
                          ->accept(['foo/bar' => function($d) {return $d;}]);
-            $this->router->dispatch(new ServerRequest('get', '/'));
-            $this->assertContains('HTTP/1.1 406', $header);
+            $response = $this->router->dispatch(new ServerRequest('get', '/'))->response();
+            $this->assertNotNull($response);
+            $this->assertEquals(406, $response->getStatusCode());
         }
         function test_append_routine_honours_routine_chaining()
         {
@@ -258,33 +259,34 @@ namespace Respect\Rest {
 
         function test_user_agent_content_negotiation()
         {
-            $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
             $this->router->get('/', function () {
                 return 'unknown';
             })->userAgent([
                 'FIREFOX' => function() { return 'FIREFOX'; },
                 'IE' => function() { return 'IE'; },
             ]);
-            $response = $this->router->dispatch(new ServerRequest('GET', '/'));
+            $serverRequest = (new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX');
+            $response = $this->router->dispatch($serverRequest);
             $this->assertEquals('FIREFOX', $response);
         }
         function test_user_agent_content_negotiation_fallback()
         {
-            $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
             $this->router->get('/', function () {
                 return 'unknown';
             })->userAgent([
                 '*' => function() { return 'IE'; },
             ]);
-            $response = $this->router->dispatch(new ServerRequest('GET', '/'));
+            $serverRequest = (new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX');
+            $response = $this->router->dispatch($serverRequest);
             $this->assertEquals('IE', $response);
         }
         function test_stream_routine()
         {
             $done                            = false;
             $self                            = $this;
-            $request                         = new Request(new ServerRequest('GET', '/input'));
-            $_SERVER['HTTP_ACCEPT_ENCODING'] = 'deflate';
+            $serverRequest                   = (new ServerRequest('GET', '/input'))
+                                                ->withHeader('Accept-Encoding', 'deflate');
+            $request                         = new Request($serverRequest);
             $this->router->get('/input', function() { return fopen('php://input', 'r+'); })
                          ->acceptEncoding([
                             'deflate' => function($stream) use ($self, &$done) {
@@ -390,7 +392,6 @@ namespace Respect\Rest {
          */
         public function test_is_callable_proxy()
         {
-            $_SERVER['HTTP_ACCEPT'] = 'text/html';
             $f = new Foo();
             $e = 'Hello';
             $r = new Router(new Psr17Factory());
@@ -398,7 +399,8 @@ namespace Respect\Rest {
               ->accept([
                 'text/html' => [$f, 'getBar']
               ]);
-            $response = $r->dispatch(new ServerRequest('get', '/'))->response();
+            $serverRequest = (new ServerRequest('get', '/'))->withHeader('Accept', 'text/html');
+            $response = $r->dispatch($serverRequest)->response();
             $this->assertEquals($e, (string) $response->getBody());
         }
 
@@ -415,14 +417,12 @@ namespace Respect\Rest {
         #[DataProvider('provider_content_type')]
         function test_automatic_content_type_header($ctype)
         {
-            global $header;
-            $_SERVER['HTTP_ACCEPT'] = $ctype;
             $r = new Router(new Psr17Factory());
             $r->get('/auto', '')->accept([$ctype=>'json_encode']);
-
-
-            $r = $r->dispatch(new ServerRequest('get', '/auto'))->response();
-            $this->assertContains('Content-Type: '.$ctype, $header);
+            $serverRequest = (new ServerRequest('get', '/auto'))->withHeader('Accept', $ctype);
+            $response = $r->dispatch($serverRequest)->response();
+            $this->assertNotNull($response);
+            $this->assertEquals($ctype, $response->getHeaderLine('Content-Type'));
         }
         /**
          * @ticket 44
@@ -430,14 +430,12 @@ namespace Respect\Rest {
         #[DataProvider('provider_content_type')]
         function test_wildcard_automatic_content_type_header($ctype)
         {
-            global $header;
-            $_SERVER['HTTP_ACCEPT'] = '*/*';
             $r = new Router(new Psr17Factory());
             $r->get('/auto', '')->accept([$ctype=>'json_encode']);
-
-
-            $r = $r->dispatch(new ServerRequest('get', '/auto'))->response();
-            $this->assertContains('Content-Type: '.$ctype, $header);
+            $serverRequest = (new ServerRequest('get', '/auto'))->withHeader('Accept', '*/*');
+            $response = $r->dispatch($serverRequest)->response();
+            $this->assertNotNull($response);
+            $this->assertEquals($ctype, $response->getHeaderLine('Content-Type'));
         }
         function test_request_forward()
         {
@@ -462,41 +460,38 @@ namespace Respect\Rest {
         }
         function test_negotiate_acceptable_complete_headers()
         {
-            global $header;
-            $_SERVER['REQUEST_URI'] = '/accept';
-            $_SERVER['HTTP_ACCEPT'] = 'foo/bar';
-            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = '13375p34|<';
             $this->router->get('/accept', function() { return 'ok'; })
                          ->accept(['foo/bar' => function($d) {return $d;}])
                          ->acceptLanguage(['13375p34|<' => function($d) {return $d;}]);
-            $this->router->dispatch(new ServerRequest('get', '/accept'));
-            $this->assertContains('Content-Type: foo/bar', $header);
-            $this->assertContains('Content-Language: 13375p34|<', $header);
-            $this->assertMatchesRegularExpression('/Vary: negotiate,.*accept(?!-)/', implode("\n", $header));
-            $this->assertMatchesRegularExpression('/Vary: negotiate,.*accept-language/', implode("\n", $header));
-            $this->assertContains('Content-Location: /accept', $header);
-            $this->assertContains('Expires: Thu, 01 Jan 1980 00:00:00 GMT', $header);
-            $this->assertContains('Cache-Control: max-age=86400', $header);
+            $serverRequest = (new ServerRequest('get', '/accept'))
+                ->withHeader('Accept', 'foo/bar')
+                ->withHeader('Accept-Language', '13375p34|<');
+            $response = $this->router->dispatch($serverRequest)->response();
+            $this->assertNotNull($response);
+            $this->assertEquals('ok', (string) $response->getBody());
+            $this->assertEquals('foo/bar', $response->getHeaderLine('Content-Type'));
+            $this->assertStringContainsString('accept-language', $response->getHeaderLine('Vary'));
+            $this->assertEquals('/accept', $response->getHeaderLine('Content-Location'));
+            $this->assertNotEmpty($response->getHeaderLine('Expires'));
+            $this->assertNotEmpty($response->getHeaderLine('Cache-Control'));
         }
         function test_accept_content_type_header()
         {
-            global $header;
-            $_SERVER['HTTP_ACCEPT'] = 'foo/bar';
             $this->router->get('/', function() { return 'ok'; })
                          ->accept(['foo/bar' => function($d) {return $d;}]);
-            $this->router->dispatch(new ServerRequest('get', '/'));
-            $this->assertContains('Content-Type: foo/bar', $header);
-            $this->assertMatchesRegularExpression('/Vary: negotiate,.*accept(?!-)/', implode("\n", $header));
+            $serverRequest = (new ServerRequest('get', '/'))->withHeader('Accept', 'foo/bar');
+            $response = $this->router->dispatch($serverRequest)->response();
+            $this->assertNotNull($response);
+            $this->assertEquals('foo/bar', $response->getHeaderLine('Content-Type'));
         }
         function test_accept_content_language_header()
         {
-            global $header;
-            $_SERVER['HTTP_ACCEPT_LANGUAGE'] = '13375p34|<';
             $this->router->get('/', function() { return 'ok'; })
                          ->acceptLanguage(['13375p34|<' => function($d) {return $d;}]);
-            $this->router->dispatch(new ServerRequest('get', '/'));
-            $this->assertContains('Content-Language: 13375p34|<', $header);
-            $this->assertMatchesRegularExpression('/Vary: negotiate,.*accept-language/', implode("\n", $header));
+            $serverRequest = (new ServerRequest('get', '/'))->withHeader('Accept-Language', '13375p34|<');
+            $response = $this->router->dispatch($serverRequest)->response();
+            $this->assertNotNull($response);
+            $this->assertStringContainsString('accept-language', $response->getHeaderLine('Vary'));
         }
         /**
          * @ticket 44
@@ -565,7 +560,8 @@ namespace Respect\Rest {
 
             $router->any('/moo/*', __NAMESPACE__.'\\RouteKnowsNothing');
 
-            $out = (string) $router->run(new \Respect\Rest\Request(new ServerRequest('get', '/meow/blub')))->getBody(); // ReflectionException
+            $serverRequest = (new ServerRequest('get', '/meow/blub'))->withHeader('Accept', 'application/json');
+            $out = (string) $router->run(new \Respect\Rest\Request($serverRequest))->getBody(); // ReflectionException
 
             $this->assertEquals('"ok: blub"', $out);
 

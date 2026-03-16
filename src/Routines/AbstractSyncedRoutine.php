@@ -1,10 +1,6 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
@@ -18,17 +14,9 @@ use Respect\Rest\Request;
 /** Base class for routines that sync parameters */
 abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSynced
 {
-    /**
-     * @var Reflector
-     */
-    protected $reflection;
+    protected ?\Reflector $reflection = null;
 
-    /**
-     * Return parameters that can be used with the routine.
-     *
-     * @return array
-     */
-    public function getParameters()
+    public function getParameters(): array
     {
         $reflection = $this->getReflection();
         if (!$reflection instanceof ReflectionObject && !$reflection instanceof ReflectionClass) {
@@ -38,14 +26,7 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
         return [];
     }
 
-    /**
-     * Executes the routine and return its result.
-     *
-     * @param  Respect\Rest\Request $request
-     * @param  array                $params
-     * @return mixed
-     */
-    public function execute(Request $request, $params)
+    public function execute(Request $request, array $params): mixed
     {
         $callback = $this->getCallback();
         if (is_string($callback)) {
@@ -58,12 +39,7 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
         return $callback(...$params);
     }
 
-    /**
-     * Returns a concrete ReflectionFunctionAbstract for this routine callback.
-     *
-     * @return Reflector
-     */
-    protected function getReflection()
+    protected function getReflection(): \Reflector
     {
         $callback = $this->getCallback();
         if (is_array($callback)) {

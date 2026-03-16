@@ -13,7 +13,7 @@ use Respect\Rest\Routes\AbstractRoute;
  */
 class AbstractRoutine extends RestAbstractRoutine
 {
-    public function getCallback()
+    public function getCallback(): mixed
     {
         return $this->callback;
     }

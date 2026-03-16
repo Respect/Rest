@@ -3,10 +3,10 @@ namespace Respect\Rest\Routines;
 
 
 /**
- * @covers Respect\Rest\Routines\AbstractCallbackList
+ * @covers Respect\Rest\Routines\CallbackList
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
+class CallbackListTest extends \PHPUnit\Framework\TestCase
 {
     protected $object;
 
@@ -20,7 +20,7 @@ class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
                 'e' => 'is_numeric',
         ];
 
-        $this->object = new FunkyAbstractCallbackList($ar);
+        $this->object = new FunkyCallbackList($ar);
     }
 
     protected function tearDown(): void
@@ -29,7 +29,7 @@ class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @covers Respect\Rest\Routines\AbstractCallbackList::executeCallback
+     * @covers Respect\Rest\Routines\CallbackList::executeCallback
      */
     public function testExecuteCallback()
     {
@@ -39,7 +39,7 @@ class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($this->object->funkyExecuteCallback('e', [4]));
     }
     /**
-     * @covers Respect\Rest\Routines\AbstractCallbackList::getCallback
+     * @covers Respect\Rest\Routines\CallbackList::getCallback
      */
     public function testGetCallback()
     {
@@ -49,7 +49,7 @@ class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
         $this->assertIsCallable($this->object->funkyGetCallback('e'));
     }
     /**
-     * @covers Respect\Rest\Routines\AbstractCallbackList::__construct
+     * @covers Respect\Rest\Routines\CallbackList::__construct
      */
     public function testLoad()
     {
@@ -62,7 +62,7 @@ class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
         $this->assertContains('e', $a);
     }
     /**
-     * @covers Respect\Rest\Routines\AbstractCallbackList::getKeys
+     * @covers Respect\Rest\Routines\CallbackList::getKeys
      */
     public function testGetKeys()
     {
@@ -76,7 +76,7 @@ class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @covers Respect\Rest\Routines\AbstractCallbackList::hasKey
+     * @covers Respect\Rest\Routines\CallbackList::hasKey
      */
     public function testHasKey()
     {
@@ -88,7 +88,7 @@ class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @covers Respect\Rest\Routines\AbstractCallbackList::filterKeysContain
+     * @covers Respect\Rest\Routines\CallbackList::filterKeysContain
      */
     public function testFilterKeysContain()
     {
@@ -102,7 +102,7 @@ class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
     }
 
     /**
-     * @covers Respect\Rest\Routines\AbstractCallbackList::filterKeysNotContain
+     * @covers Respect\Rest\Routines\CallbackList::filterKeysNotContain
      */
     public function testFilterKeysNotContain()
     {
@@ -120,7 +120,7 @@ class AbstractCallbackListTest extends \PHPUnit\Framework\TestCase
 
 }
 
-class FunkyAbstractCallbackList extends AbstractCallbackList{
+class FunkyCallbackList extends CallbackList{
     public function funkyExecuteCallback($key, $params) {
         return $this->executeCallback($key, $params);
     }

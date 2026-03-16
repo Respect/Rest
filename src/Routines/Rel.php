@@ -1,10 +1,6 @@
 <?php
-/*
- * This file is part of the Respect\Rest package.
- *
- * For the full copyright and license information, please view the LICENSE
- * file that was distributed with this source code.
- */
+
+declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
@@ -19,7 +15,7 @@ class Rel extends ArrayObject implements Routinable, ProxyableThrough
         $this->exchangeArray($list);
     }
 
-    public function extractLinks($data, $relSpec, $deep = true)
+    public function extractLinks(mixed $data, mixed $relSpec, bool $deep = true): mixed
     {
         if (is_callable($relSpec)) {
             return $relSpec($data);
@@ -34,7 +30,7 @@ class Rel extends ArrayObject implements Routinable, ProxyableThrough
         return $relSpec;
     }
 
-    public function through(Request $request, $params)
+    public function through(Request $request, array $params): mixed
     {
         $rels = $this;
 

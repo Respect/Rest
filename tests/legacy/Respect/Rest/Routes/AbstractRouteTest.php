@@ -51,8 +51,6 @@ class AbstractRouteTest extends \PHPUnit\Framework\TestCase
     #[DataProvider('extensions_provider')]
     public function testIgnoreFileExtensions($with, $without)
     {
-        $_SERVER['HTTP_ACCEPT'] = '*';
-        $_SERVER['REQUEST_URI'] = '/';
         $r = new Router(new Psr17Factory());
         $r->get('/route1/*', function ($match) {return $match;});
         $r->get('/route2/*', function ($match) {return $match;})
@@ -64,9 +62,11 @@ class AbstractRouteTest extends \PHPUnit\Framework\TestCase
 
         ]);
 
-        $response = (string) $r->dispatch(new ServerRequest('get', "/route1/$with"))->response()->getBody();
+        $serverRequest1 = (new ServerRequest('get', "/route1/$with"))->withHeader('Accept', '*');
+        $response = (string) $r->dispatch($serverRequest1)->response()->getBody();
         $this->assertEquals($with, $response);
-        $response = (string) $r->dispatch(new ServerRequest('get', "/route2/$with"))->response()->getBody();
+        $serverRequest2 = (new ServerRequest('get', "/route2/$with"))->withHeader('Accept', '*');
+        $response = (string) $r->dispatch($serverRequest2)->response()->getBody();
         $this->assertEquals("$without.accepted", $response);
     }
 
