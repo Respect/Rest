@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest\Routines {
 
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Respect\Rest\Request,
     Respect\Rest\Router;
 use Stubs\Routines\WhenAlwaysTrue;
@@ -42,7 +44,7 @@ class LegacyWhenTest extends \PHPUnit\Framework\TestCase
     {
         global $header;
         $header = [];
-        $request = @new Request();
+        $request = new Request(new ServerRequest('GET', '/'));
         $params = [];
         $alias = &$this->object;
 
@@ -60,14 +62,14 @@ class LegacyWhenTest extends \PHPUnit\Framework\TestCase
 
     public function test_when_with_a_callable_class_within_a_route()
     {
-        $router  = new Router;
+        $router  = new Router(new Psr17Factory());
         $routine = new WhenAlwaysTrue;
         $router->get('/', function() { return 'route'; })
                ->by($routine);
         // By does not affect the output of the route.
         $this->assertEquals(
             $expected = 'route',
-            (string) $router->dispatch('GET', '/')
+            (string) $router->dispatch(new ServerRequest('GET', '/'))
         );
         $ref = new \ReflectionObject($routine);
         $prop = $ref->getProperty('invoked');

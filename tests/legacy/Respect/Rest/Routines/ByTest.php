@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest\Routines;
 
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Respect\Rest\Request,
     Respect\Rest\Router;
 use Stubs\Routines\ByClassWithInvoke;
@@ -38,7 +40,7 @@ class ByTest extends \PHPUnit\Framework\TestCase
      */
     public function test_by_with_an_anonymous_function()
     {
-        $request = new Request();
+        $request = new Request(new ServerRequest('GET', '/'));
         $params  = [];
         $routine = new By(function() { return 'from by callback'; });
         $this->assertEquals('from by callback', $routine->by($request, $params));
@@ -50,13 +52,13 @@ class ByTest extends \PHPUnit\Framework\TestCase
      */
     public function test_by_on_a_route()
     {
-        $router = new Router();
+        $router = new Router(new Psr17Factory());
         $router->get('/', function() { return 'route'; })
                ->by(function() { return 'by'; });
         // By does not affect the output of the route.
         $this->assertEquals(
             $expected = 'route',
-            (string) $router->dispatch('GET', '/')
+            (string) $router->dispatch(new ServerRequest('GET', '/'))
         );
     }
 
@@ -66,13 +68,13 @@ class ByTest extends \PHPUnit\Framework\TestCase
      */
     public function test_by_on_a_route_with_classname()
     {
-        $router = new Router();
+        $router = new Router(new Psr17Factory());
         $router->get('/', function() { return 'route'; })
                ->by('Stubs\Routines\ByClassWithInvoke');
         // By does not affect the output of the route.
         $this->assertEquals(
             $expected = 'route',
-            (string) $router->dispatch('GET', '/')
+            (string) $router->dispatch(new ServerRequest('GET', '/'))
         );
     }
 
@@ -82,14 +84,14 @@ class ByTest extends \PHPUnit\Framework\TestCase
      */
     public function test_by_with_a_callable_class_on_a_route()
     {
-        $router  = new Router;
+        $router  = new Router(new Psr17Factory());
         $routine = new ByClassWithInvoke;
         $router->get('/', function() { return 'route'; })
                ->by($routine);
         // By does not affect the output of the route.
         $this->assertEquals(
             $expected = 'route',
-            (string) $router->dispatch('GET', '/')
+            (string) $router->dispatch(new ServerRequest('GET', '/'))
         );
         $ref = new \ReflectionObject($routine);
         $prop = $ref->getProperty('invoked');

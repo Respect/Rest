@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest\Routines;
 
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Respect\Rest\Request;
 /**
  * @covers Respect\Rest\Routines\ContentType
@@ -39,7 +41,7 @@ class ContentTypeTest extends \PHPUnit\Framework\TestCase
      */
     public function testBy()
     {
-        $request = @new Request();
+        $request = new Request(new ServerRequest('GET', '/'));
         $params = [];
         $alias = &$this->object;
 

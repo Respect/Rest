@@ -5,6 +5,8 @@ namespace Respect\Rest\Routines {
 /**
  * @covers Respect\Rest\Routines\AuthBasic
  */
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Respect\Rest\Router;
 
 class AuthBasicTest extends \PHPUnit\Framework\TestCase {
@@ -26,7 +28,7 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
         $_SERVER['REQUEST_METHOD'] = 'GET';
         $_SERVER['CONTENT_TYPE'] = 'text/html';
         $_REQUEST['_method'] = '';
-        $this->router = new Router;
+        $this->router = new Router(new Psr17Factory());
         $this->router->isAutoDispatched = false;
         $this->router->methodOverriding = false;
     }
@@ -57,14 +59,14 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
 
         // to be able to run assertions in callback, I'm using a method here instead of a closure
         $routine = new AuthBasic('auth realm', [$this, 'shunt_wantedParams']);
-        $routine->by(new \Respect\Rest\Request('GET', "/$param1/$param2"), [$param1, $param2]);
+        $routine->by(new \Respect\Rest\Request(new ServerRequest('GET', "/$param1/$param2")), [$param1, $param2]);
 
         unset($_SERVER['PHP_AUTH_USER']);
         unset($_SERVER['PHP_AUTH_PW']);
         $_SERVER['HTTP_AUTHORIZATION'] = 'Basic ' . base64_encode($user . ':' . $pass);
 
         $routine = new AuthBasic('auth realm', [$this, 'shunt_wantedParams']);
-        $routine->by(new \Respect\Rest\Request('GET', "/$param1/$param2"), [$param1, $param2]);
+        $routine->by(new \Respect\Rest\Request(new ServerRequest('GET', "/$param1/$param2")), [$param1, $param2]);
     }
 
     /*
@@ -78,7 +80,7 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
                         return true;
             };
         $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
-        $this->router->dispatch('get', '/')->response();
+        $this->router->dispatch(new ServerRequest('get', '/'))->response();
         $this->assertContains('HTTP/1.1 401', $header);
         $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
     }
@@ -95,7 +97,7 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
                     return $login;
             };
         $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
-        $response = $this->router->dispatch('get', '/')->response();
+        $response = $this->router->dispatch(new ServerRequest('get', '/'))->response();
         $this->assertEquals('Login', $response);
         $this->assertContains('HTTP/1.1 401', $header);
         $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
@@ -118,7 +120,7 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
                         }
                         return false;
                      });
-        (string) $this->router->dispatch('GET', '/')->response();
+        (string) $this->router->dispatch(new ServerRequest('GET', '/'))->response();
         $this->assertTrue($checkpoint, 'Auth not run');
         $this->assertNotContains('HTTP/1.1 401', $header);
         $this->assertNotContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
@@ -143,7 +145,7 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
                         }
                         return false;
                      });
-        (string) $this->router->dispatch('GET', '/')->response();
+        (string) $this->router->dispatch(new ServerRequest('GET', '/'))->response();
         $this->assertTrue($checkpoint, 'Auth not run');
         $this->assertNotContains('HTTP/1.1 401', $header);
         $this->assertNotContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
@@ -171,7 +173,7 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
             }
             return false;
         });
-        (string)$this->router->dispatch('GET', "/$param1/$param2")->response();
+        (string)$this->router->dispatch(new ServerRequest('GET', "/$param1/$param2"))->response();
         $this->assertTrue($checkpoint, 'Parameters passed incorrectly');
         unset($_SERVER['PHP_AUTH_PW'], $_SERVER['PHP_AUTH_USER']);
     }
@@ -190,7 +192,7 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
         $this->router->get('/', 'ok')->authBasic('Test Realm', function($username, $password) {
             return (($username == 'user') && ($password == 'pass'));
         });
-        (string) $this->router->dispatch('GET', '/')->response();
+        (string) $this->router->dispatch(new ServerRequest('GET', '/'))->response();
         $this->assertContains('HTTP/1.1 401', $header);
         $this->assertContains('WWW-Authenticate: Basic realm="Test Realm"', $header);
         unset($_SERVER['HTTP_AUTHORIZATION']);
@@ -202,7 +204,7 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
      */
     public function test_always_can_take_multiple_parameters_for_routine_constructor() {
         $this->assertEmpty(DummyRoutine::$result);
-        $r3 = new \Respect\Rest\Router();
+        $r3 = new \Respect\Rest\Router(new Psr17Factory());
         $r3->always('dummyRoutine', 'arg1', 'arg2', 'arg3');
         $this->assertEquals('arg1, arg2, arg3', DummyRoutine::$result);
     }

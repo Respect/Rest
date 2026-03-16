@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest;
 
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
@@ -23,7 +25,7 @@ class RouterTest extends TestCase
     public function testMagicConstructorWarnsIfNoSufficientParametersWerePassed()
     {
         $this->expectException('InvalidArgumentException');
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $router->thisIsInsufficientForMagicConstruction();
     }
     /**
@@ -32,7 +34,7 @@ class RouterTest extends TestCase
     public function testMagicConstructorWarnsIfNoSufficientParametersWerePassed2()
     {
         $this->expectException('InvalidArgumentException');
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $router->thisIsInsufficientForMagicConstruction('/magicians');
     }
 
@@ -42,7 +44,7 @@ class RouterTest extends TestCase
      */
     public function testMagicConstructorCanCreateCallbackRoutes()
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $callbackRoute = $router->get('/', $target = function() {});
         $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target);
 
@@ -71,7 +73,7 @@ class RouterTest extends TestCase
      */
     public function testMagicConstructorCanCreateCallbackRoutesWithExtraParams()
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $callbackRoute = $router->get('/', $target = function() {}, ['extra']);
         $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target, ['extra']);
 
@@ -100,7 +102,7 @@ class RouterTest extends TestCase
      */
     public function testMagicConstructorCanRouteToPreBuiltInstances()
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $myInstance = new class implements Routable {
             public function GET() { return 'mock response'; }
         };
@@ -127,7 +129,7 @@ class RouterTest extends TestCase
     #[DataProvider('provideForStaticRoutableValues')]
     public function testMagicConstructorCanRouteToStaticValue($staticValue, $reason)
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $router->isAutoDispatched = false; // prevent static content from being echoed on dispatch
         $staticRoute = $router->get('/', $staticValue);
         $concreteStaticRoute = $router->staticRoute('GET','/', $staticValue);
@@ -162,10 +164,10 @@ class RouterTest extends TestCase
     public function testMagicConstructorCannotRouteSomeStaticValues($staticValue, $reason)
     {
         $this->expectException(\InvalidArgumentException::class);
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $nonStaticRoute = $router->get('/', $staticValue);
 
-        $router->run(); // __toString is not allowed to throw exceptions
+        $router->run(new Request(new ServerRequest('GET', '/'))); // __toString is not allowed to throw exceptions
 
         $this->assertNotInstanceOf(
             'Respect\\Rest\\Routes\\StaticValue',
@@ -188,7 +190,7 @@ class RouterTest extends TestCase
      */
     public function testMagicConstructorCanRouteToClasses()
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $className = StubRoutable::class;
         $classRoute = $router->get('/', $className);
         $concreteClassRoute = $router->classRoute('GET', '/', $className);
@@ -212,7 +214,7 @@ class RouterTest extends TestCase
      */
     public function testMagicConstructorCanRouteToClassesUsingConstructorParams()
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $className = StubRoutable::class;
         $classRoute = $router->get('/', $className, ['some', 'constructor', 'params']);
         $concreteClassRoute = $router->classRoute('GET', '/', $className, ['some', 'constructor', 'params']);
@@ -242,7 +244,7 @@ class RouterTest extends TestCase
      */
     public function testMagicConstructorCanRouteToFactoriesThatReturnInstancesOfAClass()
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         eval('class MockRoutable implements Respect\Rest\Routable{ public function GET() {} }');
         eval('class FactoryClass { public static function factoryMethod() { return new MockRoutable(); } }');
         $factoryRoute = $router->get('/', 'FactoryClass', ['FactoryClass', 'factoryMethod']);
@@ -270,11 +272,11 @@ class RouterTest extends TestCase
      */
     public function testCanRespondToGlobalOptionsMethodAutomatically()
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $router->get('/asian', 'Asian Food!');
         $router->post('/eastern', 'Eastern Food!');
         $router->eat('/mongolian', 'Mongolian Food!');
-        $response = (string) $router->dispatch('OPTIONS', '*')->response();
+        $response = (string) $router->dispatch(new ServerRequest('OPTIONS', '*'))->response();
 
         $this->assertHeaderContains(
             'Allow: GET, POST, EAT',
@@ -290,12 +292,12 @@ class RouterTest extends TestCase
     public function testDeveloperCanOverridePostMethodWithQueryStringParameter()
     {
         $_REQUEST['_method'] = 'PUT';
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $router->methodOverriding = true;
         $router->put('/bulbs', 'Some Bulbs Put Response');
         $router->post('/bulbs', 'Some Bulbs Post Response');
 
-        $result = (string) $router->dispatch('POST', '/bulbs')->response();
+        $result = (string) $router->dispatch(new ServerRequest('POST', '/bulbs'))->response();
 
         $this->assertSame(
             'Some Bulbs Put Response',
@@ -322,7 +324,7 @@ class RouterTest extends TestCase
     {
         $_REQUEST['_method'] = 'PUT';
         $router->methodOverriding = false;
-        $result = (string) $router->dispatch('POST', '/bulbs')->response();
+        $result = (string) $router->dispatch(new ServerRequest('POST', '/bulbs'))->response();
 
         $this->assertSame(
             'Some Bulbs Post Response',
@@ -344,9 +346,9 @@ class RouterTest extends TestCase
      */
     public function testDeveloperCanSetUpAVirtualHostPathOnConstructor()
     {
-        $router = new Router('/store');
+        $router = new Router(new Psr17Factory(), '/store');
         $router->get('/products', 'Some Products!');
-        $response = $router->dispatch('GET', '/store/products')->response();
+        $response = $router->dispatch(new ServerRequest('GET', '/store/products'))->response();
 
         $this->assertSame(
             'Some Products!',
@@ -358,14 +360,14 @@ class RouterTest extends TestCase
     /**
      * @covers Respect\Rest\Router::__destruct
      */
-    public function testRouterCanBeAutoDispatchedIfProtocolIsDefined()
+    public function testRouterDoesNotAutoDispatchAfterManualDispatch()
     {
-        $_SERVER['SERVER_PROTOCOL'] = 'HTTP/1.1';
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $router->get('/', 'Hello Respect');
+        $router->dispatch(new ServerRequest('GET', '/'));
         unset($router);
 
-        $this->expectOutputString('Hello Respect');
+        $this->expectOutputString('');
     }
 
     /**
@@ -374,8 +376,8 @@ class RouterTest extends TestCase
      */
     public function testReturns404WhenNoRoutesExist()
     {
-        $router = new Router;
-        $response = (string) $router->dispatch('GET', '/')->response();
+        $router = new Router(new Psr17Factory());
+        $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response();
 
         $this->assertEquals(
             '404',
@@ -390,9 +392,9 @@ class RouterTest extends TestCase
      */
     public function testReturns404WhenNoRouteMatches()
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $router->get('/foo', 'This exists.');
-        $response = (string) $router->dispatch('GET', '/')->response();
+        $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response();
 
         $this->assertEquals(
             '404',
@@ -406,9 +408,9 @@ class RouterTest extends TestCase
      */
     public function testNamesRoutesUsingAttributes()
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $router->allMembers = $router->any('/members', 'John, Carl');
-        $response = (string) $router->dispatch('GET', '/members')->response();
+        $response = (string) $router->dispatch(new ServerRequest('GET', '/members'))->response();
 
         $ref = new \ReflectionObject($router);
         $this->assertTrue($ref->hasProperty('allMembers'), 'There must be an attribute set for that key');
@@ -426,7 +428,7 @@ class RouterTest extends TestCase
      */
     public function testCreateUriShouldBeAwareOfVirtualHost()
     {
-        $router = new Router('/my/virtual/host');
+        $router = new Router(new Psr17Factory(), '/my/virtual/host');
         $catsRoute = $router->any('/cats/*', 'Meow');
         $virtualHostUri = $catsRoute->createUri('mittens');
         $this->assertEquals(
@@ -443,12 +445,12 @@ class RouterTest extends TestCase
     public function testOptionsRequestShouldNotCallOtherHandlers()
     {
         // arrange
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $router->get('/asian', 'GET: Asian Food!');
         $router->post('/asian', 'POST: Asian Food!');
 
         // act
-        $response = (string) $router->dispatch('OPTIONS', '/asian')->response();
+        $response = (string) $router->dispatch(new ServerRequest('OPTIONS', '/asian'))->response();
 
         // assert
         $this->assertHeaderContains(
@@ -470,13 +472,13 @@ class RouterTest extends TestCase
     public function testOptionsRequestShouldBeDispatchedToCorrectOptionsHandler()
     {
         // arrange
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $router->get('/asian', 'GET: Asian Food!');
         $router->options('/asian', 'OPTIONS: Asian Food!');
         $router->post('/asian', 'POST: Asian Food!');
 
         // act
-        $response = (string) $router->dispatch('OPTIONS', '/asian')->response();
+        $response = (string) $router->dispatch(new ServerRequest('OPTIONS', '/asian'))->response();
 
         // assert
         $this->assertHeaderContains(

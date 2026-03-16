@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest\Routes;
 
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\Router;
 
@@ -16,7 +18,7 @@ class ExceptionTest extends TestCase
      */
     public function testMagicConstuctorCanCreateRoutesToExceptions()
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $called = false;
         $phpUnit = $this;
         $router->exceptionRoute('RuntimeException', function ($e) use (&$called, $phpUnit) {
@@ -31,7 +33,7 @@ class ExceptionTest extends TestCase
         $router->get('/', function () {
             throw new \RuntimeException('Oops');
         });
-        $response = (string) $router->dispatch('GET', '/')->response();
+        $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response();
 
         $this->assertTrue($called, 'The exception route must have been called');
 

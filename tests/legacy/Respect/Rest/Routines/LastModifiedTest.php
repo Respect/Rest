@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest\Routines {
 
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Respect\Rest\Request;
 /**
  * @covers Respect\Rest\Routines\LastModified
@@ -43,7 +45,7 @@ class LastModifiedTest extends \PHPUnit\Framework\TestCase
     public function testBy()
     {
         global $header;
-        $request = @new Request();
+        $request = new Request(new ServerRequest('GET', '/'));
         $params = [];
         $alias = &$this->object;
         $this->assertTrue($alias->by($request, $params));

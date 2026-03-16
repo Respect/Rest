@@ -9,6 +9,8 @@
 namespace Respect\Rest;
 
 use Exception;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
 use InvalidArgumentException;
 use Respect\Rest\Routes\AbstractRoute;
@@ -60,6 +62,11 @@ class Router
      * @var string The prefix for every requested URI starting with a slash
      */
     protected $virtualHost = '';
+
+    /**
+     * @var ResponseFactoryInterface The PSR-17 response factory
+     */
+    public $responseFactory;
 
     /**
      * @var Request|null The current request being dispatched
@@ -211,30 +218,34 @@ class Router
     }
 
     /**
+     * @param ResponseFactoryInterface $responseFactory The PSR-17 response factory
      * @param mixed $virtualHost null for no virtual host or a string prefix
      *                           for every URI
      */
-    public function __construct($virtualHost = null)
+    public function __construct(ResponseFactoryInterface $responseFactory, $virtualHost = null)
     {
+        $this->responseFactory = $responseFactory;
         $this->virtualHost = $virtualHost;
     }
 
-    /** If $this->autoDispatched, dispatches the app */
+    /** If $this->autoDispatched and a request was dispatched, outputs the response */
     public function __destruct()
     {
-        if (!$this->isAutoDispatched || !isset($_SERVER['SERVER_PROTOCOL'])) {
+        if (!$this->isAutoDispatched || !$this->request) {
             return;
         }
 
-        echo $this->run();
+        echo $this->request->response();
     }
 
-    /** Runs the router and returns its output */
+    /** Returns the response string from the last dispatched request */
     public function __toString()
     {
         $string = '';
         try {
-            $string = (string) $this->run();
+            if ($this->request) {
+                $string = (string) $this->request->response();
+            }
         } catch (\Exception $exception) {
             trigger_error($exception->getMessage(), E_USER_ERROR);
         }
@@ -352,16 +363,15 @@ class Router
     }
 
     /**
-     * Dispatches the router
+     * Dispatches the router with a PSR-7 server request
      *
-     * @param mixed $method null to infer it or an HTTP method (GET, POST, etc)
-     * @param mixed $uri    null to infer it or a request URI path (/foo/bar)
+     * @param ServerRequestInterface $serverRequest The PSR-7 server request
      *
      * @return mixed Whatever you returned from your model
      */
-    public function dispatch($method = null, $uri = null)
+    public function dispatch(ServerRequestInterface $serverRequest)
     {
-        return $this->dispatchRequest(new Request($method, $uri));
+        return $this->dispatchRequest(new Request($serverRequest));
     }
 
     /**
@@ -371,7 +381,7 @@ class Router
      *
      * @return mixed Whatever the dispatched route returns
      */
-    public function dispatchRequest(?Request $request = null)
+    public function dispatchRequest(Request $request)
     {
         if ($this->isRoutelessDispatch($request)) {
             return $this->request;
@@ -497,14 +507,9 @@ class Router
      *
      * @return bool true if the request doesn't apply for routes
      */
-    public function isRoutelessDispatch(?Request $request = null)
+    public function isRoutelessDispatch(Request $request)
     {
         $this->isAutoDispatched = false;
-
-        if (!$request) {
-            $request = new Request();
-        }
-
         $this->request = $request;
 
         if ($this->hasDispatchedOverridenMethod()) {
@@ -553,7 +558,7 @@ class Router
      *
      * @return string the response string
      */
-    public function run(?Request $request = null)
+    public function run(Request $request)
     {
         $route = $this->dispatchRequest($request);
 

@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest\Routes;
 
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\Router;
@@ -18,7 +20,7 @@ class ErrorTest extends TestCase
     #[RunInSeparateProcess]
     public function testMagicConstuctorCanCreateRoutesToErrors()
     {
-        $router = new Router;
+        $router = new Router(new Psr17Factory());
         $called = false;
         $phpUnit = $this;
         $router->errorRoute(function ($err) use (&$called, $phpUnit) {
@@ -33,7 +35,7 @@ class ErrorTest extends TestCase
         $router->get('/', function () {
             trigger_error('Oops', E_USER_WARNING);
         });
-        $response = (string) $router->dispatch('GET', '/')->response();
+        $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response();
 
         $this->assertTrue($called, 'The error route must have been called');
 

@@ -2,6 +2,8 @@
 
 namespace Respect\Rest\Routines;
 
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Respect\Rest\Request;
 
 /**
@@ -47,7 +49,7 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
      */
     public function testIdentifyRequested()
     {
-        $this->assertContains('a', $this->neg->pubIdentifyRequested(new Request('GET', '/')));
+        $this->assertContains('a', $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/'))));
     }
 
     /**
@@ -55,7 +57,7 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
      */
     public function testConsiderProvisions()
     {
-        $r = $this->neg->pubIdentifyRequested(new Request('GET', '/'));
+        $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
         $this->assertContains('a', $this->neg->pubConsiderProvisions($r[0]));
     }
 
@@ -65,7 +67,7 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
     public function testNotifyApproved()
     {
         $asrt = 'a';
-        $r = $this->neg->pubIdentifyRequested(new Request('GET', '/'));
+        $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
         $p = $this->neg->pubConsiderProvisions($r[0]);
         $this->neg->pubNotifyApproved($r[0],$p[0]);
         $this->assertContains($asrt, $this->neg->outcome);
@@ -80,7 +82,7 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
     public function testNotifyDeclined()
     {
         $asrt = 'a';
-        $r = $this->neg->pubIdentifyRequested(new Request('GET', '/'));
+        $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
         $p = $this->neg->pubConsiderProvisions($r[0]);
         $this->neg->pubNotifyDeclined($r[0],$p[0]);
         $this->assertContains($asrt, $this->neg->outcome);
@@ -150,7 +152,7 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
      */
     public function testAuthorize()
     {
-        $r = $this->neg->pubIdentifyRequested(new Request('GET', '/'));
+        $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
         $p = $this->neg->pubConsiderProvisions($r[0]);
         $this->assertTrue($this->neg->pubAuthorize($r[0],$p[0]));
         $this->assertFalse($this->neg->pubAuthorize($r[0],$p[0].'a'));
@@ -219,7 +221,7 @@ class Negotiator extends AbstractCallbackMediator {
     }
     public function pubIdentifyRequested( $request =null, $params=null)
     {
-        return $this->identifyRequested(new Request('GET', '/'), $params=null);
+        return $this->identifyRequested(new Request(new ServerRequest('GET', '/')), $params=null);
     }
     public function pubConsiderProvisions($requested)
     {
@@ -227,11 +229,11 @@ class Negotiator extends AbstractCallbackMediator {
     }
     public function pubNotifyApproved($requested, $provided,  $request = null, $params = null)
     {
-        $this->notifyApproved($requested, $provided, new Request('GET', '/'), $params=null);
+        $this->notifyApproved($requested, $provided, new Request(new ServerRequest('GET', '/')), $params=null);
     }
     public function pubNotifyDeclined($requested, $provided,  $request =null, $params=null)
     {
-        $this->notifyDeclined($requested, $provided, new Request('GET', '/'), $params=null);
+        $this->notifyDeclined($requested, $provided, new Request(new ServerRequest('GET', '/')), $params=null);
     }
     public function pubAuthorize($requested, $provided)
     {
@@ -241,7 +243,7 @@ class Negotiator extends AbstractCallbackMediator {
     {
         $this->decisionmap = $decisionmap;
         $this->outcome = [];
-        return $this->when(new Request('GET', '/'), []);
+        return $this->when(new Request(new ServerRequest('GET', '/')), []);
     }
 
 }

@@ -1,6 +1,8 @@
 <?php
 namespace Respect\Rest\Routes {
 
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Respect\Rest\Router;
 /**
@@ -51,7 +53,7 @@ class AbstractRouteTest extends \PHPUnit\Framework\TestCase
     {
         $_SERVER['HTTP_ACCEPT'] = '*';
         $_SERVER['REQUEST_URI'] = '/';
-        $r = new Router();
+        $r = new Router(new Psr17Factory());
         $r->get('/route1/*', function ($match) {return $match;});
         $r->get('/route2/*', function ($match) {return $match;})
             ->accept([
@@ -62,9 +64,9 @@ class AbstractRouteTest extends \PHPUnit\Framework\TestCase
 
         ]);
 
-        $response = $r->dispatch('get', "/route1/$with")->response();
+        $response = $r->dispatch(new ServerRequest('get', "/route1/$with"))->response();
         $this->assertEquals($with, $response);
-        $response = $r->dispatch('get', "/route2/$with")->response();
+        $response = $r->dispatch(new ServerRequest('get', "/route2/$with"))->response();
         $this->assertEquals("$without.accepted", $response);
     }
 

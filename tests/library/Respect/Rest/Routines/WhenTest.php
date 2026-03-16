@@ -2,6 +2,8 @@
 namespace Respect\Rest\Routines;
 
 use Exception;
+use Nyholm\Psr7\ServerRequest;
+use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\TestCase;
 use ReflectionFunction;
 
@@ -12,7 +14,7 @@ class WhenTest extends TestCase
 {
 	public function testRoutineWhenShouldBlockRouteFromMatchIfTheCallbackReturnIsFalse()
 	{
-		$router = new \Respect\Rest\Router;
+		$router = new \Respect\Rest\Router(new Psr17Factory());
 		$router->get('/', function () {
 			return 'Oh yeah!';
 		});
@@ -21,7 +23,7 @@ class WhenTest extends TestCase
 		})->when(function () {
 			return false;
 		});
-		$response = $router->dispatch('GET', '/')->response();
+		$response = $router->dispatch(new ServerRequest('GET', '/'))->response();
 
 		$this->assertEquals(
 			'Oh yeah!',
@@ -39,14 +41,14 @@ class WhenTest extends TestCase
 	public function testRoutineWhenShouldConsiderSyncedCallbackParameters()
 	{
 		$phpUnit = $this;
-		$router = new \Respect\Rest\Router;
+		$router = new \Respect\Rest\Router(new Psr17Factory());
 		$router->get('/speakers/*', function ($speakerName) {
 			return "Hello $speakerName";
 		})->when(function ($speakerName) use ($phpUnit) {
 			$phpUnit->assertEquals('alganet', $speakerName);
 			return strlen($speakerName) >= 3;
 		});
-		$response = $router->dispatch('GET', '/speakers/alganet')->response();
+		$response = $router->dispatch(new ServerRequest('GET', '/speakers/alganet'))->response();
 
 		$this->assertEquals(
 			'Hello alganet',
