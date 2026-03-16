@@ -43,18 +43,18 @@ class Router
      * @var array An array of routines that must be applied to every route
      * instance
      */
-    protected $globalRoutines = array();
+    protected $globalRoutines = [];
 
     /**
      * @var array An array of main routes for this router
      */
-    protected $routes = array();
+    protected $routes = [];
 
     /**
      * @var array An array of side routes (errors, exceptions, etc) for this
      * router
      */
-    protected $sideRoutes = array();
+    protected $sideRoutes = [];
 
     /**
      * @var string The prefix for every requested URI starting with a slash
@@ -142,7 +142,7 @@ class Router
             );
         }
 
-        list($path, $routeTarget) = $args;
+        [$path, $routeTarget] = $args;
 
          // Support multiple route definitions as array of paths
         if (is_array($path)) {
@@ -325,7 +325,7 @@ class Router
         $method,
         $path,
         $callback,
-        array $arguments = array()
+        array $arguments = []
     ) {
         $route = new Routes\Callback($method, $path, $callback, $arguments);
         $this->appendRoute($route);
@@ -343,7 +343,7 @@ class Router
      *
      * @return Respect\Rest\Routes\ClassName The route instance
      */
-    public function classRoute($method, $path, $class, array $arguments = array())
+    public function classRoute($method, $path, $class, array $arguments = [])
     {
         $route = new Routes\ClassName($method, $path, $class, $arguments);
         $this->appendRoute($route);
@@ -439,7 +439,7 @@ class Router
      */
     public function getAllowedMethods(array $routes)
     {
-        $allowedMethods = array();
+        $allowedMethods = [];
 
         foreach ($routes as $route) {
             $allowedMethods[] = $route->method;
@@ -619,7 +619,7 @@ class Router
     protected function configureRequest(
         Request $request,
         AbstractRoute $route,
-        array $params = array()
+        array $params = []
     ) {
         $request->route = $route;
         $request->params = $params;
@@ -730,7 +730,7 @@ class Router
     protected function matchRoute(
         Request $request,
         AbstractRoute $route,
-        &$params = array()
+        &$params = []
     ) {
         if ($route->match($request, $params)) {
             $request->route = $route;

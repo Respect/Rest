@@ -27,7 +27,7 @@ class Request
      * path like /users/*, a Request for /users/alganet should have an array
      * equivalent to ['alganet']
      */
-    public $params = array();
+    public $params = [];
 
     /** @var AbstractRoute A route matched for this request */
     public $route;
@@ -42,13 +42,13 @@ class Request
     public function __construct($method = null, $uri = null)
     {
         //Tries to infer request variables only if null
-        if (is_null($method)) {
+        if ($method === null) {
             $method = isset($_SERVER['REQUEST_METHOD'])
                 ? $_SERVER['REQUEST_METHOD']
                 : 'GET';
         }
 
-        if (is_null($uri)) {
+        if ($uri === null) {
             $uri = isset($_SERVER['REQUEST_URI'])
                 ? $_SERVER['REQUEST_URI']
                 : '/';
@@ -135,7 +135,7 @@ class Request
      */
     protected function processPosRoutines($response)
     {
-        $proxyResults = array();
+        $proxyResults = [];
 
         foreach ($this->route->routines as $routine) {
             if ($routine instanceof ProxyableThrough) {
@@ -153,10 +153,7 @@ class Request
         //This is mainly used by accept() and similar ones.
         foreach ($proxyResults as $proxyCallback) {
             if (is_callable($proxyCallback)) {
-                $response = call_user_func_array(
-                    $proxyCallback,
-                    array($response)
-                );
+                $response = $proxyCallback($response);
             }
         }
 
@@ -229,7 +226,7 @@ class Request
             $errorHandler = $this->prepareForErrorForwards();
             $preRoutineResult = $this->processPreRoutines();
 
-            if (!is_null($preRoutineResult)) {
+            if ($preRoutineResult !== null) {
                 return $preRoutineResult;
             }
 
@@ -243,7 +240,7 @@ class Request
             $possiblyModifiedResponse = $this->processPosRoutines($response);
             $errorResponse = $this->forwardErrors($errorHandler);
 
-            if (!is_null($errorResponse)) {
+            if ($errorResponse !== null) {
                 return $errorResponse;
             }
 
@@ -276,7 +273,7 @@ class Request
             $method == 'HEAD' ? 'GET' : $method
         );
 
-        $callbackParameters = array();
+        $callbackParameters = [];
 
         if (!$routine instanceof ParamSynced) {
             $callbackParameters = $params;

@@ -59,7 +59,7 @@ namespace Respect\Rest {
         public function tearDown(): void
         {
             global $header;
-            $header = array();
+            $header = [];
         }
         function test_magic_call_should_throw_exception_with_just_one_arg()
         {
@@ -100,21 +100,21 @@ namespace Respect\Rest {
         function test_magic_call_with_class_callback_should_return_factory_route()
         {
             $route = $this->router->thisIsAMagicCall(
-                '/some/path', 'DateTime', array(new \Datetime, 'format')
+                '/some/path', 'DateTime', [new \Datetime, 'format']
             );
             $this->assertInstanceOf('Respect\Rest\Routes\Factory', $route);
         }
         function test_magic_call_with_class_with_constructor_should_return_class_route()
         {
             $route = $this->router->thisIsAMagicCall(
-                '/some/path', 'DateTime', array('2989374983')
+                '/some/path', 'DateTime', ['2989374983']
             );
             $this->assertInstanceOf('Respect\Rest\Routes\ClassName', $route);
         }
         function test_magic_call_with_some_static_value()
         {
             $route = $this->router->thisIsAMagicCall(
-                '/some/path', array('foo')
+                '/some/path', ['foo']
             );
             $this->assertInstanceOf('Respect\Rest\Routes\StaticValue', $route);
         }
@@ -155,7 +155,7 @@ namespace Respect\Rest {
         {
             global $header;
             $this->router->get('/', function() { return 'ok'; })
-                         ->accept(array('text/html' => function($d) {return $d;}));
+                         ->accept(['text/html' => function($d) {return $d;}]);
             $this->router->dispatch('delete', '/');
             $this->assertContains('HTTP/1.1 405', $header);
             $this->assertContains('Allow: GET', $header);
@@ -208,7 +208,7 @@ namespace Respect\Rest {
         {
             global $header;
             $this->router->get('/', function() { return 'ok'; })
-                         ->accept(array('foo/bar' => function($d) {return $d;}));
+                         ->accept(['foo/bar' => function($d) {return $d;}]);
             $this->router->dispatch('get', '/');
             $this->assertContains('HTTP/1.1 406', $header);
             $this->assertContains('Allow: GET', $header);
@@ -225,7 +225,7 @@ namespace Respect\Rest {
         {
             $this->router->get('/one-time/*', function($frag, $param1, $param2) {
                 return "one-time-$frag-$param1-$param2";
-            }, array('addl','add2'));
+            }, ['addl','add2']);
             $response = $this->router->dispatch('GET', '/one-time/1');
             $this->assertEquals('one-time-1-addl-add2', $response);
         }
@@ -246,7 +246,7 @@ namespace Respect\Rest {
         {
             global $header;
             $expectedHeader = 'X-Burger: With Cheese!';
-            $this->router->get('/', __NAMESPACE__.'\\HeadTest', array($expectedHeader))
+            $this->router->get('/', __NAMESPACE__.'\\HeadTest', [$expectedHeader])
                          ->when(function(){return true;});
             $headResponse = $this->router->dispatch('HEAD', '/');
             $getResponse  = $this->router->dispatch('GET', '/');
@@ -255,9 +255,9 @@ namespace Respect\Rest {
         }
         function test_user_agent_class()
         {
-            $u = new KnowsUserAgent(array('*' => function () {
+            $u = new KnowsUserAgent(['*' => function () {
         //        print_r(\func_get_args());
-            }));
+            }]);
 
             $this->assertFalse($u->knowsCompareItems('a','b'));
             $this->assertFalse($u->knowsCompareItems('c','b'));
@@ -271,10 +271,10 @@ namespace Respect\Rest {
             $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
             $this->router->get('/', function () {
                 return 'unknown';
-            })->userAgent(array(
+            })->userAgent([
                 'FIREFOX' => function() { return 'FIREFOX'; },
                 'IE' => function() { return 'IE'; },
-            ));
+            ]);
             $response = $this->router->dispatch('GET', '/');
             $this->assertEquals('FIREFOX', $response);
         }
@@ -283,9 +283,9 @@ namespace Respect\Rest {
             $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
             $this->router->get('/', function () {
                 return 'unknown';
-            })->userAgent(array(
+            })->userAgent([
                 '*' => function() { return 'IE'; },
-            ));
+            ]);
             $response = $this->router->dispatch('GET', '/');
             $this->assertEquals('IE', $response);
         }
@@ -296,14 +296,14 @@ namespace Respect\Rest {
             $request                         = new Request('GET', '/input');
             $_SERVER['HTTP_ACCEPT_ENCODING'] = 'deflate';
             $this->router->get('/input', function() { return fopen('php://input', 'r+'); })
-                         ->acceptEncoding(array(
+                         ->acceptEncoding([
                             'deflate' => function($stream) use ($self, &$done) {
                                 $done = true;
                                 $self->assertIsResource($stream);
                                 stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
                                 return $stream; //now deflated on demand
                             }
-                         ));
+                         ]);
 
             $response = $this->router->run($request);
             $this->assertTrue($done);
@@ -362,22 +362,22 @@ namespace Respect\Rest {
         function test_single_last_param()
         {
             $r = new Router();
-            $args = array();
+            $args = [];
             $r->any('/documents/*', function($documentId) use (&$args) {
                 $args = func_get_args();
             });
             $r->dispatch('get', '/documents/1234')->response();
-            $this->assertEquals(array('1234'), $args);
+            $this->assertEquals(['1234'], $args);
         }
         function test_single_last_param2()
         {
             $r = new Router();
-            $args = array();
+            $args = [];
             $r->any('/documents/**', function($documentsPath) use (&$args) {
                 $args = func_get_args();
             });
             $r->dispatch('get', '/documents/foo/bar')->response();
-            $this->assertEquals(array(array('foo', 'bar')), $args);
+            $this->assertEquals([['foo', 'bar']], $args);
         }
         /**
          * Unit test for Commit: 3e8d536
@@ -388,7 +388,7 @@ namespace Respect\Rest {
         function test_catchall_on_root_call_should_get_callback_parameter()
         {
             $r = new Router();
-            $args = array();
+            $args = [];
             $r->any('/**', function($documentsPath) use (&$args) {
                 $args = func_get_args();
             });
@@ -406,19 +406,19 @@ namespace Respect\Rest {
             $e = 'Hello';
             $r = new Router();
             $r->get('/', $e)
-              ->accept(array(
-                'text/html' => array($f, 'getBar')
-              ));
+              ->accept([
+                'text/html' => [$f, 'getBar']
+              ]);
             $response = $r->dispatch('get', '/')->response();
             $this->assertEquals($e, (string) $response);
         }
 
         static function provider_content_type()
         {
-            return array(
-                array('text/html'),
-                array('application/json')
-            );
+            return [
+                ['text/html'],
+                ['application/json']
+            ];
         }
         /**
          * @ticket 44
@@ -429,7 +429,7 @@ namespace Respect\Rest {
             global $header;
             $_SERVER['HTTP_ACCEPT'] = $ctype;
             $r = new Router();
-            $r->get('/auto', '')->accept(array($ctype=>'json_encode'));
+            $r->get('/auto', '')->accept([$ctype=>'json_encode']);
 
 
             $r = $r->dispatch('get', '/auto')->response();
@@ -444,7 +444,7 @@ namespace Respect\Rest {
             global $header;
             $_SERVER['HTTP_ACCEPT'] = '*/*';
             $r = new Router();
-            $r->get('/auto', '')->accept(array($ctype=>'json_encode'));
+            $r->get('/auto', '')->accept([$ctype=>'json_encode']);
 
 
             $r = $r->dispatch('get', '/auto')->response();
@@ -465,11 +465,11 @@ namespace Respect\Rest {
         }
         static function provider_content_type_extension()
         {
-            return array(
-                array('text/html','.html'),
-                array('application/json','.json'),
-                array('text/xml','.xml')
-            );
+            return [
+                ['text/html','.html'],
+                ['application/json','.json'],
+                ['text/xml','.xml']
+            ];
         }
         function test_negotiate_acceptable_complete_headers()
         {
@@ -478,8 +478,8 @@ namespace Respect\Rest {
             $_SERVER['HTTP_ACCEPT'] = 'foo/bar';
             $_SERVER['HTTP_ACCEPT_LANGUAGE'] = '13375p34|<';
             $this->router->get('/accept', function() { return 'ok'; })
-                         ->accept(array('foo/bar' => function($d) {return $d;}))
-                         ->acceptLanguage(array('13375p34|<' => function($d) {return $d;}));
+                         ->accept(['foo/bar' => function($d) {return $d;}])
+                         ->acceptLanguage(['13375p34|<' => function($d) {return $d;}]);
             $this->router->dispatch('get', '/accept');
             $this->assertContains('Content-Type: foo/bar', $header);
             $this->assertContains('Content-Language: 13375p34|<', $header);
@@ -494,7 +494,7 @@ namespace Respect\Rest {
             global $header;
             $_SERVER['HTTP_ACCEPT'] = 'foo/bar';
             $this->router->get('/', function() { return 'ok'; })
-                         ->accept(array('foo/bar' => function($d) {return $d;}));
+                         ->accept(['foo/bar' => function($d) {return $d;}]);
             $this->router->dispatch('get', '/');
             $this->assertContains('Content-Type: foo/bar', $header);
             $this->assertMatchesRegularExpression('/Vary: negotiate,.*accept(?!-)/', implode("\n", $header));
@@ -504,7 +504,7 @@ namespace Respect\Rest {
             global $header;
             $_SERVER['HTTP_ACCEPT_LANGUAGE'] = '13375p34|<';
             $this->router->get('/', function() { return 'ok'; })
-                         ->acceptLanguage(array('13375p34|<' => function($d) {return $d;}));
+                         ->acceptLanguage(['13375p34|<' => function($d) {return $d;}]);
             $this->router->dispatch('get', '/');
             $this->assertContains('Content-Language: 13375p34|<', $header);
             $this->assertMatchesRegularExpression('/Vary: negotiate,.*accept-language/', implode("\n", $header));
@@ -516,10 +516,10 @@ namespace Respect\Rest {
         function test_do_not_set_automatic_content_type_header_for_extensions($ctype, $ext)
         {
             global $header;
-            $header = array();
+            $header = [];
             $_SERVER['HTTP_ACCEPT'] = $ctype;
             $r = new Router();
-            $r->get('/auto', '')->accept(array($ext=>'json_encode'));
+            $r->get('/auto', '')->accept([$ext=>'json_encode']);
 
 
             $r = $r->dispatch('get', '/auto'.$ext)->response();
@@ -571,7 +571,7 @@ namespace Respect\Rest {
             $router->isAutoDispatched = false;
 
             $r1 = $router->any('/meow/*', __NAMESPACE__.'\\RouteKnowsGet');
-            $r1->accept(array('application/json' => 'json_encode')); // some routine inheriting from AbstractAccept
+            $r1->accept(['application/json' => 'json_encode']); // some routine inheriting from AbstractAccept
 
             $router->any('/moo/*', __NAMESPACE__.'\\RouteKnowsNothing');
 
@@ -674,5 +674,5 @@ namespace Respect\Rest\Routines {
 }
 
 namespace {
-    $header=array();
+    $header=[];
 }

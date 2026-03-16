@@ -19,10 +19,10 @@ class UserAgentTest extends \PHPUnit\Framework\TestCase
      */
     protected function setUp(): void
     {
-        $this->object = new UserAgent(array(
+        $this->object = new UserAgent([
             'FIREFOX' => function (){},
             'InhernetExplorer' => function (){},
-        ));
+        ]);
 
     }
 
@@ -39,7 +39,7 @@ class UserAgentTest extends \PHPUnit\Framework\TestCase
     public function testThrough()
     {
         $request = @new Request();
-        $params = array();
+        $params = [];
         $alias = &$this->object;
 
         $_SERVER['HTTP_USER_AGENT'] = 'FIREFOX';
@@ -54,7 +54,7 @@ class UserAgentTest extends \PHPUnit\Framework\TestCase
     public function testThroughInvalid()
     {
         $request = @new Request();
-        $params = array();
+        $params = [];
         $alias = &$this->object;
         $_SERVER['HTTP_USER_AGENT'] = 'CHROME';
         $this->assertInstanceOf('Respect\\Rest\\Routines\\UserAgent', $alias);

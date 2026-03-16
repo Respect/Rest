@@ -22,7 +22,7 @@ class Rel extends ArrayObject implements Routinable, ProxyableThrough
     public function extractLinks($data, $relSpec, $deep = true)
     {
         if (is_callable($relSpec)) {
-            return call_user_func($relSpec, $data);
+            return $relSpec($data);
         } elseif ($deep && is_array($relSpec)) {
             foreach ($relSpec as &$r) {
                 $r = $this->extractLinks($data, $r, false);
@@ -44,7 +44,7 @@ class Rel extends ArrayObject implements Routinable, ProxyableThrough
             }
 
             if (!isset($data['links'])) {
-                $data['links'] = array();
+                $data['links'] = [];
             }
 
             $data['links'] = array_merge_recursive($data['links'], $rels->getArrayCopy());

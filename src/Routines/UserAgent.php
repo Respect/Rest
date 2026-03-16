@@ -19,7 +19,7 @@ class UserAgent extends AbstractCallbackMediator implements ProxyableThrough, Un
 
     protected function identifyRequested(Request $request, $params)
     {
-        return array($_SERVER[self::ACCEPT_HEADER]);
+        return [$_SERVER[self::ACCEPT_HEADER]];
     }
     protected function considerProvisions($requested)
     {

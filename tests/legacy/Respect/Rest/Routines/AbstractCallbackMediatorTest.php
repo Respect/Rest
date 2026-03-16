@@ -22,7 +22,7 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
 
         $this->neg = new Negotiator();
 
-        $a = array('a'=>array('a'));
+        $a = ['a'=>['a']];
         $this->neg->getMediated($a);
     }
 
@@ -37,7 +37,7 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
     public function testNegatiatorMock()
     {
         $neg =  new Negotiator();
-        $a = array('ZZ'=>array('ZZ'));
+        $a = ['ZZ'=>['ZZ']];
         $this->assertTrue($neg->getMediated($a));
         $this->assertContains('ZZ', $neg->outcome);
         $this->assertTrue($neg->outcome['approved']);
@@ -96,37 +96,37 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
     {
         $neg =  new Negotiator();
         $asrt = 'h';
-        $a = array($asrt=>array('h','rc','tt','ZZ','uu'));
+        $a = [$asrt=>['h','rc','tt','ZZ','uu']];
         $this->assertTrue($neg->getMediated($a));
         $this->assertContains($asrt, $neg->outcome);
         $this->assertEquals($asrt, $neg->outcome['requested']);
         $this->assertEquals($asrt, $neg->outcome['provided']);
         $asrt = 'rc';
-        $a = array($asrt=>array('h','rc','tt','ZZ','uu'));
+        $a = [$asrt=>['h','rc','tt','ZZ','uu']];
         $this->assertTrue($neg->getMediated($a));
         $this->assertContains($asrt, $neg->outcome);
         $this->assertEquals($asrt, $neg->outcome['requested']);
         $this->assertEquals($asrt, $neg->outcome['provided']);
         $asrt = 'tt';
-        $a = array($asrt=>array('h','rc','tt','ZZ','uu'));
+        $a = [$asrt=>['h','rc','tt','ZZ','uu']];
         $this->assertTrue($neg->getMediated($a));
         $this->assertContains($asrt, $neg->outcome);
         $this->assertEquals($asrt, $neg->outcome['requested']);
         $this->assertEquals($asrt, $neg->outcome['provided']);
         $asrt = 'ZZ';
-        $a = array($asrt=>array('h','rc','tt','ZZ','uu'));
+        $a = [$asrt=>['h','rc','tt','ZZ','uu']];
         $this->assertTrue($neg->getMediated($a));
         $this->assertContains($asrt, $neg->outcome);
         $this->assertEquals($asrt, $neg->outcome['requested']);
         $this->assertEquals($asrt, $neg->outcome['provided']);
         $asrt = 'uu';
-        $a = array($asrt=>array('h','rc','tt','ZZ','uu'));
+        $a = [$asrt=>['h','rc','tt','ZZ','uu']];
         $this->assertTrue($neg->getMediated($a));
         $this->assertContains($asrt, $neg->outcome);
         $this->assertEquals($asrt, $neg->outcome['requested']);
         $this->assertEquals($asrt, $neg->outcome['provided']);
         $this->assertTrue($neg->outcome['approved']);
-        $a = array('abc'=>array('h','rc','tt','ZZ','uu'));
+        $a = ['abc'=>['h','rc','tt','ZZ','uu']];
         $this->assertFalse($neg->getMediated($a));
         $this->assertFalse($neg->outcome['approved']);
     }
@@ -139,7 +139,7 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
     public function testMediate()
     {
         $neg =  new Negotiator();
-        $a = array('ZZ'=>array('ZZ'));
+        $a = ['ZZ'=>['ZZ']];
         $this->assertTrue($neg->getMediated($a));
         $this->assertContains('ZZ', $neg->outcome);
         $this->assertTrue($neg->outcome['approved']);
@@ -173,7 +173,7 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
         $neg = new Negotiator();
         $this->expectException(\UnexpectedValueException::class);
         $this->expectExceptionMessage('Provisions must be an array of 0 to many.');
-        $neg->getMediated(array('a'=>'not an array'));
+        $neg->getMediated(['a'=>'not an array']);
     }
 }
 
@@ -181,12 +181,12 @@ class AbstractCallbackMediatorTest extends \PHPUnit\Framework\TestCase
  * Mock Test instance
  */
 class Negotiator extends AbstractCallbackMediator {
-    public $decisionmap = array(),
-        $outcome = array();
+    public $decisionmap = [],
+        $outcome = [];
 
     public function __construct ()
     {
-        parent::__construct(array('a' => 'is_numeric'));
+        parent::__construct(['a' => 'is_numeric']);
     }
 
 
@@ -199,23 +199,23 @@ class Negotiator extends AbstractCallbackMediator {
     }
     protected function considerProvisions($requested)
     {
-        return !empty($this->decisionmap[$requested]) ? $this->decisionmap[$requested] : array();
+        return !empty($this->decisionmap[$requested]) ? $this->decisionmap[$requested] : [];
     }
     protected function notifyApproved($requested, $provided, Request $request, $params)
     {
-        $this->outcome = array(
+        $this->outcome = [
             'approved' => true,
             'requested' => $requested,
             'provided' => $provided,
-        );
+        ];
     }
     protected function notifyDeclined($requested, $provided, Request $request, $params)
     {
-        $this->outcome = array(
+        $this->outcome = [
             'approved' => false,
             'requested' => $requested,
             'provided' => $provided,
-        );
+        ];
     }
     public function pubIdentifyRequested( $request =null, $params=null)
     {
@@ -240,8 +240,8 @@ class Negotiator extends AbstractCallbackMediator {
     public function getMediated ($decisionmap)
     {
         $this->decisionmap = $decisionmap;
-        $this->outcome = array();
-        return $this->when(new Request('GET', '/'), array());
+        $this->outcome = [];
+        return $this->when(new Request('GET', '/'), []);
     }
 
 }

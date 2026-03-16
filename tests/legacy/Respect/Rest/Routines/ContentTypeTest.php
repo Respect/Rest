@@ -19,10 +19,10 @@ class ContentTypeTest extends \PHPUnit\Framework\TestCase
      */
     protected function setUp(): void
     {
-        $this->object = new ContentType(array(
+        $this->object = new ContentType([
             'text/html' => function (){return 'from html callback';},
             'application/json' => function (){return 'from json callback';},
-        ));
+        ]);
 
     }
 
@@ -40,7 +40,7 @@ class ContentTypeTest extends \PHPUnit\Framework\TestCase
     public function testBy()
     {
         $request = @new Request();
-        $params = array();
+        $params = [];
         $alias = &$this->object;
 
         $_SERVER['CONTENT_TYPE'] = 'text/html';

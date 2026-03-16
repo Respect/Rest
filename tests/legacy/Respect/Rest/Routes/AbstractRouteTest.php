@@ -31,17 +31,17 @@ class AbstractRouteTest extends \PHPUnit\Framework\TestCase
 
     public static function extensions_provider()
     {
-        return array(
-            array('test.json',             'test'),
-            array('test.bz2',              'test'),
-            array('test.json~user',        'test'),
-            array('test.hal+json',         'test'),
-            array('test.en.html',          'test'),
-            array('test.vnd.amazon.ebook', 'test'),
-            array('test.vnd.hp-hps',       'test'),
-            array('test.json-patch',       'test'),
-            array('test.my_funny.ext',     'test'),
-        );
+        return [
+            ['test.json',             'test'],
+            ['test.bz2',              'test'],
+            ['test.json~user',        'test'],
+            ['test.hal+json',         'test'],
+            ['test.en.html',          'test'],
+            ['test.vnd.amazon.ebook', 'test'],
+            ['test.vnd.hp-hps',       'test'],
+            ['test.json-patch',       'test'],
+            ['test.my_funny.ext',     'test'],
+        ];
     }
     /**
      * @covers Respect\Rest\Routes\AbstractRoute::match
@@ -54,13 +54,13 @@ class AbstractRouteTest extends \PHPUnit\Framework\TestCase
         $r = new Router();
         $r->get('/route1/*', function ($match) {return $match;});
         $r->get('/route2/*', function ($match) {return $match;})
-            ->accept(array(
+            ->accept([
             '.json-home' => function ($data) {
                 return factory::respond(E2M::mediaType('.json-home'), $data);
             },
             "*" => function($data){ return "$data.accepted";},
 
-        ));
+        ]);
 
         $response = $r->dispatch('get', "/route1/$with")->response();
         $this->assertEquals($with, $response);
@@ -109,5 +109,5 @@ namespace Respect\Rest {
 }
 
 namespace {
-    $header=array();
+    $header=[];
 }

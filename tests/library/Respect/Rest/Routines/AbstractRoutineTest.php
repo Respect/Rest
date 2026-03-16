@@ -24,12 +24,12 @@ class AbstractRoutineTest extends \PHPUnit\Framework\TestCase
 
     public static function provide_valid_constructor_arguments()
     {
-        return array(
-            array(function() { return 'Hello'; }),
-            array(array('DateTime', 'createFromFormat')),
-            array(new InstanceWithInvoke),
-            array('Stubs\Routines\WhenAlwaysTrue')
-        );
+        return [
+            [function() { return 'Hello'; }],
+            [['DateTime', 'createFromFormat']],
+            [new InstanceWithInvoke],
+            ['Stubs\Routines\WhenAlwaysTrue']
+        ];
     }
 
     #[DataProvider('provide_invalid_constructor_arguments')]
@@ -42,9 +42,9 @@ class AbstractRoutineTest extends \PHPUnit\Framework\TestCase
 
     public static function provide_invalid_constructor_arguments()
     {
-        return array(
-            array('this_function_name_does_not_exist'),
-            array(new \StdClass),
-        );
+        return [
+            ['this_function_name_does_not_exist'],
+            [new \StdClass],
+        ];
     }
 }

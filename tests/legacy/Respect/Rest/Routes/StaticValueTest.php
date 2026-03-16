@@ -17,7 +17,7 @@ class StaticValueTest extends \PHPUnit\Framework\TestCase
      */
     function test_getReflection_should_return_instance_of_current_routed_class()
     {
-        $route = new StaticValue('any', '/', array('foo'));
+        $route = new StaticValue('any', '/', ['foo']);
         $refl = $route->getReflection('format');
         $this->assertInstanceOf('ReflectionMethod', $refl);
     }
@@ -26,8 +26,8 @@ class StaticValueTest extends \PHPUnit\Framework\TestCase
      */
     function test_runTarget_returns_value()
     {
-        $route = new StaticValue('any', '/', array('foo'));
-        $p=array('');
-        $this->assertEquals(array('foo'), $route->runTarget('get', $p));
+        $route = new StaticValue('any', '/', ['foo']);
+        $p=[''];
+        $this->assertEquals(['foo'], $route->runTarget('get', $p));
     }
 }
