@@ -7,6 +7,7 @@ namespace Respect\Rest\Routes;
 use InvalidArgumentException;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
+use Respect\Rest\Request;
 use Respect\Rest\Routable;
 
 class Factory extends AbstractRoute
@@ -36,7 +37,7 @@ class Factory extends AbstractRoute
         return $this->reflection;
     }
 
-    public function runTarget(string $method, array &$params): mixed
+    public function runTarget(string $method, array &$params, Request $request): mixed
     {
         if ($this->instance === null) {
             $this->instance = ($this->factory)($method, $params);
@@ -46,6 +47,12 @@ class Factory extends AbstractRoute
             throw new InvalidArgumentException(
                 'Routed classes must implement the Respect\\Rest\\Routable interface'
             );
+        }
+
+        $reflection = $this->getReflection($method);
+        if ($reflection !== null) {
+            $args = $this->resolveCallbackArguments($reflection, $params, $request);
+            return $this->instance->$method(...$args);
         }
 
         return $this->instance->$method(...$params);

@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use ReflectionClass;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
+use Respect\Rest\Request;
 use Respect\Rest\Routable;
 
 class ClassName extends AbstractRoute
@@ -63,10 +64,16 @@ class ClassName extends AbstractRoute
         return null;
     }
 
-    public function runTarget(string $method, array &$params): mixed
+    public function runTarget(string $method, array &$params, Request $request): mixed
     {
         if ($this->instance === null) {
             $this->instance = $this->createInstance();
+        }
+
+        $reflection = $this->getReflection($method);
+        if ($reflection !== null) {
+            $args = $this->resolveCallbackArguments($reflection, $params, $request);
+            return $this->instance->$method(...$args);
         }
 
         return $this->instance->$method(...$params);

@@ -7,6 +7,7 @@ namespace Respect\Rest\Routes;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
+use Respect\Rest\Request;
 
 class Callback extends AbstractRoute
 {
@@ -48,8 +49,11 @@ class Callback extends AbstractRoute
         return $this->reflection;
     }
 
-    public function runTarget(string $method, array &$params): mixed
+    public function runTarget(string $method, array &$params, Request $request): mixed
     {
-        return ($this->callback)(...array_merge($params, $this->arguments));
+        $reflection = $this->getReflection($method);
+        $args = $this->resolveCallbackArguments($reflection, array_merge($params, $this->arguments), $request);
+
+        return ($this->callback)(...$args);
     }
 }

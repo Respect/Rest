@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
+use Respect\Rest\Request;
+
 class Error extends Callback
 {
     /** @var callable */
@@ -17,7 +19,7 @@ class Error extends Callback
         parent::__construct('ANY', '^$', $callback);
     }
 
-    public function runTarget(string $method, array &$params): mixed
+    public function runTarget(string $method, array &$params, Request $request): mixed
     {
         return ($this->callback)($this->errors);
     }

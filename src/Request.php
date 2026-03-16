@@ -195,7 +195,7 @@ class Request
                 return $this->route->wrapResponse($preRoutineResult);
             }
 
-            $rawResult = $this->route->runTarget($this->method, $this->params);
+            $rawResult = $this->route->runTarget($this->method, $this->params, $this);
 
             if ($rawResult instanceof AbstractRoute) {
                 return $this->forward($rawResult);
