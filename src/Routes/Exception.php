@@ -6,7 +6,7 @@ namespace Respect\Rest\Routes;
 
 use Respect\Rest\Request;
 
-class Exception extends Callback
+final class Exception extends Callback
 {
     public string $class;
 

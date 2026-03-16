@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest\Routes {
 
 use Nyholm\Psr7\ServerRequest;
@@ -9,7 +11,7 @@ use Respect\Rest\Router;
  * @covers Respect\Rest\Routes\AbstractRoute
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class AbstractRouteTest extends \PHPUnit\Framework\TestCase
+final class AbstractRouteTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var AbstractRoute local instance
@@ -64,10 +66,10 @@ class AbstractRouteTest extends \PHPUnit\Framework\TestCase
 
         $serverRequest1 = (new ServerRequest('get', "/route1/$with"))->withHeader('Accept', '*');
         $response = (string) $r->dispatch($serverRequest1)->response()->getBody();
-        $this->assertEquals($with, $response);
+        self::assertEquals($with, $response);
         $serverRequest2 = (new ServerRequest('get', "/route2/$with"))->withHeader('Accept', '*');
         $response = (string) $r->dispatch($serverRequest2)->response()->getBody();
-        $this->assertEquals("$without.accepted", $response);
+        self::assertEquals("$without.accepted", $response);
     }
 
 }

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest\Routines;
 
 use Exception;
@@ -10,7 +12,7 @@ use ReflectionFunction;
 /** 
  * @covers Respect\Rest\Routines\Rel 
  */
-class RelTest extends TestCase
+final class RelTest extends TestCase
 {
 	public function testSimpleTextRelationPassesThroughData()
 	{
@@ -25,11 +27,11 @@ class RelTest extends TestCase
 		// PSR migration: Rel through() returns an array with 'links', which gets
 		// cast to string "Array" via wrapResponse((string) $result). Array structure
 		// assertions are skipped until Routines become middleware and can serialize properly.
-		$this->assertNotNull(
+		self::assertNotNull(
 			$response,
 			'Response should not be null when a rel route matches'
 		);
-		$this->assertInstanceOf(
+		self::assertInstanceOf(
 			\Psr\Http\Message\ResponseInterface::class,
 			$response,
 			'Response should be a ResponseInterface'
@@ -50,11 +52,11 @@ class RelTest extends TestCase
 		// PSR migration: Rel through() returns an array with 'links', which gets
 		// cast to string "Array" via wrapResponse((string) $result). Array structure
 		// assertions are skipped until Routines become middleware and can serialize properly.
-		$this->assertNotNull(
+		self::assertNotNull(
 			$response,
 			'Response should not be null when a rel callback route matches'
 		);
-		$this->assertInstanceOf(
+		self::assertInstanceOf(
 			\Psr\Http\Message\ResponseInterface::class,
 			$response,
 			'Response should be a ResponseInterface'
@@ -74,11 +76,11 @@ class RelTest extends TestCase
 		// PSR migration: Rel through() returns an array with 'links', which gets
 		// cast to string "Array" via wrapResponse((string) $result). Array structure
 		// assertions are skipped until Routines become middleware and can serialize properly.
-		$this->assertNotNull(
+		self::assertNotNull(
 			$response,
 			'Response should not be null when a rel route with multiple links matches'
 		);
-		$this->assertInstanceOf(
+		self::assertInstanceOf(
 			\Psr\Http\Message\ResponseInterface::class,
 			$response,
 			'Response should be a ResponseInterface'
@@ -99,11 +101,11 @@ class RelTest extends TestCase
 		// PSR migration: Rel through() returns an array with 'links', which gets
 		// cast to string "Array" via wrapResponse((string) $result). Array structure
 		// assertions are skipped until Routines become middleware and can serialize properly.
-		$this->assertNotNull(
+		self::assertNotNull(
 			$response,
 			'Response should not be null when a rel route with non-unique multiple links matches'
 		);
-		$this->assertInstanceOf(
+		self::assertInstanceOf(
 			\Psr\Http\Message\ResponseInterface::class,
 			$response,
 			'Response should be a ResponseInterface'

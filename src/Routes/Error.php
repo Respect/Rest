@@ -6,7 +6,7 @@ namespace Respect\Rest\Routes;
 
 use Respect\Rest\Request;
 
-class Error extends Callback
+final class Error extends Callback
 {
     /** @var callable */
     public $callback;

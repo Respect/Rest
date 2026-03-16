@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Respect\Rest\Routines {
 
@@ -9,32 +10,21 @@ use Nyholm\Psr7\ServerRequest;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Respect\Rest\Router;
 
-class AuthBasicTest extends \PHPUnit\Framework\TestCase {
+final class AuthBasicTest extends \PHPUnit\Framework\TestCase {
 
     private static $wantedParams;
     private $router;
 
     public function shunt_wantedParams()
     {
-        $this->assertSame(self::$wantedParams, func_get_args(), 'wrong arguments were passed to the routine\'s callback');
+        self::assertSame(self::$wantedParams, func_get_args(), 'wrong arguments were passed to the routine\'s callback');
     }
 
     function setUp(): void
     {
-        global $header;
-        $header = [];
-        $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
-        $_SERVER['REQUEST_URI'] = '/';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-        $_SERVER['CONTENT_TYPE'] = 'text/html';
-        $_REQUEST['_method'] = '';
         $this->router = new Router(new Psr17Factory());
         $this->router->isAutoDispatched = false;
         $this->router->methodOverriding = false;
-    }
-
-    protected function tearDown(): void
-    {
     }
 
     /**
@@ -81,8 +71,8 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
         $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
         // No Authorization header -> should get 401 response
         $response = $this->router->dispatch(new ServerRequest('get', '/'))->response();
-        $this->assertEquals(401, $response->getStatusCode());
-        $this->assertEquals('Basic realm="Test Realm"', $response->getHeaderLine('WWW-Authenticate'));
+        self::assertEquals(401, $response->getStatusCode());
+        self::assertEquals('Basic realm="Test Realm"', $response->getHeaderLine('WWW-Authenticate'));
     }
 
     /**
@@ -102,9 +92,9 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
             };
         $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
         $response = $this->router->dispatch(new ServerRequest('get', '/'))->response();
-        $this->assertEquals(401, $response->getStatusCode());
-        $this->assertEquals('Login', (string) $response->getBody());
-        $this->assertEquals('Basic realm="Test Realm"', $response->getHeaderLine('WWW-Authenticate'));
+        self::assertEquals(401, $response->getStatusCode());
+        self::assertEquals('Login', (string) $response->getBody());
+        self::assertEquals('Basic realm="Test Realm"', $response->getHeaderLine('WWW-Authenticate'));
     }
 
     /**
@@ -125,8 +115,8 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
                         return false;
                      });
         $response = $this->router->dispatch($serverRequest)->response();
-        $this->assertTrue($checkpoint, 'Auth not run');
-        $this->assertNotEquals(401, $response->getStatusCode());
+        self::assertTrue($checkpoint, 'Auth not run');
+        self::assertNotEquals(401, $response->getStatusCode());
     }
 
     /**
@@ -151,8 +141,8 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
                         return false;
                      });
         $response = $this->router->dispatch($serverRequest)->response();
-        $this->assertTrue($checkpoint, 'Auth not run');
-        $this->assertNotEquals(401, $response->getStatusCode());
+        self::assertTrue($checkpoint, 'Auth not run');
+        self::assertNotEquals(401, $response->getStatusCode());
     }
 
     /**
@@ -179,7 +169,7 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
             return false;
         });
         (string)$this->router->dispatch($serverRequest)->response()->getBody();
-        $this->assertTrue($checkpoint, 'Parameters passed incorrectly');
+        self::assertTrue($checkpoint, 'Parameters passed incorrectly');
     }
 
     /**
@@ -197,8 +187,8 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
             return (($username == 'user') && ($password == 'pass'));
         });
         $response = $this->router->dispatch($serverRequest)->response();
-        $this->assertEquals(401, $response->getStatusCode());
-        $this->assertEquals('Basic realm="Test Realm"', $response->getHeaderLine('WWW-Authenticate'));
+        self::assertEquals(401, $response->getStatusCode());
+        self::assertEquals('Basic realm="Test Realm"', $response->getHeaderLine('WWW-Authenticate'));
     }
 
     /**
@@ -206,10 +196,10 @@ class AuthBasicTest extends \PHPUnit\Framework\TestCase {
      * #64
      */
     public function test_always_can_take_multiple_parameters_for_routine_constructor() {
-        $this->assertEmpty(DummyRoutine::$result);
+        self::assertEmpty(DummyRoutine::$result);
         $r3 = new \Respect\Rest\Router(new Psr17Factory());
         $r3->always('dummyRoutine', 'arg1', 'arg2', 'arg3');
-        $this->assertEquals('arg1, arg2, arg3', DummyRoutine::$result);
+        self::assertEquals('arg1, arg2, arg3', DummyRoutine::$result);
     }
 }
 class DummyRoutine implements Routinable {

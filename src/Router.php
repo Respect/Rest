@@ -23,7 +23,7 @@ use Respect\Rest\Routes\AbstractRoute;
  * @method AbstractRoute patch(string $path, mixed $routeTarget)
  * @method AbstractRoute any(string $path, mixed $routeTarget)
  */
-class Router
+final class Router
 {
     public bool $isAutoDispatched = true;
     public bool $methodOverriding = false;

@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest\Routines;
 
 use Stubs\Routines\ByClassWithInvoke;
@@ -7,7 +9,7 @@ use Stubs\Routines\ByClassWithInvoke;
  * @covers Respect\Rest\Routines\ParamSynced
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
+final class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var AbstractSyncedRoutine
@@ -41,12 +43,12 @@ class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
      */
     public function testGetParameters()
     {
-        $this->assertInstanceOf('Respect\Rest\Routines\ParamSynced',$this->object);
+        self::assertInstanceOf('Respect\Rest\Routines\ParamSynced',$this->object);
         $parameters = $this->object->getParameters();
-        $this->assertCount(2, $parameters);
-        $this->assertEquals('userId', $parameters[0]->name);
-        $this->assertEquals('blogId', $parameters[1]->name);
-        $this->assertInstanceOf('ReflectionParameter', $parameters[0]);
+        self::assertCount(2, $parameters);
+        self::assertEquals('userId', $parameters[0]->name);
+        self::assertEquals('blogId', $parameters[1]->name);
+        self::assertInstanceOf('ReflectionParameter', $parameters[0]);
     }
 
     /**
@@ -65,11 +67,11 @@ class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
              ->method('getCallback')
              ->willReturn($callback);
 
-        $this->assertContainsOnlyInstancesOf(
+        self::assertContainsOnlyInstancesOf(
             $expected = 'ReflectionParameter',
             $result   = $stub->getParameters()
         );
-        $this->assertCount(
+        self::assertCount(
             $expected = 3,
             $result
         );
@@ -91,11 +93,11 @@ class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
              ->method('getCallback')
              ->willReturn($callback);
 
-        $this->assertContainsOnlyInstancesOf(
+        self::assertContainsOnlyInstancesOf(
             $expected = 'ReflectionParameter',
             $result   = $stub->getParameters()
         );
-        $this->assertCount(
+        self::assertCount(
             $expected = 1,
             $result
         );
@@ -108,7 +110,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
     public function  test_getParameters_with_callable_instance()
     {
         $stub     = new ByClassWithInvoke;
-        $this->assertIsCallable($stub, 'Callable instance does not pass the is_callable test.');
+        self::assertIsCallable($stub, 'Callable instance does not pass the is_callable test.');
         $class    = 'Respect\Rest\Routines\AbstractSyncedRoutine';
         $callback = function($name) { return 'Hello '.$name; };
         $routine  = $this->getMockBuilder($class)
@@ -118,7 +120,7 @@ class AbstractSyncedRoutineTest extends \PHPUnit\Framework\TestCase
         $routine->expects($this->any())
                 ->method('getCallback')
                 ->willReturn($stub);
-        $this->assertCount(
+        self::assertCount(
             $expected = 0,
             $result   = $routine->getParameters()
         );

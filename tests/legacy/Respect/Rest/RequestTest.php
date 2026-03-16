@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Respect\Rest;
 
@@ -8,15 +9,8 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 /**
  * @covers Respect\Rest\Request
  */
-class LegacyRequestTest extends \PHPUnit\Framework\TestCase
+final class LegacyRequestTest extends \PHPUnit\Framework\TestCase
 {
-    function setUp(): void 
-    {
-        $_SERVER['SERVER_PROTOCOL'] = 'HTTP';
-        $_SERVER['REQUEST_URI'] = '/';
-        $_SERVER['REQUEST_METHOD'] = 'GET';
-    }
-
     function test_casting_to_string_returns_response()
     {
         $request = new Request(new ServerRequest('GET', '/'));
@@ -25,7 +19,7 @@ class LegacyRequestTest extends \PHPUnit\Framework\TestCase
         });
         $route->responseFactory = new Psr17Factory();
         $request->route = $route;
-        $this->assertEquals('ok', (string) $request);
+        self::assertEquals('ok', (string) $request);
     }
 
     function test_unsynced_param_comes_as_null()
@@ -40,6 +34,6 @@ class LegacyRequestTest extends \PHPUnit\Framework\TestCase
         }));
         $dummy=['bar'];
         $request->routineCall('by', 'GET', $routine, $dummy);
-        $this->assertEquals([null,'bar',null], $args);
+        self::assertEquals([null,'bar',null], $args);
     }
 }

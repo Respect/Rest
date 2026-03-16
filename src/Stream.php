@@ -10,7 +10,7 @@ use RuntimeException;
 /**
  * Minimal PSR-7 StreamInterface wrapper for PHP stream resources.
  */
-class Stream implements StreamInterface
+final class Stream implements StreamInterface
 {
     /** @var resource|null */
     private $resource;
@@ -84,7 +84,7 @@ class Stream implements StreamInterface
             return false;
         }
         $meta = stream_get_meta_data($this->resource);
-        return $meta['seekable'] ?? false;
+        return $meta['seekable'];
     }
 
     public function seek(int $offset, int $whence = SEEK_SET): void

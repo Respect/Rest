@@ -8,7 +8,7 @@ use SplObjectStorage;
 use Respect\Rest\Request;
 
 /** Handles content type content negotiation */
-class ContentType extends AbstractCallbackMediator implements ProxyableBy, Unique
+final class ContentType extends AbstractCallbackMediator implements ProxyableBy, Unique
 {
     protected array $contentMap = [];
     protected SplObjectStorage|false|null $negotiated = null;

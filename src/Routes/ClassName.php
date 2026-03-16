@@ -11,24 +11,17 @@ use ReflectionMethod;
 use Respect\Rest\Request;
 use Respect\Rest\Routable;
 
-class ClassName extends AbstractRoute
+final class ClassName extends AbstractRoute
 {
-    public string $class = '';
-
-    /** @var array<int, mixed> */
-    public array $constructorParams = [];
-
     protected ?object $instance = null;
 
-    /** @param array<int, mixed> $params */
+    /** @param array<int, mixed> $constructorParams */
     public function __construct(
         string $method,
         string $pattern,
-        string $class,
-        array $params = []
+        public string $class = '',
+        public array $constructorParams = [],
     ) {
-        $this->class = $class;
-        $this->constructorParams = $params;
         parent::__construct($method, $pattern);
     }
 

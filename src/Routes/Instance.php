@@ -10,15 +10,13 @@ use Respect\Rest\Request;
 use ReflectionMethod;
 use Respect\Rest\Routable;
 
-class Instance extends AbstractRoute
+final class Instance extends AbstractRoute
 {
     public string $class = '';
-    protected object $instance;
     protected ?ReflectionMethod $reflection = null;
 
-    public function __construct(string $method, string $pattern, object $instance)
+    public function __construct(string $method, string $pattern, protected object $instance)
     {
-        $this->instance = $instance;
         $this->class = get_class($instance);
         parent::__construct($method, $pattern);
     }

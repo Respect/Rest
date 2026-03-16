@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest\Routines;
 
 use Nyholm\Psr7\ServerRequest;
@@ -8,7 +10,7 @@ use Respect\Rest\Request;
  * @covers Respect\Rest\Routines\UserAgent
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class UserAgentTest extends \PHPUnit\Framework\TestCase
+final class UserAgentTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var UserAgent
@@ -44,12 +46,12 @@ class UserAgentTest extends \PHPUnit\Framework\TestCase
         $alias = &$this->object;
 
         $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
-        $this->assertTrue($alias->when($request, $params));
-        $this->assertInstanceOf('Closure', $alias->through($request, $params));
+        self::assertTrue($alias->when($request, $params));
+        self::assertInstanceOf('Closure', $alias->through($request, $params));
 
         $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'InhernetExplorer'));
-        $this->assertTrue($alias->when($request, $params));
-        $this->assertInstanceOf('Closure', $alias->through($request, $params));
+        self::assertTrue($alias->when($request, $params));
+        self::assertInstanceOf('Closure', $alias->through($request, $params));
 
     }
     public function testThroughInvalid()
@@ -57,9 +59,9 @@ class UserAgentTest extends \PHPUnit\Framework\TestCase
         $params = [];
         $alias = &$this->object;
         $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'CHROME'));
-        $this->assertInstanceOf('Respect\\Rest\\Routines\\UserAgent', $alias);
-        $this->assertFalse($alias->when($request, $params));
-        $this->assertNull($alias->through($request, $params));
+        self::assertInstanceOf('Respect\\Rest\\Routines\\UserAgent', $alias);
+        self::assertFalse($alias->when($request, $params));
+        self::assertNull($alias->through($request, $params));
     }
 
 }

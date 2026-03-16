@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
-use UnexpectedValueException;
 
 /**
  * Mediates the callback selection process when choosing the appropriate
@@ -41,20 +40,12 @@ abstract class AbstractCallbackMediator extends CallbackList implements Proxyabl
 
     private function mediate(string &$requested, string &$provided, Request $request, array $params): bool
     {
-        if (is_array($requests = $this->identifyRequested($request, $params))) {
-            foreach ($requests as $requested) {
-                if (is_array($provisions = $this->considerProvisions($requested))) {
-                    foreach ($provisions as $provided) {
-                        if ($this->authorize($requested, $provided)) {
-                            return true;
-                        }
-                    }
-                } else {
-                    throw new UnexpectedValueException('Provisions must be an array of 0 to many.');
+        foreach ($this->identifyRequested($request, $params) as $requested) {
+            foreach ($this->considerProvisions($requested) as $provided) {
+                if ($this->authorize($requested, $provided)) {
+                    return true;
                 }
             }
-        } else {
-            throw new UnexpectedValueException('Requests must be an array of 0 to many.');
         }
 
         return false;

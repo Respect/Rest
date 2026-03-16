@@ -10,18 +10,18 @@ use ReflectionMethod;
 use Respect\Rest\Request;
 use Respect\Rest\Routable;
 
-class Factory extends AbstractRoute
+final class Factory extends AbstractRoute
 {
-    public string $class = '';
     protected ?object $instance = null;
-    /** @var callable */
-    public $factory;
     protected ?ReflectionMethod $reflection = null;
 
-    public function __construct(string $method, string $pattern, string $class, callable $factory)
-    {
-        $this->factory = $factory;
-        $this->class = $class;
+    public function __construct(
+        string $method,
+        string $pattern,
+        public string $class = '',
+        /** @var callable */
+        public $factory = null,
+    ) {
         parent::__construct($method, $pattern);
     }
 

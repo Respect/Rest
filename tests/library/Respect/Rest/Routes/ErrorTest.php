@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest\Routes;
 
 use Nyholm\Psr7\ServerRequest;
@@ -10,7 +12,7 @@ use Respect\Rest\Router;
 /**
  * @covers Respect\Rest\Routes\Error
  */
-class ErrorTest extends TestCase
+final class ErrorTest extends TestCase
 {
     /**
      * @covers Respect\Rest\Routes\Error::getReflection
@@ -37,9 +39,9 @@ class ErrorTest extends TestCase
         });
         $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response()->getBody();
 
-        $this->assertTrue($called, 'The error route must have been called');
+        self::assertTrue($called, 'The error route must have been called');
 
-        $this->assertEquals(
+        self::assertEquals(
             'There has been an error.',
             $response,
             'An error should be caught by the router and forwarded'

@@ -14,6 +14,8 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     Unique,
     IgnorableFileExtension
 {
+    const string ACCEPT_HEADER = '';
+
     protected SplObjectStorage|false|null $negotiated = null;
     protected string $request_uri = '';
 

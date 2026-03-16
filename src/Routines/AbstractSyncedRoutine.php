@@ -22,8 +22,8 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
     public function getParameters(): array
     {
         $reflection = $this->getReflection();
-        if (!$reflection instanceof ReflectionObject && !$reflection instanceof ReflectionClass) {
-            return $this->getReflection()->getParameters();
+        if ($reflection instanceof \ReflectionFunctionAbstract) {
+            return $reflection->getParameters();
         }
 
         return [];
@@ -34,9 +34,10 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
         $callback = $this->getCallback();
         if (is_string($callback)) {
             $reflection = $this->getReflection();
-            $routineInstance = $reflection->newInstanceArgs($params);
-
-            return $routineInstance();
+            if ($reflection instanceof ReflectionClass) {
+                $routineInstance = $reflection->newInstanceArgs($params);
+                return $routineInstance();
+            }
         }
 
         $reflection = $this->getReflection();

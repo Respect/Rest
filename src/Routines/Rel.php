@@ -7,7 +7,7 @@ namespace Respect\Rest\Routines;
 use ArrayObject;
 use Respect\Rest\Request;
 
-class Rel extends ArrayObject implements Routinable, ProxyableThrough
+final class Rel extends ArrayObject implements Routinable, ProxyableThrough
 {
     public function __construct(array $list)
     {

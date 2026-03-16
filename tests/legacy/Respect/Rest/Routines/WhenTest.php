@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest\Routines {
 
 use Nyholm\Psr7\ServerRequest;
@@ -11,7 +13,7 @@ use Stubs\Routines\WhenAlwaysTrue;
  * @covers Respect\Rest\Routines\When
  * @author Nick Lombard <github@jigsoft.co.za>
  */
-class LegacyWhenTest extends \PHPUnit\Framework\TestCase
+final class LegacyWhenTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @var When
@@ -48,15 +50,15 @@ class LegacyWhenTest extends \PHPUnit\Framework\TestCase
         $params = [];
         $alias = &$this->object;
 
-        $this->assertTrue($alias->when($request, $params));
-        $this->assertCount(0, $header);
+        self::assertTrue($alias->when($request, $params));
+        self::assertCount(0, $header);
 
         $this->object = new When(function () {
                 return false;
             });
         $alias = &$this->object;
 
-        $this->assertFalse($alias->when($request, $params));
+        self::assertFalse($alias->when($request, $params));
     }
 
     public function test_when_with_a_callable_class_within_a_route()
@@ -66,13 +68,13 @@ class LegacyWhenTest extends \PHPUnit\Framework\TestCase
         $router->get('/', function() { return 'route'; })
                ->by($routine);
         // By does not affect the output of the route.
-        $this->assertEquals(
+        self::assertEquals(
             $expected = 'route',
             (string) $router->dispatch(new ServerRequest('GET', '/'))
         );
         $ref = new \ReflectionObject($routine);
         $prop = $ref->getProperty('invoked');
-        $this->assertEquals(true, $prop->getValue($routine), 'Routine was not invoked!');
+        self::assertEquals(true, $prop->getValue($routine), 'Routine was not invoked!');
     }
 }
 

@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Respect\Rest;
 
@@ -13,7 +14,7 @@ use Psr\Http\Message\ServerRequestInterface;
  * Tests that route callbacks and routines can type-hint PSR-7 interfaces
  * to receive automatic injection of ServerRequestInterface and ResponseInterface.
  */
-class Psr7InjectionTest extends TestCase
+final class Psr7InjectionTest extends TestCase
 {
     private Router $router;
 

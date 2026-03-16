@@ -15,7 +15,7 @@ use Respect\Rest\Routines\ProxyableThrough;
 use Respect\Rest\Routines\Routinable;
 
 /** Internal routing context wrapping a PSR-7 server request */
-class Request
+final class Request
 {
     public string $method = '';
 
@@ -26,8 +26,6 @@ class Request
 
     public string $uri = '';
 
-    public ServerRequestInterface $serverRequest;
-
     /** @var array<string, string> Headers to apply to the final response (set by routines) */
     public array $responseHeaders = [];
 
@@ -36,9 +34,8 @@ class Request
 
     public ?\Psr\Http\Message\ResponseFactoryInterface $responseFactory = null;
 
-    public function __construct(ServerRequestInterface $serverRequest)
+    public function __construct(public ServerRequestInterface $serverRequest)
     {
-        $this->serverRequest = $serverRequest;
         $this->uri = rtrim(rawurldecode($serverRequest->getUri()->getPath()), ' /');
         $this->method = strtoupper($serverRequest->getMethod());
     }
@@ -60,8 +57,9 @@ class Request
         foreach ($this->route->sideRoutes as $sideRoute) {
             if ($sideRoute instanceof Routes\Error) {
                 return set_error_handler(
-                    static function () use ($sideRoute): void {
-                        $sideRoute->errors[] = func_get_args();
+                    static function (int $errno, string $errstr, string $errfile = '', int $errline = 0) use ($sideRoute): bool {
+                        $sideRoute->errors[] = [$errno, $errstr, $errfile, $errline];
+                        return true;
                     }
                 );
             }

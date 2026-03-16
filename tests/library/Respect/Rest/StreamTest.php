@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace Respect\Rest;
 
@@ -7,19 +8,19 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\StreamInterface;
 use RuntimeException;
 
-class StreamTest extends TestCase
+final class StreamTest extends TestCase
 {
     #[Test]
     public function implementsStreamInterface(): void
     {
         $stream = new Stream(fopen('php://temp', 'r+'));
-        $this->assertInstanceOf(StreamInterface::class, $stream);
+        self::assertInstanceOf(StreamInterface::class, $stream);
     }
 
     #[Test]
     public function constructorRejectsNonResource(): void
     {
-        $this->expectException(RuntimeException::class);
+        self::expectException(RuntimeException::class);
         new Stream('not a resource');
     }
 
@@ -30,7 +31,7 @@ class StreamTest extends TestCase
         fwrite($resource, 'hello world');
         $stream = new Stream($resource);
 
-        $this->assertEquals('hello world', (string) $stream);
+        self::assertEquals('hello world', (string) $stream);
     }
 
     #[Test]
@@ -41,7 +42,7 @@ class StreamTest extends TestCase
         $stream = new Stream($resource);
         $stream->detach();
 
-        $this->assertEquals('', (string) $stream);
+        self::assertEquals('', (string) $stream);
     }
 
     #[Test]
@@ -51,8 +52,8 @@ class StreamTest extends TestCase
         $stream = new Stream($resource);
         $stream->close();
 
-        $this->assertFalse($stream->isReadable());
-        $this->assertFalse($stream->isSeekable());
+        self::assertFalse($stream->isReadable());
+        self::assertFalse($stream->isSeekable());
     }
 
     #[Test]
@@ -62,8 +63,8 @@ class StreamTest extends TestCase
         $stream = new Stream($resource);
         $detached = $stream->detach();
 
-        $this->assertSame($resource, $detached);
-        $this->assertNull($stream->detach());
+        self::assertSame($resource, $detached);
+        self::assertNull($stream->detach());
     }
 
     #[Test]
@@ -73,7 +74,7 @@ class StreamTest extends TestCase
         fwrite($resource, 'abcdef');
         $stream = new Stream($resource);
 
-        $this->assertEquals(6, $stream->getSize());
+        self::assertEquals(6, $stream->getSize());
     }
 
     #[Test]
@@ -83,7 +84,7 @@ class StreamTest extends TestCase
         $stream = new Stream($resource);
         $stream->detach();
 
-        $this->assertNull($stream->getSize());
+        self::assertNull($stream->getSize());
     }
 
     #[Test]
@@ -95,7 +96,7 @@ class StreamTest extends TestCase
         fread($resource, 3);
         $stream = new Stream($resource);
 
-        $this->assertEquals(3, $stream->tell());
+        self::assertEquals(3, $stream->tell());
     }
 
     #[Test]
@@ -104,7 +105,7 @@ class StreamTest extends TestCase
         $stream = new Stream(fopen('php://temp', 'r+'));
         $stream->detach();
 
-        $this->expectException(RuntimeException::class);
+        self::expectException(RuntimeException::class);
         $stream->tell();
     }
 
@@ -117,7 +118,7 @@ class StreamTest extends TestCase
         fread($resource, 10);
         $stream = new Stream($resource);
 
-        $this->assertTrue($stream->eof());
+        self::assertTrue($stream->eof());
     }
 
     #[Test]
@@ -126,7 +127,7 @@ class StreamTest extends TestCase
         $stream = new Stream(fopen('php://temp', 'r+'));
         $stream->detach();
 
-        $this->assertTrue($stream->eof());
+        self::assertTrue($stream->eof());
     }
 
     #[Test]
@@ -134,7 +135,7 @@ class StreamTest extends TestCase
     {
         $stream = new Stream(fopen('php://temp', 'r+'));
 
-        $this->assertTrue($stream->isSeekable());
+        self::assertTrue($stream->isSeekable());
     }
 
     #[Test]
@@ -145,10 +146,10 @@ class StreamTest extends TestCase
         $stream = new Stream($resource);
 
         $stream->seek(3);
-        $this->assertEquals(3, $stream->tell());
+        self::assertEquals(3, $stream->tell());
 
         $stream->rewind();
-        $this->assertEquals(0, $stream->tell());
+        self::assertEquals(0, $stream->tell());
     }
 
     #[Test]
@@ -157,7 +158,7 @@ class StreamTest extends TestCase
         $stream = new Stream(fopen('php://temp', 'r+'));
         $stream->detach();
 
-        $this->expectException(RuntimeException::class);
+        self::expectException(RuntimeException::class);
         $stream->seek(0);
     }
 
@@ -166,7 +167,7 @@ class StreamTest extends TestCase
     {
         $stream = new Stream(fopen('php://temp', 'r+'));
 
-        $this->assertFalse($stream->isWritable());
+        self::assertFalse($stream->isWritable());
     }
 
     #[Test]
@@ -174,7 +175,7 @@ class StreamTest extends TestCase
     {
         $stream = new Stream(fopen('php://temp', 'r+'));
 
-        $this->expectException(RuntimeException::class);
+        self::expectException(RuntimeException::class);
         $stream->write('data');
     }
 
@@ -183,7 +184,7 @@ class StreamTest extends TestCase
     {
         $stream = new Stream(fopen('php://temp', 'r+'));
 
-        $this->assertTrue($stream->isReadable());
+        self::assertTrue($stream->isReadable());
     }
 
     #[Test]
@@ -194,8 +195,8 @@ class StreamTest extends TestCase
         rewind($resource);
         $stream = new Stream($resource);
 
-        $this->assertEquals('hel', $stream->read(3));
-        $this->assertEquals('lo', $stream->read(10));
+        self::assertEquals('hel', $stream->read(3));
+        self::assertEquals('lo', $stream->read(10));
     }
 
     #[Test]
@@ -204,7 +205,7 @@ class StreamTest extends TestCase
         $stream = new Stream(fopen('php://temp', 'r+'));
         $stream->detach();
 
-        $this->expectException(RuntimeException::class);
+        self::expectException(RuntimeException::class);
         $stream->read(1);
     }
 
@@ -217,7 +218,7 @@ class StreamTest extends TestCase
         fread($resource, 2);
         $stream = new Stream($resource);
 
-        $this->assertEquals('cdef', $stream->getContents());
+        self::assertEquals('cdef', $stream->getContents());
     }
 
     #[Test]
@@ -226,7 +227,7 @@ class StreamTest extends TestCase
         $stream = new Stream(fopen('php://temp', 'r+'));
         $stream->detach();
 
-        $this->expectException(RuntimeException::class);
+        self::expectException(RuntimeException::class);
         $stream->getContents();
     }
 
@@ -236,8 +237,8 @@ class StreamTest extends TestCase
         $stream = new Stream(fopen('php://temp', 'r+'));
         $meta = $stream->getMetadata();
 
-        $this->assertIsArray($meta);
-        $this->assertArrayHasKey('uri', $meta);
+        self::assertIsArray($meta);
+        self::assertArrayHasKey('uri', $meta);
     }
 
     #[Test]
@@ -245,8 +246,8 @@ class StreamTest extends TestCase
     {
         $stream = new Stream(fopen('php://temp', 'r+'));
 
-        $this->assertEquals('php://temp', $stream->getMetadata('uri'));
-        $this->assertNull($stream->getMetadata('nonexistent'));
+        self::assertEquals('php://temp', $stream->getMetadata('uri'));
+        self::assertNull($stream->getMetadata('nonexistent'));
     }
 
     #[Test]
@@ -255,7 +256,7 @@ class StreamTest extends TestCase
         $stream = new Stream(fopen('php://temp', 'r+'));
         $stream->detach();
 
-        $this->assertEquals([], $stream->getMetadata());
-        $this->assertNull($stream->getMetadata('uri'));
+        self::assertEquals([], $stream->getMetadata());
+        self::assertNull($stream->getMetadata('uri'));
     }
 }

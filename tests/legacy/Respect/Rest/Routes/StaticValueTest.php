@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 namespace Respect\Rest\Routes;
 
 use Nyholm\Psr7\ServerRequest;
@@ -7,7 +9,7 @@ use Respect\Rest\Request;
 /**
  * @covers Respect\Rest\Routes\StaticValue
  */
-class StaticValueTest extends \PHPUnit\Framework\TestCase
+final class StaticValueTest extends \PHPUnit\Framework\TestCase
 {
     /**
      * @covers Respect\Rest\Routes\StaticValue::getReflection
@@ -16,7 +18,7 @@ class StaticValueTest extends \PHPUnit\Framework\TestCase
     {
         $route = new StaticValue('any', '/', ['foo']);
         $refl = $route->getReflection('format');
-        $this->assertInstanceOf('ReflectionMethod', $refl);
+        self::assertInstanceOf('ReflectionMethod', $refl);
     }
     /**
      * @covers Respect\Rest\Routes\StaticValue::runTarget
@@ -26,6 +28,6 @@ class StaticValueTest extends \PHPUnit\Framework\TestCase
         $route = new StaticValue('any', '/', ['foo']);
         $p = [''];
         $request = new Request(new ServerRequest('GET', '/'));
-        $this->assertEquals(['foo'], $route->runTarget('get', $p, $request));
+        self::assertEquals(['foo'], $route->runTarget('get', $p, $request));
     }
 }

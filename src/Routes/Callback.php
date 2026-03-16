@@ -11,23 +11,17 @@ use Respect\Rest\Request;
 
 class Callback extends AbstractRoute
 {
-    /** @var callable */
-    protected $callback;
-
-    /** @var array<int, mixed> */
-    public array $arguments;
-
     protected ?ReflectionFunctionAbstract $reflection = null;
 
     /** @param array<int, mixed> $arguments */
     public function __construct(
         string $method,
         string $pattern,
-        callable $callback,
-        array $arguments = []
+        /** @var callable */
+        protected $callback,
+        /** @var array<int, mixed> */
+        public array $arguments = [],
     ) {
-        $this->callback = $callback;
-        $this->arguments = $arguments;
         parent::__construct($method, $pattern);
     }
 
