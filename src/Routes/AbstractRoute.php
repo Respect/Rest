@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
-use JsonSerializable;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -12,10 +11,10 @@ use ReflectionClass;
 use ReflectionFunctionAbstract;
 use ReflectionNamedType;
 use Respect\Rest\DispatchContext;
+use Respect\Rest\Responder;
 use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\Unique;
-use Respect\Rest\Stream;
 
 use function array_pop;
 use function array_shift;
@@ -23,10 +22,7 @@ use function assert;
 use function end;
 use function explode;
 use function is_a;
-use function is_array;
-use function is_resource;
 use function is_string;
-use function json_encode;
 use function ltrim;
 use function preg_match;
 use function preg_quote;
@@ -154,26 +150,7 @@ abstract class AbstractRoute
     /** Wraps a mixed value into a PSR-7 ResponseInterface */
     public function wrapResponse(mixed $result): ResponseInterface
     {
-        if ($result instanceof ResponseInterface) {
-            return $result;
-        }
-
-        assert($this->responseFactory !== null);
-        $response = $this->responseFactory->createResponse();
-
-        if (is_resource($result)) {
-            return $response->withBody(new Stream($result));
-        }
-
-        if (is_array($result) || $result instanceof JsonSerializable) {
-            $response->getBody()->write((string) json_encode($result));
-
-            return $response->withHeader('Content-Type', 'application/json');
-        }
-
-        $response->getBody()->write((string) $result);
-
-        return $response;
+        return $this->responder()->normalize($result);
     }
 
     /** @return static */
@@ -290,6 +267,13 @@ abstract class AbstractRoute
         }
 
         return $args;
+    }
+
+    protected function responder(): Responder
+    {
+        assert($this->responseFactory !== null);
+
+        return new Responder($this->responseFactory);
     }
 
     /** @return array{string, string} */

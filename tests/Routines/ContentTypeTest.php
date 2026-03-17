@@ -42,6 +42,7 @@ final class ContentTypeTest extends TestCase
                 ->withHeader('Content-Type', 'text/html')
                 ->withBody($factory->createStream('from html callback')),
         );
+        $context->responseFactory = $factory;
         self::assertTrue($alias->when($context, $params));
         self::assertNull($alias->by($context, $params));
         self::assertEquals('FROM HTML CALLBACK', $context->request->getAttribute(ContentType::ATTRIBUTE));
@@ -51,25 +52,30 @@ final class ContentTypeTest extends TestCase
                 ->withHeader('Content-Type', 'application/json')
                 ->withBody($factory->createStream('{"source":"json"}')),
         );
+        $context->responseFactory = $factory;
         self::assertTrue($alias->when($context, $params));
         self::assertNull($alias->by($context, $params));
         self::assertEquals(['source' => 'json'], $context->request->getParsedBody());
         self::assertEquals(['source' => 'json'], $context->request->getAttribute(ContentType::ATTRIBUTE));
 
         $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('Content-Type', 'text/xml'));
+        $context->responseFactory = $factory;
         self::assertFalse($alias->when($context, $params));
         self::assertNull($alias->by($context, $params));
-        self::assertSame(415, $context->responseStatus);
+        self::assertTrue($context->hasPreparedResponse());
+        self::assertSame(415, $context->response()?->getStatusCode());
     }
 
     public function testWhenAllowsMissingContentTypeHeader(): void
     {
         $params = [];
+        $factory = new Psr17Factory();
 
         $context = new DispatchContext(new ServerRequest('GET', '/'));
+        $context->responseFactory = $factory;
 
         self::assertTrue($this->object->when($context, $params));
         self::assertNull($this->object->by($context, $params));
-        self::assertNull($context->responseStatus);
+        self::assertFalse($context->hasPreparedResponse());
     }
 }
