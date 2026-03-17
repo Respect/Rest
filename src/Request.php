@@ -68,7 +68,7 @@ final class Request
         try {
             if (!$this->route instanceof AbstractRoute) {
                 if ($this->responseStatus !== null && $this->responseFactory !== null) {
-                    return $this->applyResponseMeta(
+                    return $this->finalizeResponse(
                         $this->responseFactory->createResponse($this->responseStatus),
                     );
                 }
@@ -81,17 +81,17 @@ final class Request
 
             if ($preRoutineResult !== null) {
                 if ($preRoutineResult instanceof ResponseInterface) {
-                    return $preRoutineResult;
+                    return $this->finalizeResponse($preRoutineResult);
                 }
 
                 if ($preRoutineResult === false) {
-                    return $this->route->wrapResponse('');
+                    return $this->finalizeResponse($this->route->wrapResponse(''));
                 }
 
-                return $this->route->wrapResponse($preRoutineResult);
+                return $this->finalizeResponse($this->route->wrapResponse($preRoutineResult));
             }
 
-            $rawResult = $this->route->runTarget($this->method, $this->params, $this);
+            $rawResult = $this->route->dispatchTarget($this->method, $this->params, $this);
 
             if ($rawResult instanceof AbstractRoute) {
                 return $this->forward($rawResult);
@@ -104,7 +104,7 @@ final class Request
                 return $errorResponse;
             }
 
-            return $this->applyResponseMeta($this->route->wrapResponse($processedResult));
+            return $this->finalizeResponse($this->route->wrapResponse($processedResult));
         } catch (Throwable $e) {
             $exceptionResponse = $this->catchExceptions($e);
             if ($exceptionResponse === null) {
@@ -119,9 +119,7 @@ final class Request
     public function routineCall(string $type, string $method, Routinable $routine, array &$params): mixed
     {
         assert($this->route !== null);
-        $reflection = $this->route->getReflection(
-            $method === 'HEAD' ? 'GET' : $method,
-        );
+        $reflection = $this->route->getTargetReflection($method);
 
         $callbackParameters = [];
 
@@ -309,6 +307,17 @@ final class Request
         }
 
         return $response;
+    }
+
+    protected function finalizeResponse(ResponseInterface $response): ResponseInterface
+    {
+        $response = $this->applyResponseMeta($response);
+
+        if ($this->method !== 'HEAD' || $this->responseFactory === null) {
+            return $response;
+        }
+
+        return $response->withBody($this->responseFactory->createResponse()->getBody());
     }
 
     public function __toString(): string

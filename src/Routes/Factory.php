@@ -5,16 +5,12 @@ declare(strict_types=1);
 namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
-use ReflectionFunctionAbstract;
-use ReflectionMethod;
 use Respect\Rest\Request;
 use Respect\Rest\Routable;
 
-final class Factory extends AbstractRoute
+final class Factory extends ControllerRoute
 {
     protected object|null $instance = null;
-
-    protected ReflectionMethod|null $reflection = null;
 
     public function __construct(
         string $method,
@@ -23,19 +19,9 @@ final class Factory extends AbstractRoute
         /** @var callable */
         public $factory = null,
     ) {
+        $this->reflectionTarget = $class;
+
         parent::__construct($method, $pattern);
-    }
-
-    public function getReflection(string $method): ReflectionFunctionAbstract
-    {
-        if ($this->reflection === null) {
-            $this->reflection = new ReflectionMethod(
-                $this->class,
-                $method,
-            );
-        }
-
-        return $this->reflection;
     }
 
     /** @param array<int, mixed> $params */
@@ -51,9 +37,6 @@ final class Factory extends AbstractRoute
             );
         }
 
-        $reflection = $this->getReflection($method);
-        $args = $this->resolveCallbackArguments($reflection, $params, $request);
-
-        return $this->instance->$method(...$args);
+        return $this->invokeTarget($this->instance, $method, $params, $request);
     }
 }

@@ -99,6 +99,26 @@ abstract class AbstractRoute
     /** @param array<int, mixed> $params */
     abstract public function runTarget(string $method, array &$params, Request $request): mixed;
 
+    public function getTargetMethod(string $method): string
+    {
+        if ($method === 'HEAD' && $this->method === 'GET') {
+            return 'GET';
+        }
+
+        return $method;
+    }
+
+    public function getTargetReflection(string $method): ReflectionFunctionAbstract|null
+    {
+        return $this->getReflection($this->getTargetMethod($method));
+    }
+
+    /** @param array<int, mixed> $params */
+    public function dispatchTarget(string $method, array &$params, Request $request): mixed
+    {
+        return $this->runTarget($this->getTargetMethod($method), $params, $request);
+    }
+
     /** Wraps a mixed value into a PSR-7 ResponseInterface */
     public function wrapResponse(mixed $result): ResponseInterface
     {
