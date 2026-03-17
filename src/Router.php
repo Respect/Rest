@@ -288,10 +288,6 @@ final class Router
     {
         $route = $this->dispatchRequest($request);
 
-        if ($request->method === 'HEAD') {
-            return null;
-        }
-
         return $route->response();
     }
 
@@ -420,15 +416,27 @@ final class Router
         );
     }
 
-    protected function matchesMethod(AbstractRoute $route, string $methodName): bool
+    protected function getMethodMatchRank(AbstractRoute $route): int|null
     {
         assert($this->request !== null);
 
-        return stripos($methodName, '__') !== 0
-            && ($route->method === $this->request->method
-                || $route->method === 'ANY'
-                || ($route->method === 'GET'
-                    && $this->request->method === 'HEAD'));
+        if (stripos($this->request->method, '__') === 0) {
+            return null;
+        }
+
+        if ($route->method === $this->request->method) {
+            return 0;
+        }
+
+        if ($route->method === 'ANY') {
+            return 1;
+        }
+
+        if ($route->method === 'GET' && $this->request->method === 'HEAD') {
+            return 2;
+        }
+
+        return null;
     }
 
     /** @param array<int, mixed> $params */
@@ -452,22 +460,24 @@ final class Router
         assert($this->request !== null);
         $badRequest = false;
 
-        foreach ($matchedByPath as $route) {
-            if (!$this->matchesMethod($route, $this->request->method)) {
-                continue;
-            }
+        foreach ([0, 1, 2] as $rank) {
+            foreach ($matchedByPath as $route) {
+                if ($this->getMethodMatchRank($route) !== $rank) {
+                    continue;
+                }
 
-            /** @var array<int, mixed> $tempParams */
-            $tempParams = $matchedByPath[$route];
-            if ($route->matchRoutines($this->request, $tempParams)) {
-                return $this->configureRequest(
-                    $this->request,
-                    $route,
-                    static::cleanUpParams($tempParams),
-                );
-            }
+                /** @var array<int, mixed> $tempParams */
+                $tempParams = $matchedByPath[$route];
+                if ($route->matchRoutines($this->request, $tempParams)) {
+                    return $this->configureRequest(
+                        $this->request,
+                        $route,
+                        static::cleanUpParams($tempParams),
+                    );
+                }
 
-            $badRequest = true;
+                $badRequest = true;
+            }
         }
 
         return $badRequest ? false : null;

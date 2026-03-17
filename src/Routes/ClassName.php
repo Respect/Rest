@@ -6,15 +6,13 @@ namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
 use ReflectionClass;
-use ReflectionFunctionAbstract;
-use ReflectionMethod;
 use Respect\Rest\Request;
 use Respect\Rest\Routable;
 
 use function assert;
 use function method_exists;
 
-final class ClassName extends AbstractRoute
+final class ClassName extends ControllerRoute
 {
     protected object|null $instance = null;
 
@@ -25,20 +23,9 @@ final class ClassName extends AbstractRoute
         public string $class = '',
         public array $constructorParams = [],
     ) {
+        $this->reflectionTarget = $class;
+
         parent::__construct($method, $pattern);
-    }
-
-    public function getReflection(string $method): ReflectionFunctionAbstract|null
-    {
-        /** @var class-string $class */
-        $class = $this->class;
-        $mirror = new ReflectionClass($class);
-
-        if ($mirror->hasMethod($method)) {
-            return new ReflectionMethod($this->class, $method);
-        }
-
-        return null;
     }
 
     /** @param array<int, mixed> $params */
@@ -48,14 +35,7 @@ final class ClassName extends AbstractRoute
             $this->instance = $this->createInstance();
         }
 
-        $reflection = $this->getReflection($method);
-        if ($reflection !== null) {
-            $args = $this->resolveCallbackArguments($reflection, $params, $request);
-
-            return $this->instance->$method(...$args);
-        }
-
-        return $this->instance->$method(...$params);
+        return $this->invokeTarget($this->instance, $method, $params, $request);
     }
 
     protected function createInstance(): Routable

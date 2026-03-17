@@ -18,6 +18,7 @@ use Respect\Rest\Request;
 use Respect\Rest\Routable;
 use Respect\Rest\Router;
 use Respect\Rest\Routines;
+use Respect\Rest\Test\Stubs\HeadFactoryController;
 use Respect\Rest\Test\Stubs\HeadTest as HeadTestStub;
 use Respect\Rest\Test\Stubs\MyController;
 use Respect\Rest\Test\Stubs\MyOptionalParamRoute;
@@ -1593,16 +1594,38 @@ final class RouterTest extends TestCase
         $router = new Router(new Psr17Factory());
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
-        $router->get('/', static function () {
-            return 'ok';
+        $router->get('/', static function (ResponseInterface $response) {
+            $response->getBody()->write('ok');
+
+            return $response->withHeader('X-Handled-By', 'GET');
         });
-        $getResponse  = $router->dispatch(new ServerRequest('GET', '/'));
-        self::assertEquals('ok', (string) $getResponse);
-        // HEAD should also match GET route
-        $router->dispatch(new ServerRequest('HEAD', '/'));
+        $response = $router->dispatch(new ServerRequest('HEAD', '/'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('GET', $response->getHeaderLine('X-Handled-By'));
+        self::assertSame('', (string) $response->getBody());
     }
 
-    public function test_http_method_head_with_classes_and_routines(): void
+    public function test_http_method_head_run_returns_response_without_body(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->isAutoDispatched = false;
+        $router->methodOverriding = false;
+        $router->get('/', static function (ResponseInterface $response) {
+            $response->getBody()->write('ok');
+
+            return $response->withHeader('X-Handled-By', 'GET');
+        });
+
+        $response = $router->run(new Request(new ServerRequest('HEAD', '/')));
+
+        self::assertNotNull($response);
+        self::assertSame('GET', $response->getHeaderLine('X-Handled-By'));
+        self::assertSame('', (string) $response->getBody());
+    }
+
+    public function test_http_method_head_with_class_routes_and_routines(): void
     {
         $router = new Router(new Psr17Factory());
         $router->isAutoDispatched = false;
@@ -1612,10 +1635,66 @@ final class RouterTest extends TestCase
             ->when(static function () {
                 return true;
             });
-        $getResponse  = $router->dispatch(new ServerRequest('GET', '/'));
-        self::assertEquals('ok', self::responseBody($getResponse));
-        // HEAD should match GET route
-        $router->dispatch(new ServerRequest('HEAD', '/'));
+
+        $response = $router->dispatch(new ServerRequest('HEAD', '/'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('', (string) $response->getBody());
+    }
+
+    public function test_http_method_head_with_instance_routes_uses_get_fallback(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->isAutoDispatched = false;
+        $router->methodOverriding = false;
+        $router->instanceRoute('ANY', '/users/*', new MyController('ok'));
+
+        $response = $router->dispatch(new ServerRequest('HEAD', '/users/alganet'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
+        self::assertSame('', (string) $response->getBody());
+    }
+
+    public function test_http_method_head_with_factory_routes_uses_get_fallback(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->isAutoDispatched = false;
+        $router->methodOverriding = false;
+        $router->factoryRoute('ANY', '/', HeadFactoryController::class, static function () {
+            return new HeadFactoryController();
+        });
+
+        $response = $router->dispatch(new ServerRequest('HEAD', '/'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('', (string) $response->getBody());
+    }
+
+    public function test_explicit_head_route_overrides_get_fallback(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->isAutoDispatched = false;
+        $router->methodOverriding = false;
+        $router->get('/', static function (ResponseInterface $response) {
+            $response->getBody()->write('get');
+
+            return $response->withHeader('X-Handled-By', 'GET');
+        });
+        $router->head('/', static function (ResponseInterface $response) {
+            $response->getBody()->write('head');
+
+            return $response->withHeader('X-Handled-By', 'HEAD');
+        });
+
+        $response = $router->dispatch(new ServerRequest('HEAD', '/'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame('HEAD', $response->getHeaderLine('X-Handled-By'));
+        self::assertSame('', (string) $response->getBody());
     }
 
     public function test_user_agent_class(): void
