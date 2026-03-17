@@ -14,14 +14,13 @@ use SplObjectStorage;
 use Throwable;
 
 use function array_filter;
+use function array_keys;
 use function array_pop;
-use function array_unique;
 use function array_values;
 use function assert;
 use function class_exists;
 use function count;
 use function implode;
-use function in_array;
 use function interface_exists;
 use function is_array;
 use function is_callable;
@@ -194,10 +193,18 @@ final class Router
         $allowedMethods = [];
 
         foreach ($routes as $route) {
-            $allowedMethods[] = $route->method;
+            foreach ($route->getAllowedMethods() as $method) {
+                $allowedMethods[$method] = true;
+            }
         }
 
-        return array_unique($allowedMethods);
+        if ($allowedMethods === []) {
+            return [];
+        }
+
+        $allowedMethods['OPTIONS'] = true;
+
+        return array_keys($allowedMethods);
     }
 
     public function hasDispatchedOverridenMethod(): bool
@@ -376,7 +383,9 @@ final class Router
      */
     protected function handleOptionsRequest(array $allowedMethods, SplObjectStorage $matchedByPath): void
     {
-        if (in_array('OPTIONS', $allowedMethods)) {
+        if ($this->hasExplicitOptionsRoute($matchedByPath)) {
+            assert($this->request !== null);
+            $this->request->responseHeaders['Allow'] = $this->getAllowHeaderValue($allowedMethods);
             $this->resolveRouteMatch(
                 $this->routineMatch($matchedByPath),
                 $allowedMethods,
@@ -424,19 +433,19 @@ final class Router
             return null;
         }
 
-        if ($route->method === $this->request->method) {
-            return 0;
+        return $route->getMethodMatchRank($this->request->method);
+    }
+
+    /** @param SplObjectStorage<AbstractRoute, array<int, mixed>> $matchedByPath */
+    protected function hasExplicitOptionsRoute(SplObjectStorage $matchedByPath): bool
+    {
+        foreach ($matchedByPath as $route) {
+            if ($route->method === 'OPTIONS') {
+                return true;
+            }
         }
 
-        if ($route->method === 'ANY') {
-            return 1;
-        }
-
-        if ($route->method === 'GET' && $this->request->method === 'HEAD') {
-            return 2;
-        }
-
-        return null;
+        return false;
     }
 
     /** @param array<int, mixed> $params */

@@ -343,7 +343,7 @@ final class RouterTest extends TestCase
         self::assertNotNull($response);
         self::assertSame(204, $response->getStatusCode());
         self::assertEqualsCanonicalizing(
-            ['GET', 'POST', 'EAT'],
+            ['GET', 'HEAD', 'POST', 'EAT', 'OPTIONS'],
             array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
         );
     }
@@ -516,7 +516,7 @@ final class RouterTest extends TestCase
         self::assertSame(204, $response->getStatusCode());
         self::assertSame('', (string) $response->getBody());
         self::assertEqualsCanonicalizing(
-            ['GET', 'POST'],
+            ['GET', 'HEAD', 'POST', 'OPTIONS'],
             array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
         );
     }
@@ -536,6 +536,10 @@ final class RouterTest extends TestCase
             'OPTIONS: Asian Food!',
             (string) $response->getBody(),
             'OPTIONS request should call the correct custom OPTIONS handler.',
+        );
+        self::assertEqualsCanonicalizing(
+            ['GET', 'HEAD', 'POST', 'OPTIONS'],
+            array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
         );
     }
 
@@ -571,7 +575,7 @@ final class RouterTest extends TestCase
         $response = $router->request->response();
 
         self::assertNotNull($response);
-        self::assertSame(405, $response->getStatusCode());
+        self::assertSame(204, $response->getStatusCode());
         self::assertSame('OPTIONS', $response->getHeaderLine('Allow'));
     }
 
@@ -828,7 +832,22 @@ final class RouterTest extends TestCase
         $result = $this->router->dispatch(new ServerRequest('__construct', '/users/alganet'))->response();
         self::assertNotNull($result);
         self::assertSame(405, $result->getStatusCode());
-        self::assertSame('ANY', $result->getHeaderLine('Allow'));
+        self::assertEqualsCanonicalizing(
+            ['GET', 'HEAD', 'POST', 'OPTIONS'],
+            array_map('trim', explode(',', $result->getHeaderLine('Allow'))),
+        );
+    }
+
+    public function testBindControllerAnyRouteRejectsUnsupportedHttpMethod(): void
+    {
+        $this->router->instanceRoute('ANY', '/users/*', new MyController());
+        $result = $this->router->dispatch(new ServerRequest('delete', '/users/alganet'))->response();
+        self::assertNotNull($result);
+        self::assertSame(405, $result->getStatusCode());
+        self::assertEqualsCanonicalizing(
+            ['GET', 'HEAD', 'POST', 'OPTIONS'],
+            array_map('trim', explode(',', $result->getHeaderLine('Allow'))),
+        );
     }
 
     public function testBindControllerMultiMethods(): void
@@ -1472,7 +1491,7 @@ final class RouterTest extends TestCase
         self::assertNotNull($response);
         self::assertSame(405, $response->getStatusCode());
         self::assertEqualsCanonicalizing(
-            ['GET', 'PUT'],
+            ['GET', 'HEAD', 'PUT', 'OPTIONS'],
             array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
         );
     }
@@ -1493,7 +1512,10 @@ final class RouterTest extends TestCase
         $response = $router->dispatch(new ServerRequest('delete', '/'))->response();
         self::assertNotNull($response);
         self::assertSame(405, $response->getStatusCode());
-        self::assertSame('GET', $response->getHeaderLine('Allow'));
+        self::assertEqualsCanonicalizing(
+            ['GET', 'HEAD', 'OPTIONS'],
+            array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
+        );
     }
 
     public function test_transparent_options_allow_methods(): void
@@ -1511,7 +1533,7 @@ final class RouterTest extends TestCase
         self::assertNotNull($response);
         self::assertSame(204, $response->getStatusCode());
         self::assertEqualsCanonicalizing(
-            ['GET', 'POST'],
+            ['GET', 'HEAD', 'POST', 'OPTIONS'],
             array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
         );
     }
@@ -1531,7 +1553,7 @@ final class RouterTest extends TestCase
         self::assertNotNull($response);
         self::assertSame(204, $response->getStatusCode());
         self::assertEqualsCanonicalizing(
-            ['GET', 'POST'],
+            ['GET', 'HEAD', 'POST', 'OPTIONS'],
             array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
         );
     }
