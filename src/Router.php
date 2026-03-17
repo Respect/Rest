@@ -10,26 +10,16 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
 use Respect\Rest\Routes\AbstractRoute;
-use SplObjectStorage;
 use Throwable;
 
-use function array_filter;
-use function array_keys;
 use function array_pop;
-use function array_values;
-use function assert;
 use function class_exists;
 use function count;
-use function implode;
 use function interface_exists;
 use function is_array;
 use function is_callable;
 use function is_string;
-use function iterator_to_array;
 use function preg_match;
-use function preg_quote;
-use function preg_replace;
-use function stripos;
 use function substr_count;
 use function trigger_error;
 use function usort;
@@ -67,6 +57,8 @@ final class Router
 
     /** Used by tests for named route attributes */
     public mixed $allMembers = null;
+
+    private DispatchEngine|null $dispatchEngine = null;
 
     public function __construct(
         public ResponseFactoryInterface $responseFactory,
@@ -141,21 +133,12 @@ final class Router
 
     public function dispatch(ServerRequestInterface $serverRequest): DispatchContext
     {
-        $context = new DispatchContext($serverRequest);
-        $context->responseFactory = $this->responseFactory;
-
-        return $this->dispatchContext($context);
+        return $this->dispatchEngine()->dispatch($serverRequest);
     }
 
     public function dispatchContext(DispatchContext $context): DispatchContext
     {
-        $context->responseFactory ??= $this->responseFactory;
-
-        if (!$this->isRoutelessDispatch($context) && $context->route === null) {
-            $this->routeDispatch();
-        }
-
-        return $context;
+        return $this->dispatchEngine()->dispatchContext($context);
     }
 
     public function exceptionRoute(string $className, callable $callback): Routes\Exception
@@ -182,43 +165,6 @@ final class Router
         return $route;
     }
 
-    /**
-     * @param array<int, AbstractRoute> $routes
-     *
-     * @return array<int, string>
-     */
-    public function getAllowedMethods(array $routes): array
-    {
-        $allowedMethods = [];
-
-        foreach ($routes as $route) {
-            foreach ($route->getAllowedMethods() as $method) {
-                $allowedMethods[$method] = true;
-            }
-        }
-
-        if ($allowedMethods === []) {
-            return [];
-        }
-
-        $allowedMethods['OPTIONS'] = true;
-
-        return array_keys($allowedMethods);
-    }
-
-    public function hasDispatchedOverridenMethod(): bool
-    {
-        if (!$this->context || !$this->methodOverriding || $this->context->method() !== 'POST') {
-            return false;
-        }
-
-        // Read _method from the PSR-7 parsed body or query params
-        $parsedBody = $this->context->request->getParsedBody();
-        $queryParams = $this->context->request->getQueryParams();
-
-        return (is_array($parsedBody) && isset($parsedBody['_method'])) || isset($queryParams['_method']);
-    }
-
     public function instanceRoute(string $method, string $path, object $instance): Routes\Instance
     {
         $route = new Routes\Instance($method, $path, $instance);
@@ -227,74 +173,9 @@ final class Router
         return $route;
     }
 
-    public function isDispatchedToGlobalOptionsMethod(): bool
-    {
-        return $this->context !== null
-            && $this->context->method() === 'OPTIONS'
-            && $this->context->path() === '*';
-    }
-
-    public function isRoutelessDispatch(DispatchContext $context): bool
-    {
-        $this->isAutoDispatched = false;
-        $this->context = $context;
-
-        if ($this->hasDispatchedOverridenMethod()) {
-            $parsedBody = $context->request->getParsedBody();
-            $queryParams = $context->request->getQueryParams();
-            $bodyMethod = is_array($parsedBody) ? ($parsedBody['_method'] ?? null) : null;
-            $overrideMethod = $bodyMethod ?? $queryParams['_method'] ?? null;
-            if ($overrideMethod !== null) {
-                $context->overrideMethod((string) $overrideMethod);
-            }
-        }
-
-        if ($this->isDispatchedToGlobalOptionsMethod()) {
-            $allowedMethods = $this->getAllowedMethods($this->routes);
-
-            if ($allowedMethods) {
-                $context->prepareResponse(
-                    204,
-                    ['Allow' => $this->getAllowHeaderValue($allowedMethods)],
-                );
-            } else {
-                $context->prepareResponse(404);
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    public function routeDispatch(): void
-    {
-        assert($this->context !== null);
-        $context = $this->context;
-        $this->applyVirtualHost();
-
-        $matchedByPath = $this->getMatchedRoutesByPath();
-        /** @var array<int, AbstractRoute> $matchedArray */
-        $matchedArray = iterator_to_array($matchedByPath);
-        $allowedMethods = $this->getAllowedMethods($matchedArray);
-
-        if ($context->method() === 'OPTIONS' && $allowedMethods) {
-            $this->handleOptionsRequest($allowedMethods, $matchedByPath);
-        } elseif (count($matchedByPath) === 0) {
-            $context->prepareResponse(404);
-        } else {
-            $this->resolveRouteMatch(
-                $this->routineMatch($matchedByPath),
-                $allowedMethods,
-            );
-        }
-    }
-
     public function run(DispatchContext $context): ResponseInterface|null
     {
-        $route = $this->dispatchContext($context);
-
-        return $route->response();
+        return $this->dispatchEngine()->run($context);
     }
 
     public function staticRoute(string $method, string $path, mixed $staticValue): Routes\StaticValue
@@ -305,194 +186,25 @@ final class Router
         return $route;
     }
 
+    /** @return array<int, AbstractRoute> */
+    public function getRoutes(): array
+    {
+        return $this->routes;
+    }
+
+    public function getVirtualHost(): string|null
+    {
+        return $this->virtualHost;
+    }
+
+    public function dispatchEngine(): DispatchEngine
+    {
+        return $this->dispatchEngine ??= new DispatchEngine($this);
+    }
+
     public static function compareOcurrences(string $patternA, string $patternB, string $sub): bool
     {
         return substr_count($patternA, $sub) < substr_count($patternB, $sub);
-    }
-
-    /**
-     * @param array<int, mixed> $params
-     *
-     * @return array<int, mixed>
-     */
-    protected static function cleanUpParams(array $params): array
-    {
-        return array_values(
-            array_filter(
-                $params,
-                static fn(mixed $param): bool => $param !== '',
-            ),
-        );
-    }
-
-    protected function applyVirtualHost(): void
-    {
-        assert($this->context !== null);
-        if (!$this->virtualHost) {
-            return;
-        }
-
-        $this->context->setPath(
-            preg_replace(
-                '#^' . preg_quote($this->virtualHost) . '#',
-                '',
-                $this->context->path(),
-            ) ?? $this->context->path(),
-        );
-    }
-
-    /** @param array<int, mixed> $params */
-    protected function configureContext(
-        DispatchContext $context,
-        AbstractRoute $route,
-        array $params = [],
-    ): DispatchContext {
-        $context->route = $route;
-        $context->params = $params;
-
-        return $context;
-    }
-
-    /** @return SplObjectStorage<AbstractRoute, array<int, mixed>> */
-    protected function getMatchedRoutesByPath(): SplObjectStorage
-    {
-        assert($this->context !== null);
-        /** @var SplObjectStorage<AbstractRoute, array<int, mixed>> $matched */
-        $matched = new SplObjectStorage();
-
-        foreach ($this->routes as $route) {
-            $params = [];
-            if (!$this->matchRoute($this->context, $route, $params)) {
-                continue;
-            }
-
-            $matched[$route] = $params;
-        }
-
-        return $matched;
-    }
-
-    /** @param array<string> $allowedMethods */
-    protected function getAllowHeaderValue(array $allowedMethods): string
-    {
-        return implode(', ', $allowedMethods);
-    }
-
-    /**
-     * @param array<string> $allowedMethods
-     * @param SplObjectStorage<AbstractRoute, array<int, mixed>> $matchedByPath
-     */
-    protected function handleOptionsRequest(array $allowedMethods, SplObjectStorage $matchedByPath): void
-    {
-        if ($this->hasExplicitOptionsRoute($matchedByPath)) {
-            $matchedContext = $this->routineMatch($matchedByPath);
-            if ($matchedContext instanceof DispatchContext) {
-                $matchedContext->setResponseHeader('Allow', $this->getAllowHeaderValue($allowedMethods));
-            }
-
-            $this->resolveRouteMatch($matchedContext, $allowedMethods);
-
-            return;
-        }
-
-        assert($this->context !== null);
-        $this->context->prepareResponse(
-            204,
-            ['Allow' => $this->getAllowHeaderValue($allowedMethods)],
-        );
-    }
-
-    /** @param array<string> $allowedMethods */
-    protected function resolveRouteMatch(DispatchContext|bool|null $matchedContext, array $allowedMethods = []): void
-    {
-        assert($this->context !== null);
-        if ($matchedContext instanceof DispatchContext || $this->context->hasPreparedResponse()) {
-            return;
-        }
-
-        if ($matchedContext === false) {
-            $this->context->prepareResponse(400);
-
-            return;
-        }
-
-        if ($allowedMethods === []) {
-            return;
-        }
-
-        $this->context->prepareResponse(
-            405,
-            ['Allow' => $this->getAllowHeaderValue($allowedMethods)],
-        );
-    }
-
-    protected function getMethodMatchRank(AbstractRoute $route): int|null
-    {
-        assert($this->context !== null);
-
-        if (stripos($this->context->method(), '__') === 0) {
-            return null;
-        }
-
-        return $route->getMethodMatchRank($this->context->method());
-    }
-
-    /** @param SplObjectStorage<AbstractRoute, array<int, mixed>> $matchedByPath */
-    protected function hasExplicitOptionsRoute(SplObjectStorage $matchedByPath): bool
-    {
-        foreach ($matchedByPath as $route) {
-            if ($route->method === 'OPTIONS') {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /** @param array<int, mixed> $params */
-    protected function matchRoute(
-        DispatchContext $context,
-        AbstractRoute $route,
-        array &$params = [],
-    ): bool {
-        if ($route->match($context, $params)) {
-            $context->route = $route;
-
-            return true;
-        }
-
-        return false;
-    }
-
-    /** @param SplObjectStorage<AbstractRoute, array<int, mixed>> $matchedByPath */
-    protected function routineMatch(SplObjectStorage $matchedByPath): DispatchContext|bool|null
-    {
-        assert($this->context !== null);
-        $badRequest = false;
-
-        foreach ([0, 1, 2] as $rank) {
-            foreach ($matchedByPath as $route) {
-                if ($this->getMethodMatchRank($route) !== $rank) {
-                    continue;
-                }
-
-                /** @var array<int, mixed> $tempParams */
-                $tempParams = $matchedByPath[$route];
-                $this->context->clearResponseMeta();
-                $this->context->route = $route;
-                if ($route->matchRoutines($this->context, $tempParams)) {
-                    return $this->configureContext(
-                        $this->context,
-                        $route,
-                        static::cleanUpParams($tempParams),
-                    );
-                }
-
-                $badRequest = true;
-            }
-        }
-
-        return $badRequest ? false : null;
     }
 
     protected function sortRoutesByComplexity(): void

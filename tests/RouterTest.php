@@ -328,9 +328,10 @@ final class RouterTest extends TestCase
 
     /**
      * @covers Respect\Rest\Router::dispatchContext
-     * @covers Respect\Rest\Router::isRoutelessDispatch
-     * @covers Respect\Rest\Router::isDispatchedToGlobalOptionsMethod
-     * @covers Respect\Rest\Router::getAllowedMethods
+     * @covers Respect\Rest\DispatchEngine::dispatchContext
+     * @covers Respect\Rest\DispatchEngine::isRoutelessDispatch
+     * @covers Respect\Rest\DispatchEngine::isDispatchedToGlobalOptionsMethod
+     * @covers Respect\Rest\DispatchEngine::getAllowedMethods
      * @runInSeparateProcess
      */
     public function testCanRespondToGlobalOptionsMethodAutomatically(): void
@@ -352,8 +353,9 @@ final class RouterTest extends TestCase
 
     /**
      * @covers Respect\Rest\Router::dispatchContext
-     * @covers Respect\Rest\Router::isRoutelessDispatch
-     * @covers Respect\Rest\Router::isDispatchedToGlobalOptionsMethod
+     * @covers Respect\Rest\DispatchEngine::dispatchContext
+     * @covers Respect\Rest\DispatchEngine::isRoutelessDispatch
+     * @covers Respect\Rest\DispatchEngine::isDispatchedToGlobalOptionsMethod
      */
     public function testGlobalOptionsMethodWithoutRoutesReturns404(): void
     {
@@ -367,8 +369,9 @@ final class RouterTest extends TestCase
 
     /**
      * @covers Respect\Rest\Router::dispatchContext
-     * @covers Respect\Rest\Router::isRoutelessDispatch
-     * @covers Respect\Rest\Router::hasDispatchedOverridenMethod
+     * @covers Respect\Rest\DispatchEngine::dispatchContext
+     * @covers Respect\Rest\DispatchEngine::isRoutelessDispatch
+     * @covers Respect\Rest\DispatchEngine::hasDispatchedOverriddenMethod
      */
     public function testDeveloperCanOverridePostMethodWithQueryStringParameter(): Router
     {
@@ -457,7 +460,8 @@ final class RouterTest extends TestCase
 
     /**
      * @covers Respect\Rest\Router::dispatch
-     * @covers Respect\Rest\Router::routeDispatch
+     * @covers Respect\Rest\DispatchEngine::dispatch
+     * @covers Respect\Rest\DispatchEngine::routeDispatch
      */
     public function testReturns404WhenNoRoutesExist(): void
     {
@@ -470,7 +474,8 @@ final class RouterTest extends TestCase
 
     /**
      * @covers Respect\Rest\Router::dispatch
-     * @covers Respect\Rest\Router::routeDispatch
+     * @covers Respect\Rest\DispatchEngine::dispatch
+     * @covers Respect\Rest\DispatchEngine::routeDispatch
      */
     public function testReturns404WhenNoRouteMatches(): void
     {
@@ -502,7 +507,7 @@ final class RouterTest extends TestCase
     }
 
     /**
-     * @covers Respect\Rest\Router::applyVirtualHost
+     * @covers Respect\Rest\DispatchEngine::applyVirtualHost
      * @covers Respect\Rest\Router::appendRoute
      */
     public function testCreateUriShouldBeAwareOfVirtualHost(): void
@@ -518,7 +523,7 @@ final class RouterTest extends TestCase
     }
 
     /**
-     * @covers Respect\Rest\Router::handleOptionsRequest
+     * @covers Respect\Rest\DispatchEngine::handleOptionsRequest
      * @runInSeparateProcess
      */
     public function testOptionsRequestShouldNotCallOtherHandlers(): void
@@ -538,7 +543,7 @@ final class RouterTest extends TestCase
         );
     }
 
-    /** @covers Respect\Rest\Router::handleOptionsRequest */
+    /** @covers Respect\Rest\DispatchEngine::handleOptionsRequest */
     public function testOptionsRequestShouldBeDispatchedToCorrectOptionsHandler(): void
     {
         $router = new Router(new Psr17Factory());
@@ -560,7 +565,7 @@ final class RouterTest extends TestCase
         );
     }
 
-    /** @covers Respect\Rest\Router::handleOptionsRequest */
+    /** @covers Respect\Rest\DispatchEngine::handleOptionsRequest */
     public function testOptionsRequestShouldReturnBadRequestWhenExplicitOptionsRouteFailsRoutines(): void
     {
         $router = new Router(new Psr17Factory());
@@ -579,15 +584,15 @@ final class RouterTest extends TestCase
         self::assertSame('', (string) $response->getBody());
     }
 
-    /** @covers Respect\Rest\Router::handleOptionsRequest */
+    /** @covers Respect\Rest\DispatchEngine::handleOptionsRequest */
     public function testOptionsHandlerShouldMaterializeRoutelessResponseWhenNoExplicitRouteSurvives(): void
     {
         $router = new Router(new Psr17Factory());
         $router->context = new DispatchContext(new ServerRequest('OPTIONS', '/asian'));
         $router->context->responseFactory = new Psr17Factory();
 
-        $handleOptionsRequest = new ReflectionMethod($router, 'handleOptionsRequest');
-        $handleOptionsRequest->invoke($router, ['OPTIONS'], new SplObjectStorage());
+        $handleOptionsRequest = new ReflectionMethod($router->dispatchEngine(), 'handleOptionsRequest');
+        $handleOptionsRequest->invoke($router->dispatchEngine(), $router->context, ['OPTIONS'], new SplObjectStorage());
 
         $response = $router->context->response();
 
