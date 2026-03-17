@@ -14,16 +14,12 @@ parameters:
       paths:
         - src/Routes/Factory.php
         - src/Routes/Instance.php
-    # Test issues — will be fixed during test modernization batch
+    # Test-specific issues
     - message: '/Call to an undefined method/'
-      path: tests/
-    - message: '/Access to an undefined property/'
       path: tests/
     - message: '/will always evaluate to/'
       path: tests/
     - message: '/with return type void returns/'
-      path: tests/
-    - message: '/is unused/'
       path: tests/
     - message: '/Parameter #1 .+ expects resource/'
       path: tests/
@@ -31,11 +27,7 @@ parameters:
       path: tests/
     - message: '/Anonymous function has an unused use/'
       path: tests/
-    - message: '/Result of function header \(void\) is used/'
-      path: tests/legacy/Respect/Rest/OldRouterTest.php
+    - message: '/is never read, only written/'
+      path: tests/
     - message: '/Call to an undefined static method Respect\\Rest\\Routes\\Factory::respond/'
-      path: tests/legacy/Respect/Rest/Routes/AbstractRouteTest.php
-    - message: '/Call to static method mediaType\(\) on an unknown class/'
-      path: tests/legacy/Respect/Rest/Routes/AbstractRouteTest.php
-    - message: '/Class Respect\\Rest\\Routes\\Factory referenced with incorrect case/'
-      path: tests/legacy/Respect/Rest/Routes/AbstractRouteTest.php
+      path: tests/Routes/AbstractRouteTest.php

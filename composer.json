@@ -41,19 +41,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Respect\\Rest\\": [
-                "tests/library/Respect/Rest/",
-                "tests/legacy/Respect/Rest/"
-            ],
-            "Respect\\Rest\\Routes\\": [
-                "tests/library/Respect/Rest/Routes/",
-                "tests/legacy/Respect/Rest/Routes/"
-            ],
-            "Respect\\Rest\\Routines\\": [
-                "tests/library/Respect/Rest/Routines/",
-                "tests/legacy/Respect/Rest/Routines/"
-            ],
-            "Stubs\\": "tests/src/Stubs"
+            "Respect\\Rest\\Test\\": "tests/",
+            "Respect\\Rest\\Test\\Stubs\\": "tests/Stubs/"
         }
     },
     "scripts": {
