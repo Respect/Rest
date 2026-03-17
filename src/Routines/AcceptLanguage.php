@@ -18,11 +18,11 @@ final class AcceptLanguage extends AbstractAccept
         $requested = (string) preg_replace('/^x\-/', '', $requested);
         $provided = (string) preg_replace('/^x\-/', '', $provided);
 
-        if ($requested == $provided) {
+        if (parent::authorize($requested, $provided)) {
             return $provided;
         }
 
-        if (stripos($requested, '-') || !stripos($provided, '-')) {
+        if (stripos($requested, '-') !== false || stripos($provided, '-') === false) {
             return false;
         }
 
@@ -32,6 +32,6 @@ final class AcceptLanguage extends AbstractAccept
             return $providedA;
         }
 
-        return parent::authorize($requested, $provided);
+        return false;
     }
 }

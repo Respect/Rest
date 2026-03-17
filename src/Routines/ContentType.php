@@ -19,7 +19,7 @@ final class ContentType extends AbstractCallbackMediator implements ProxyableBy,
     /** @param array<int, mixed> $params */
     public function by(Request $request, array $params): mixed
     {
-        if ($this->negotiated instanceof SplObjectStorage && $this->negotiated->contains($request)) {
+        if ($this->negotiated instanceof SplObjectStorage && $this->negotiated->offsetExists($request)) {
             return ($this->negotiated[$request])();
         }
 
