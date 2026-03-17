@@ -2199,8 +2199,8 @@ final class RouterTest extends TestCase
         self::assertStringContainsString('accept', $response->getHeaderLine('Vary'));
         self::assertStringContainsString('accept-language', $response->getHeaderLine('Vary'));
         self::assertEquals('/accept', $response->getHeaderLine('Content-Location'));
-        self::assertNotEmpty($response->getHeaderLine('Expires'));
-        self::assertNotEmpty($response->getHeaderLine('Cache-Control'));
+        self::assertSame('', $response->getHeaderLine('Expires'));
+        self::assertSame('', $response->getHeaderLine('Cache-Control'));
     }
 
     public function test_negotiate_merges_vary_headers(): void
@@ -2231,6 +2231,37 @@ final class RouterTest extends TestCase
             ['negotiate', 'accept', 'accept-language'],
             array_map('trim', explode(',', $response->getHeaderLine('Vary'))),
         );
+    }
+
+    public function test_negotiate_respects_existing_response_headers(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->get('/', static function (ResponseInterface $response) {
+            $response->getBody()->write('ok');
+
+            return $response
+                ->withHeader('Vary', 'origin')
+                ->withHeader('Content-Location', '/custom')
+                ->withHeader('Cache-Control', 'public, max-age=60');
+        })
+            ->acceptLanguage([
+                'en' => static function ($data) {
+                    return $data;
+                },
+            ]);
+
+        $response = $router->dispatch(
+            (new ServerRequest('get', '/'))->withHeader('Accept-Language', 'en'),
+        )->response();
+
+        self::assertNotNull($response);
+        self::assertEqualsCanonicalizing(
+            ['origin', 'negotiate', 'accept-language'],
+            array_map('trim', explode(',', $response->getHeaderLine('Vary'))),
+        );
+        self::assertSame('/custom', $response->getHeaderLine('Content-Location'));
+        self::assertSame('public, max-age=60', $response->getHeaderLine('Cache-Control'));
+        self::assertSame('', $response->getHeaderLine('Expires'));
     }
 
     public function test_accept_content_type_header(): void
