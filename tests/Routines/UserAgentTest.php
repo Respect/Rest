@@ -48,6 +48,56 @@ final class UserAgentTest extends TestCase
         self::assertNull($alias->through($request, $params));
     }
 
+    public function testByCanDenyBeforeRoute(): void
+    {
+        $routine = new UserAgent([
+            'FIREFOX' => static function (): bool {
+                return false;
+            },
+        ]);
+        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
+
+        self::assertTrue($routine->when($request, []));
+        self::assertFalse($routine->by($request, []));
+    }
+
+    public function testByCanPrepareThroughResultWithoutRunningTwice(): void
+    {
+        $calls = 0;
+        $routine = new UserAgent([
+            'FIREFOX' => static function () use (&$calls) {
+                $calls++;
+
+                return static function (string $output): string {
+                    return $output . '-FIREFOX';
+                };
+            },
+        ]);
+        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
+
+        self::assertTrue($routine->when($request, []));
+        self::assertNull($routine->by($request, []));
+
+        $through = $routine->through($request, []);
+        self::assertIsCallable($through);
+        self::assertSame('ok-FIREFOX', $through('ok'));
+        self::assertSame(1, $calls);
+    }
+
+    public function testByCanSkipThroughWhenPreRouteResultIsEmpty(): void
+    {
+        $routine = new UserAgent([
+            'FIREFOX' => static function (): bool {
+                return true;
+            },
+        ]);
+        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
+
+        self::assertTrue($routine->when($request, []));
+        self::assertNull($routine->by($request, []));
+        self::assertNull($routine->through($request, []));
+    }
+
     protected function tearDown(): void
     {
         unset($this->object);

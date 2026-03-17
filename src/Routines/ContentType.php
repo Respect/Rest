@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
-use SplObjectStorage;
 
 use function explode;
 use function is_array;
@@ -20,17 +19,15 @@ final class ContentType extends AbstractCallbackMediator implements ProxyableBy,
     /** @var array<string, callable> */
     protected array $contentMap = [];
 
-    /** @var SplObjectStorage<Request, callable>|false|null */
-    protected SplObjectStorage|false|null $negotiated = null;
-
     /** @param array<int, mixed> $params */
     public function by(Request $request, array $params): mixed
     {
-        if (!$this->negotiated instanceof SplObjectStorage || !$this->negotiated->offsetExists($request)) {
+        $callback = $this->getNegotiatedCallback($request);
+        if ($callback === null) {
             return null;
         }
 
-        $payload = ($this->negotiated[$request])($this->extractInput($request));
+        $payload = $callback($this->extractInput($request));
         $serverRequest = $request->serverRequest->withAttribute(self::ATTRIBUTE, $payload);
         if (is_array($payload) || is_object($payload) || $payload === null) {
             $serverRequest = $serverRequest->withParsedBody($payload);
@@ -72,16 +69,13 @@ final class ContentType extends AbstractCallbackMediator implements ProxyableBy,
     /** @param array<int, mixed> $params */
     protected function notifyApproved(string $requested, string $provided, Request $request, array $params): void
     {
-        /** @var SplObjectStorage<Request, callable> $storage */
-        $storage = new SplObjectStorage();
-        $this->negotiated = $storage;
-        $this->negotiated[$request] = $this->getCallback($provided);
+        $this->rememberNegotiatedCallback($request, $this->getCallback($provided));
     }
 
     /** @param array<int, mixed> $params */
     protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
     {
-        $this->negotiated = false;
+        $this->forgetNegotiatedCallback();
         $request->prepareResponse(415);
     }
 

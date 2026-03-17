@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
+use SplObjectStorage;
 
 /**
  * Mediates the callback selection process when choosing the appropriate
@@ -14,6 +15,9 @@ use Respect\Rest\Request;
 // phpcs:ignore SlevomatCodingStandard.Classes.SuperfluousAbstractClassNaming.SuperfluousPrefix
 abstract class AbstractCallbackMediator extends CallbackList implements ProxyableWhen
 {
+    /** @var SplObjectStorage<Request, callable>|false|null */
+    protected SplObjectStorage|false|null $negotiated = null;
+
     /** @param array<int, mixed> $params */
     public function when(Request $request, array $params): mixed
     {
@@ -69,6 +73,31 @@ abstract class AbstractCallbackMediator extends CallbackList implements Proxyabl
         Request $request,
         array $params,
     ): void;
+
+    protected function getNegotiatedCallback(Request $request): callable|null
+    {
+        if (!$this->negotiated instanceof SplObjectStorage || !$this->negotiated->offsetExists($request)) {
+            return null;
+        }
+
+        return $this->negotiated[$request];
+    }
+
+    protected function rememberNegotiatedCallback(Request $request, callable $callback): void
+    {
+        if (!$this->negotiated instanceof SplObjectStorage) {
+            /** @var SplObjectStorage<Request, callable> $storage */
+            $storage = new SplObjectStorage();
+            $this->negotiated = $storage;
+        }
+
+        $this->negotiated[$request] = $callback;
+    }
+
+    protected function forgetNegotiatedCallback(): void
+    {
+        $this->negotiated = false;
+    }
 
     protected function authorize(string $requested, string $provided): mixed
     {

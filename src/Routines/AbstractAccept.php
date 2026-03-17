@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\Request;
-use SplObjectStorage;
 
 use function array_keys;
 use function array_pop;
@@ -35,9 +34,6 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
 {
     public const string ACCEPT_HEADER = '';
 
-    /** @var SplObjectStorage<Request, callable>|false|null */
-    protected SplObjectStorage|false|null $negotiated = null;
-
     protected string $requestUri = '';
 
     /** @param array<int, mixed> $params */
@@ -63,14 +59,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     /** @param array<int, mixed> $params */
     public function through(Request $request, array $params): mixed
     {
-        if (
-            !$this->negotiated instanceof SplObjectStorage
-            || !$this->negotiated->offsetExists($request)
-        ) {
-            return null;
-        }
-
-        return $this->negotiated[$request];
+        return $this->getNegotiatedCallback($request);
     }
 
     /**
@@ -134,10 +123,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     /** @param array<int, mixed> $params */
     protected function notifyApproved(string $requested, string $provided, Request $request, array $params): void
     {
-        /** @var SplObjectStorage<Request, callable> $storage */
-        $storage = new SplObjectStorage();
-        $this->negotiated = $storage;
-        $this->negotiated[$request] = $this->getCallback($provided);
+        $this->rememberNegotiatedCallback($request, $this->getCallback($provided));
 
         if (strpos($provided, '.') !== false) {
             return;
@@ -160,7 +146,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     /** @param array<int, mixed> $params */
     protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
     {
-        $this->negotiated = false;
+        $this->forgetNegotiatedCallback();
         $request->prepareResponse(406);
     }
 
