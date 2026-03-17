@@ -3,11 +3,9 @@
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="tests/bootstrap.php">
     <testsuites>
-        <testsuite name="legacy">
-            <directory suffix="Test.php">tests/legacy</directory>
-        </testsuite>
-        <testsuite name="library">
-            <directory suffix="Test.php">tests/library</directory>
+        <testsuite name="unit">
+            <directory suffix="Test.php">tests</directory>
+            <exclude>tests/Stubs</exclude>
         </testsuite>
     </testsuites>
     <source>
