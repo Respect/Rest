@@ -9,6 +9,7 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\Router;
+use Respect\Rest\Routes\Callback;
 use Respect\Rest\Routes\Factory;
 
 /** @covers Respect\Rest\Routes\AbstractRoute */
@@ -61,5 +62,16 @@ final class AbstractRouteTest extends TestCase
         self::assertNotNull($resp2);
         $response = (string) $resp2->getBody();
         self::assertEquals($without . '.accepted', $response);
+    }
+
+    public function testWrapResponseNormalizesArrayResults(): void
+    {
+        $route = new Callback('GET', '/', static fn() => null);
+        $route->responseFactory = new Psr17Factory();
+
+        $response = $route->wrapResponse(['status' => 'ok']);
+
+        self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
+        self::assertSame('{"status":"ok"}', (string) $response->getBody());
     }
 }

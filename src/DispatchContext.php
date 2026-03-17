@@ -14,16 +14,12 @@ use Respect\Rest\Routines\ParamSynced;
 use Respect\Rest\Routines\Routinable;
 use Throwable;
 
-use function array_values;
 use function assert;
-use function explode;
-use function implode;
 use function rawurldecode;
 use function rtrim;
 use function set_error_handler;
 use function strtolower;
 use function strtoupper;
-use function trim;
 
 /** Internal routing context wrapping a PSR-7 server request */
 final class DispatchContext
@@ -33,21 +29,23 @@ final class DispatchContext
 
     public AbstractRoute|null $route = null;
 
-    /** @var array<string, string> Headers to apply to the final response (set by routines) */
-    public array $responseHeaders = [];
-
-    /** @var array<string, string> Comma-merged headers to append to the final response */
-    public array $responseAppendedHeaders = [];
-
     /** @var array<string, string> Headers to apply only when the response does not already have them */
-    public array $responseDefaultHeaders = [];
-
-    /** HTTP status code override set by routines (e.g. 406 for content negotiation failure) */
-    public int|null $responseStatus = null;
+    public array $defaultResponseHeaders = [];
 
     public ResponseFactoryInterface|null $responseFactory = null;
 
     private RoutinePipeline|null $routinePipeline = null;
+
+    private Responder|null $responder = null;
+
+    private ResponseInterface|null $responseDraft = null;
+
+    /** @var array<string, true> */
+    private array $appendedResponseHeaderNames = [];
+
+    private bool $hasPreparedResponse = false;
+
+    private bool $hasStatusOverride = false;
 
     private string $effectiveMethod = '';
 
@@ -81,33 +79,33 @@ final class DispatchContext
 
     public function hasPreparedResponse(): bool
     {
-        return $this->responseStatus !== null;
+        return $this->hasPreparedResponse;
     }
 
     public function clearResponseMeta(): void
     {
-        $this->responseStatus = null;
-        $this->responseHeaders = [];
-        $this->responseAppendedHeaders = [];
-        $this->responseDefaultHeaders = [];
+        $this->responseDraft = null;
+        $this->defaultResponseHeaders = [];
+        $this->appendedResponseHeaderNames = [];
+        $this->hasPreparedResponse = false;
+        $this->hasStatusOverride = false;
     }
 
     public function setResponseHeader(string $name, string $value): void
     {
-        $this->responseHeaders[$name] = $value;
+        unset($this->appendedResponseHeaderNames[strtolower($name)]);
+        $this->responseDraft = $this->ensureResponseDraft()->withHeader($name, $value);
     }
 
     public function appendResponseHeader(string $name, string $value): void
     {
-        $this->responseAppendedHeaders[$name] = $this->mergeHeaderValues(
-            $this->responseAppendedHeaders[$name] ?? '',
-            $value,
-        );
+        $this->appendedResponseHeaderNames[strtolower($name)] = true;
+        $this->responseDraft = $this->ensureResponseDraft()->withAddedHeader($name, $value);
     }
 
     public function defaultResponseHeader(string $name, string $value): void
     {
-        $this->responseDefaultHeaders[$name] ??= $value;
+        $this->defaultResponseHeaders[$name] ??= $value;
     }
 
     /** @param array<string, string> $headers */
@@ -115,7 +113,9 @@ final class DispatchContext
     {
         $this->route = null;
         $this->clearResponseMeta();
-        $this->responseStatus = $status;
+        $this->hasPreparedResponse = true;
+        $this->hasStatusOverride = true;
+        $this->responseDraft = $this->ensureResponseDraft()->withStatus($status);
         foreach ($headers as $name => $value) {
             $this->setResponseHeader($name, $value);
         }
@@ -126,10 +126,8 @@ final class DispatchContext
     {
         try {
             if (!$this->route instanceof AbstractRoute) {
-                if ($this->responseStatus !== null && $this->responseFactory !== null) {
-                    return $this->finalizeResponse(
-                        $this->responseFactory->createResponse($this->responseStatus),
-                    );
+                if ($this->responseDraft !== null) {
+                    return $this->finalizeResponse($this->responseDraft);
                 }
 
                 return null;
@@ -148,10 +146,8 @@ final class DispatchContext
                 }
 
                 if ($preRoutineResult === false) {
-                    return $this->finalizeResponse($this->route->wrapResponse(''));
+                    return $this->finalizeResponse('');
                 }
-
-                return $this->finalizeResponse($this->route->wrapResponse($preRoutineResult));
             }
 
             $rawResult = $this->route->dispatchTarget($this->method(), $this->params, $this);
@@ -167,7 +163,7 @@ final class DispatchContext
                 return $errorResponse;
             }
 
-            return $this->finalizeResponse($this->route->wrapResponse($processedResult));
+            return $this->finalizeResponse($processedResult);
         } catch (Throwable $e) {
             $exceptionResponse = $this->catchExceptions($e);
             if ($exceptionResponse === null) {
@@ -211,6 +207,11 @@ final class DispatchContext
     public function setRoutinePipeline(RoutinePipeline $routinePipeline): void
     {
         $this->routinePipeline = $routinePipeline;
+    }
+
+    public function setResponder(Responder $responder): void
+    {
+        $this->responder = $responder;
     }
 
     /** @return callable|null The previous error handler, or null */
@@ -299,44 +300,16 @@ final class DispatchContext
         return null;
     }
 
-    /** Applies pending headers and status code set by routines to a ResponseInterface */
-    protected function applyResponseMeta(ResponseInterface $response): ResponseInterface
+    protected function finalizeResponse(mixed $response): ResponseInterface
     {
-        if ($this->responseStatus !== null) {
-            $response = $response->withStatus($this->responseStatus);
-        }
-
-        foreach ($this->responseDefaultHeaders as $name => $value) {
-            if ($response->hasHeader($name)) {
-                continue;
-            }
-
-            $response = $response->withHeader($name, $value);
-        }
-
-        foreach ($this->responseAppendedHeaders as $name => $value) {
-            $response = $response->withHeader(
-                $name,
-                $this->mergeHeaderValues($response->getHeaderLine($name), $value),
-            );
-        }
-
-        foreach ($this->responseHeaders as $name => $value) {
-            $response = $response->withHeader($name, $value);
-        }
-
-        return $response;
-    }
-
-    protected function finalizeResponse(ResponseInterface $response): ResponseInterface
-    {
-        $response = $this->applyResponseMeta($response);
-
-        if ($this->method() !== 'HEAD' || $this->responseFactory === null) {
-            return $response;
-        }
-
-        return $response->withBody($this->responseFactory->createResponse()->getBody());
+        return $this->responder()->finalize(
+            $response,
+            $this->responseDraft,
+            $this->defaultResponseHeaders,
+            $this->appendedResponseHeaderNames,
+            $this->hasStatusOverride,
+            $this->method(),
+        );
     }
 
     private function routinePipeline(): RoutinePipeline
@@ -344,19 +317,25 @@ final class DispatchContext
         return $this->routinePipeline ??= new RoutinePipeline();
     }
 
-    private function mergeHeaderValues(string $existing, string $appended): string
+    private function responder(): Responder
     {
-        $mergedValues = [];
-        foreach (explode(',', $existing . ',' . $appended) as $headerValue) {
-            $headerValue = trim($headerValue);
-            if ($headerValue === '') {
-                continue;
-            }
-
-            $mergedValues[strtolower($headerValue)] = $headerValue;
+        if ($this->responder !== null) {
+            return $this->responder;
         }
 
-        return implode(', ', array_values($mergedValues));
+        $responseFactory = $this->responseFactory ?? $this->route?->responseFactory;
+        assert($responseFactory !== null);
+
+        return $this->responder = new Responder($responseFactory);
+    }
+
+    private function ensureResponseDraft(): ResponseInterface
+    {
+        if ($this->responseDraft !== null) {
+            return $this->responseDraft;
+        }
+
+        return $this->responseDraft = $this->responder()->createResponse();
     }
 
     public function __toString(): string

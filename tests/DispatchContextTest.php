@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionFunction;
 use Respect\Rest\DispatchContext;
+use Respect\Rest\Responder;
 use Respect\Rest\Routes;
 use Respect\Rest\Routines;
 
@@ -277,6 +278,32 @@ final class DispatchContextTest extends TestCase
     }
 
     /** @covers Respect\Rest\DispatchContext::response */
+    public function testDeveloperCanReturnResponseInterfacesOnByRoutine(): void
+    {
+        $factory = new Psr17Factory();
+        $context = new DispatchContext(new ServerRequest('GET', '/protected-area'));
+        $route = $this->getMockForRoute('GET', '/protected-area', 'Protected Content!!!');
+        $routine = $this->getMockForRoutine('ProxyableBy');
+        $routine->expects($this->once())
+            ->method('by')
+            ->willReturn(
+                $factory
+                    ->createResponse(202)
+                    ->withHeader('X-Flow', 'by')
+                    ->withBody($factory->createStream('blocked by routine')),
+            );
+        $route->appendRoutine($routine);
+        $context->route = $route;
+
+        $response = $context->response();
+
+        self::assertNotNull($response);
+        self::assertSame(202, $response->getStatusCode());
+        self::assertSame('by', $response->getHeaderLine('X-Flow'));
+        self::assertSame('blocked by routine', (string) $response->getBody());
+    }
+
+    /** @covers Respect\Rest\DispatchContext::response */
     public function testDeveloperCanReturnCallablesToProcessOutputAfterTargetRuns(): void
     {
         $context = new DispatchContext(new ServerRequest('GET', '/logs'));
@@ -453,6 +480,35 @@ final class DispatchContextTest extends TestCase
         $toString = (string) $context;
 
         self::assertSame('Some list items', $toString);
+    }
+
+    public function testContextUsesDraftHeadersAndDeferredDefaultsWithoutRoute(): void
+    {
+        $context = new DispatchContext(new ServerRequest('GET', '/users'));
+        $context->responseFactory = new Psr17Factory();
+        $context->setResponseHeader('Content-Type', 'text/plain');
+        $context->appendResponseHeader('Vary', 'accept');
+        $context->appendResponseHeader('Vary', 'accept-language');
+        $context->defaultResponseHeader('Content-Location', '/users');
+
+        $response = $context->response();
+
+        self::assertNotNull($response);
+        self::assertSame('text/plain', $response->getHeaderLine('Content-Type'));
+        self::assertSame('/users', $response->getHeaderLine('Content-Location'));
+        self::assertSame('accept, accept-language', $response->getHeaderLine('Vary'));
+    }
+
+    public function testContextAcceptsAnInjectedResponder(): void
+    {
+        $context = new DispatchContext(new ServerRequest('GET', '/users/alganet/lists'));
+        $context->setResponder(new Responder(new Psr17Factory()));
+        $context->route = $this->getMockForRoute('GET', '/users/alganet/lists', 'Some list items');
+
+        $response = $context->response();
+
+        self::assertNotNull($response);
+        self::assertSame('Some list items', (string) $response->getBody());
     }
 
     public function test_unsynced_param_comes_as_null(): void
