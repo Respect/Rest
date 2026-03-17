@@ -26,6 +26,55 @@ abstract class ControllerRoute extends AbstractRoute
         return $this->reflections[$method] ??= new ReflectionMethod($this->reflectionTarget, $method);
     }
 
+    /** @return array<int, string> */
+    public function getAllowedMethods(): array
+    {
+        if ($this->method !== 'ANY') {
+            return parent::getAllowedMethods();
+        }
+
+        $allowedMethods = [];
+
+        foreach (self::CORE_METHODS as $method) {
+            if ($method === 'HEAD') {
+                if ($this->getReflection('HEAD') !== null || $this->getReflection('GET') !== null) {
+                    $allowedMethods[] = 'HEAD';
+                }
+
+                continue;
+            }
+
+            if ($this->getReflection($method) === null) {
+                continue;
+            }
+
+            $allowedMethods[] = $method;
+        }
+
+        return $allowedMethods;
+    }
+
+    public function getMethodMatchRank(string $method): int|null
+    {
+        if ($this->method !== 'ANY') {
+            return parent::getMethodMatchRank($method);
+        }
+
+        if ($method === 'HEAD' && $this->getReflection('HEAD') !== null) {
+            return 1;
+        }
+
+        if ($method !== 'HEAD' && $this->getReflection($method) !== null) {
+            return 1;
+        }
+
+        if ($method === 'HEAD' && $this->getReflection('GET') !== null) {
+            return 2;
+        }
+
+        return null;
+    }
+
     public function getTargetMethod(string $method): string
     {
         if ($method !== 'HEAD') {

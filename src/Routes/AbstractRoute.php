@@ -62,6 +62,8 @@ use function ucfirst;
 abstract class AbstractRoute
 {
     public const string CATCHALL_IDENTIFIER = '/**';
+
+    public const array CORE_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'];
     public const string PARAM_IDENTIFIER = '/*';
     public const string QUOTED_PARAM_IDENTIFIER = '/\*';
     public const string REGEX_CATCHALL = '(/.*)?';
@@ -98,6 +100,37 @@ abstract class AbstractRoute
 
     /** @param array<int, mixed> $params */
     abstract public function runTarget(string $method, array &$params, Request $request): mixed;
+
+    public function getMethodMatchRank(string $method): int|null
+    {
+        if ($this->method === $method) {
+            return 0;
+        }
+
+        if ($this->method === 'ANY') {
+            return 1;
+        }
+
+        if ($this->method === 'GET' && $method === 'HEAD') {
+            return 2;
+        }
+
+        return null;
+    }
+
+    /** @return array<int, string> */
+    public function getAllowedMethods(): array
+    {
+        if ($this->method === 'GET') {
+            return ['GET', 'HEAD'];
+        }
+
+        if ($this->method === 'ANY') {
+            return self::CORE_METHODS;
+        }
+
+        return [$this->method];
+    }
 
     public function getTargetMethod(string $method): string
     {
