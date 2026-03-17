@@ -20,6 +20,7 @@ use function array_values;
 use function assert;
 use function class_exists;
 use function count;
+use function implode;
 use function in_array;
 use function interface_exists;
 use function is_array;
@@ -151,9 +152,8 @@ final class Router
     public function dispatchRequest(Request $request): Request
     {
         $request->responseFactory ??= $this->responseFactory;
-        $this->isRoutelessDispatch($request);
 
-        if ($request->route === null) {
+        if (!$this->isRoutelessDispatch($request) && $request->route === null) {
             $this->routeDispatch();
         }
 
@@ -247,8 +247,12 @@ final class Router
             $allowedMethods = $this->getAllowedMethods($this->routes);
 
             if ($allowedMethods) {
-                // Store Allow header on the request's route response (handled in routeDispatch)
-                $request->route = null;
+                $request->prepareResponse(
+                    204,
+                    ['Allow' => $this->getAllowHeaderValue($allowedMethods)],
+                );
+            } else {
+                $request->prepareResponse(404);
             }
 
             return true;
@@ -271,10 +275,12 @@ final class Router
         if ($request->method === 'OPTIONS' && $allowedMethods) {
             $this->handleOptionsRequest($allowedMethods, $matchedByPath);
         } elseif (count($matchedByPath) === 0) {
-            // No routes matched — 404 handled via null route in response()
-            $request->route = null;
-        } elseif (!$this->routineMatch($matchedByPath) instanceof Request) {
-            $this->informMethodNotAllowed($allowedMethods);
+            $request->prepareResponse(404);
+        } else {
+            $this->resolveRouteMatch(
+                $this->routineMatch($matchedByPath),
+                $allowedMethods,
+            );
         }
     }
 
@@ -363,15 +369,9 @@ final class Router
     }
 
     /** @param array<string> $allowedMethods */
-    protected function informMethodNotAllowed(array $allowedMethods): void
+    protected function getAllowHeaderValue(array $allowedMethods): string
     {
-        assert($this->request !== null);
-        // 405 status is communicated via null route — response() returns null
-        if (!$allowedMethods) {
-            return;
-        }
-
-        $this->request->route = null;
+        return implode(', ', $allowedMethods);
     }
 
     /**
@@ -380,12 +380,44 @@ final class Router
      */
     protected function handleOptionsRequest(array $allowedMethods, SplObjectStorage $matchedByPath): void
     {
-        assert($this->request !== null);
         if (in_array('OPTIONS', $allowedMethods)) {
-            $this->routineMatch($matchedByPath);
-        } else {
-            $this->request->route = null;
+            $this->resolveRouteMatch(
+                $this->routineMatch($matchedByPath),
+                $allowedMethods,
+            );
+
+            return;
         }
+
+        assert($this->request !== null);
+        $this->request->prepareResponse(
+            204,
+            ['Allow' => $this->getAllowHeaderValue($allowedMethods)],
+        );
+    }
+
+    /** @param array<string> $allowedMethods */
+    protected function resolveRouteMatch(Request|bool|null $matchedRequest, array $allowedMethods = []): void
+    {
+        assert($this->request !== null);
+        if ($matchedRequest instanceof Request || $this->request->hasPreparedResponse()) {
+            return;
+        }
+
+        if ($matchedRequest === false) {
+            $this->request->prepareResponse(400);
+
+            return;
+        }
+
+        if ($allowedMethods === []) {
+            return;
+        }
+
+        $this->request->prepareResponse(
+            405,
+            ['Allow' => $this->getAllowHeaderValue($allowedMethods)],
+        );
     }
 
     protected function matchesMethod(AbstractRoute $route, string $methodName): bool
