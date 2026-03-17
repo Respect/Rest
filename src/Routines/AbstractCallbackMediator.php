@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use SplObjectStorage;
 
 /**
@@ -15,20 +15,20 @@ use SplObjectStorage;
 // phpcs:ignore SlevomatCodingStandard.Classes.SuperfluousAbstractClassNaming.SuperfluousPrefix
 abstract class AbstractCallbackMediator extends CallbackList implements ProxyableWhen
 {
-    /** @var SplObjectStorage<Request, callable>|false|null */
+    /** @var SplObjectStorage<DispatchContext, callable>|false|null */
     protected SplObjectStorage|false|null $negotiated = null;
 
     /** @param array<int, mixed> $params */
-    public function when(Request $request, array $params): mixed
+    public function when(DispatchContext $context, array $params): mixed
     {
         $requested = '';
         $provided = '';
-        $decision = $this->mediate($requested, $provided, $request, $params);
+        $decision = $this->mediate($requested, $provided, $context, $params);
 
         if ($decision) {
-            $this->notifyApproved($requested, $provided, $request, $params);
+            $this->notifyApproved($requested, $provided, $context, $params);
         } else {
-            $this->notifyDeclined($requested, $provided, $request, $params);
+            $this->notifyDeclined($requested, $provided, $context, $params);
         }
 
         return $decision;
@@ -41,7 +41,7 @@ abstract class AbstractCallbackMediator extends CallbackList implements Proxyabl
      *
      * @return array<int, string>
      */
-    abstract protected function identifyRequested(Request $request, array $params): array;
+    abstract protected function identifyRequested(DispatchContext $context, array $params): array;
 
     /**
      * Based on each of the identified particulars a list of provisions must be supplied
@@ -58,7 +58,7 @@ abstract class AbstractCallbackMediator extends CallbackList implements Proxyabl
     abstract protected function notifyApproved(
         string $requested,
         string $provided,
-        Request $request,
+        DispatchContext $context,
         array $params,
     ): void;
 
@@ -70,28 +70,28 @@ abstract class AbstractCallbackMediator extends CallbackList implements Proxyabl
     abstract protected function notifyDeclined(
         string $requested,
         string $provided,
-        Request $request,
+        DispatchContext $context,
         array $params,
     ): void;
 
-    protected function getNegotiatedCallback(Request $request): callable|null
+    protected function getNegotiatedCallback(DispatchContext $context): callable|null
     {
-        if (!$this->negotiated instanceof SplObjectStorage || !$this->negotiated->offsetExists($request)) {
+        if (!$this->negotiated instanceof SplObjectStorage || !$this->negotiated->offsetExists($context)) {
             return null;
         }
 
-        return $this->negotiated[$request];
+        return $this->negotiated[$context];
     }
 
-    protected function rememberNegotiatedCallback(Request $request, callable $callback): void
+    protected function rememberNegotiatedCallback(DispatchContext $context, callable $callback): void
     {
         if (!$this->negotiated instanceof SplObjectStorage) {
-            /** @var SplObjectStorage<Request, callable> $storage */
+            /** @var SplObjectStorage<DispatchContext, callable> $storage */
             $storage = new SplObjectStorage();
             $this->negotiated = $storage;
         }
 
-        $this->negotiated[$request] = $callback;
+        $this->negotiated[$context] = $callback;
     }
 
     protected function forgetNegotiatedCallback(): void
@@ -105,9 +105,9 @@ abstract class AbstractCallbackMediator extends CallbackList implements Proxyabl
     }
 
     /** @param array<int, mixed> $params */
-    private function mediate(string &$requested, string &$provided, Request $request, array $params): bool
+    private function mediate(string &$requested, string &$provided, DispatchContext $context, array $params): bool
     {
-        foreach ($this->identifyRequested($request, $params) as $requested) {
+        foreach ($this->identifyRequested($context, $params) as $requested) {
             foreach ($this->considerProvisions($requested) as $provided) {
                 if ($this->authorize($requested, $provided)) {
                     return true;

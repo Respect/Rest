@@ -6,7 +6,7 @@ namespace Respect\Rest\Test\Routines;
 
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Routines\Through;
 
 /** @covers Respect\Rest\Routines\Through */
@@ -24,12 +24,12 @@ final class ThroughTest extends TestCase
     /** @covers Respect\Rest\Routines\Through::through */
     public function testThrough(): void
     {
-        $request = new Request(new ServerRequest('GET', '/'));
+        $context = new DispatchContext(new ServerRequest('GET', '/'));
         $params = [];
         $alias = &$this->object;
         self::assertEquals(
             'from through callback',
-            $alias->through($request, $params),
+            $alias->through($context, $params),
         );
     }
 

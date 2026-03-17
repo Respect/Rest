@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 
 /** Routine that runs before the route */
 interface ProxyableBy
@@ -14,5 +14,5 @@ interface ProxyableBy
      *
      * @param array<int, mixed> $params
      */
-    public function by(Request $request, array $params): mixed;
+    public function by(DispatchContext $context, array $params): mixed;
 }

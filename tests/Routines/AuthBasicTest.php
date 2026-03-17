@@ -7,7 +7,7 @@ namespace Respect\Rest\Test\Routines;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Router;
 use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routines\AuthBasic;
@@ -52,11 +52,11 @@ final class AuthBasicTest extends TestCase
 
         $serverRequest = (new ServerRequest('GET', '/' . $param1 . '/' . $param2))
             ->withHeader('Authorization', 'Basic ' . base64_encode($user . ':' . $pass));
-        $request = new Request($serverRequest);
-        $request->route = $this->createRouteWithResponseFactory();
+        $context = new DispatchContext($serverRequest);
+        $context->route = $this->createRouteWithResponseFactory();
 
         $routine = new AuthBasic('auth realm', [$this, 'shunt_wantedParams']);
-        $routine->by($request, [$param1, $param2]);
+        $routine->by($context, [$param1, $param2]);
     }
 
     public function test_http_auth_should_send_401_and_WWW_headers_when_authentication_fails(): void

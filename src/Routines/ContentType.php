@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 
 use function explode;
 use function is_array;
@@ -20,32 +20,32 @@ final class ContentType extends AbstractCallbackMediator implements ProxyableBy,
     protected array $contentMap = [];
 
     /** @param array<int, mixed> $params */
-    public function by(Request $request, array $params): mixed
+    public function by(DispatchContext $context, array $params): mixed
     {
-        $callback = $this->getNegotiatedCallback($request);
+        $callback = $this->getNegotiatedCallback($context);
         if ($callback === null) {
             return null;
         }
 
-        $payload = $callback($this->extractInput($request));
-        $serverRequest = $request->serverRequest->withAttribute(self::ATTRIBUTE, $payload);
+        $payload = $callback($this->extractInput($context));
+        $psrRequest = $context->request->withAttribute(self::ATTRIBUTE, $payload);
         if (is_array($payload) || is_object($payload) || $payload === null) {
-            $serverRequest = $serverRequest->withParsedBody($payload);
+            $psrRequest = $psrRequest->withParsedBody($payload);
         }
 
-        $request->serverRequest = $serverRequest;
+        $context->request = $psrRequest;
 
         return null;
     }
 
     /** @param array<int, mixed> $params */
-    public function when(Request $request, array $params): mixed
+    public function when(DispatchContext $context, array $params): mixed
     {
-        if ($request->serverRequest->getHeaderLine('Content-Type') === '') {
+        if ($context->request->getHeaderLine('Content-Type') === '') {
             return true;
         }
 
-        return parent::when($request, $params);
+        return parent::when($context, $params);
     }
 
     /**
@@ -53,9 +53,9 @@ final class ContentType extends AbstractCallbackMediator implements ProxyableBy,
      *
      * @return array<int, string>
      */
-    protected function identifyRequested(Request $request, array $params): array
+    protected function identifyRequested(DispatchContext $context, array $params): array
     {
-        $contentType = $request->serverRequest->getHeaderLine('Content-Type');
+        $contentType = $context->request->getHeaderLine('Content-Type');
 
         return $contentType !== '' ? [trim(explode(';', $contentType, 2)[0])] : [];
     }
@@ -67,25 +67,33 @@ final class ContentType extends AbstractCallbackMediator implements ProxyableBy,
     }
 
     /** @param array<int, mixed> $params */
-    protected function notifyApproved(string $requested, string $provided, Request $request, array $params): void
-    {
-        $this->rememberNegotiatedCallback($request, $this->getCallback($provided));
+    protected function notifyApproved(
+        string $requested,
+        string $provided,
+        DispatchContext $context,
+        array $params,
+    ): void {
+        $this->rememberNegotiatedCallback($context, $this->getCallback($provided));
     }
 
     /** @param array<int, mixed> $params */
-    protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
-    {
+    protected function notifyDeclined(
+        string $requested,
+        string $provided,
+        DispatchContext $context,
+        array $params,
+    ): void {
         $this->forgetNegotiatedCallback();
-        $request->prepareResponse(415);
+        $context->prepareResponse(415);
     }
 
-    protected function extractInput(Request $request): mixed
+    protected function extractInput(DispatchContext $context): mixed
     {
-        $body = (string) $request->serverRequest->getBody();
+        $body = (string) $context->request->getBody();
         if ($body !== '') {
             return $body;
         }
 
-        return $request->serverRequest->getParsedBody();
+        return $context->request->getParsedBody();
     }
 }

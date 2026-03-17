@@ -29,16 +29,12 @@ use function strtoupper;
 use function trim;
 
 /** Internal routing context wrapping a PSR-7 server request */
-final class Request
+final class DispatchContext
 {
-    public string $method = '';
-
     /** @var array<int, mixed> */
     public array $params = [];
 
     public AbstractRoute|null $route = null;
-
-    public string $uri = '';
 
     /** @var array<string, string> Headers to apply to the final response (set by routines) */
     public array $responseHeaders = [];
@@ -54,10 +50,34 @@ final class Request
 
     public ResponseFactoryInterface|null $responseFactory = null;
 
-    public function __construct(public ServerRequestInterface $serverRequest)
+    private string $effectiveMethod = '';
+
+    private string $effectivePath = '';
+
+    public function __construct(public ServerRequestInterface $request)
     {
-        $this->uri = rtrim(rawurldecode($serverRequest->getUri()->getPath()), ' /');
-        $this->method = strtoupper($serverRequest->getMethod());
+        $this->effectivePath = rtrim(rawurldecode($request->getUri()->getPath()), ' /');
+        $this->effectiveMethod = strtoupper($request->getMethod());
+    }
+
+    public function method(): string
+    {
+        return $this->effectiveMethod;
+    }
+
+    public function path(): string
+    {
+        return $this->effectivePath;
+    }
+
+    public function overrideMethod(string $method): void
+    {
+        $this->effectiveMethod = strtoupper($method);
+    }
+
+    public function setPath(string $path): void
+    {
+        $this->effectivePath = $path;
     }
 
     public function hasPreparedResponse(): bool
@@ -131,7 +151,7 @@ final class Request
                 return $this->finalizeResponse($this->route->wrapResponse($preRoutineResult));
             }
 
-            $rawResult = $this->route->dispatchTarget($this->method, $this->params, $this);
+            $rawResult = $this->route->dispatchTarget($this->method(), $this->params, $this);
 
             if ($rawResult instanceof AbstractRoute) {
                 return $this->forward($rawResult);
@@ -219,7 +239,7 @@ final class Request
 
             $result = $this->routineCall(
                 'by',
-                $this->method,
+                $this->method(),
                 $routine,
                 $this->params,
             );
@@ -256,7 +276,7 @@ final class Request
 
             $proxyResults[] = $this->routineCall(
                 'through',
-                $this->method,
+                $this->method(),
                 $routine,
                 $this->params,
             );
@@ -368,7 +388,7 @@ final class Request
     {
         $response = $this->applyResponseMeta($response);
 
-        if ($this->method !== 'HEAD' || $this->responseFactory === null) {
+        if ($this->method() !== 'HEAD' || $this->responseFactory === null) {
             return $response;
         }
 

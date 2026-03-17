@@ -8,7 +8,7 @@ use Closure;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 
 use function array_merge;
 use function is_array;
@@ -48,10 +48,10 @@ class Callback extends AbstractRoute
     }
 
     /** @param array<int, mixed> $params */
-    public function runTarget(string $method, array &$params, Request $request): mixed
+    public function runTarget(string $method, array &$params, DispatchContext $context): mixed
     {
         $reflection = $this->getReflection($method);
-        $args = $this->resolveCallbackArguments($reflection, array_merge($params, $this->arguments), $request);
+        $args = $this->resolveCallbackArguments($reflection, array_merge($params, $this->arguments), $context);
 
         return ($this->callback)(...$args);
     }

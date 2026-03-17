@@ -6,7 +6,7 @@ namespace Respect\Rest\Test\Routines;
 
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Routines\UserAgent;
 
 /** @covers Respect\Rest\Routines\UserAgent */
@@ -29,23 +29,23 @@ final class UserAgentTest extends TestCase
         $params = [];
         $alias = &$this->object;
 
-        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
-        self::assertTrue($alias->when($request, $params));
-        self::assertInstanceOf('Closure', $alias->through($request, $params));
+        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
+        self::assertTrue($alias->when($context, $params));
+        self::assertInstanceOf('Closure', $alias->through($context, $params));
 
-        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'InhernetExplorer'));
-        self::assertTrue($alias->when($request, $params));
-        self::assertInstanceOf('Closure', $alias->through($request, $params));
+        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'InhernetExplorer'));
+        self::assertTrue($alias->when($context, $params));
+        self::assertInstanceOf('Closure', $alias->through($context, $params));
     }
 
     public function testThroughInvalid(): void
     {
         $params = [];
         $alias = &$this->object;
-        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'CHROME'));
+        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'CHROME'));
         self::assertInstanceOf('Respect\\Rest\\Routines\\UserAgent', $alias);
-        self::assertFalse($alias->when($request, $params));
-        self::assertNull($alias->through($request, $params));
+        self::assertFalse($alias->when($context, $params));
+        self::assertNull($alias->through($context, $params));
     }
 
     public function testByCanDenyBeforeRoute(): void
@@ -55,10 +55,10 @@ final class UserAgentTest extends TestCase
                 return false;
             },
         ]);
-        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
+        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
 
-        self::assertTrue($routine->when($request, []));
-        self::assertFalse($routine->by($request, []));
+        self::assertTrue($routine->when($context, []));
+        self::assertFalse($routine->by($context, []));
     }
 
     public function testByCanPrepareThroughResultWithoutRunningTwice(): void
@@ -73,12 +73,12 @@ final class UserAgentTest extends TestCase
                 };
             },
         ]);
-        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
+        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
 
-        self::assertTrue($routine->when($request, []));
-        self::assertNull($routine->by($request, []));
+        self::assertTrue($routine->when($context, []));
+        self::assertNull($routine->by($context, []));
 
-        $through = $routine->through($request, []);
+        $through = $routine->through($context, []);
         self::assertIsCallable($through);
         self::assertSame('ok-FIREFOX', $through('ok'));
         self::assertSame(1, $calls);
@@ -91,11 +91,11 @@ final class UserAgentTest extends TestCase
                 return true;
             },
         ]);
-        $request = new Request((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
+        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
 
-        self::assertTrue($routine->when($request, []));
-        self::assertNull($routine->by($request, []));
-        self::assertNull($routine->through($request, []));
+        self::assertTrue($routine->when($context, []));
+        self::assertNull($routine->by($context, []));
+        self::assertNull($routine->through($context, []));
     }
 
     protected function tearDown(): void

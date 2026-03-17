@@ -11,7 +11,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
 use ReflectionFunctionAbstract;
 use ReflectionNamedType;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\Routinable;
@@ -99,7 +99,7 @@ abstract class AbstractRoute
     abstract public function getReflection(string $method): ReflectionFunctionAbstract|null;
 
     /** @param array<int, mixed> $params */
-    abstract public function runTarget(string $method, array &$params, Request $request): mixed;
+    abstract public function runTarget(string $method, array &$params, DispatchContext $context): mixed;
 
     public function getMethodMatchRank(string $method): int|null
     {
@@ -147,9 +147,9 @@ abstract class AbstractRoute
     }
 
     /** @param array<int, mixed> $params */
-    public function dispatchTarget(string $method, array &$params, Request $request): mixed
+    public function dispatchTarget(string $method, array &$params, DispatchContext $context): mixed
     {
-        return $this->runTarget($this->getTargetMethod($method), $params, $request);
+        return $this->runTarget($this->getTargetMethod($method), $params, $context);
     }
 
     /** Wraps a mixed value into a PSR-7 ResponseInterface */
@@ -196,14 +196,14 @@ abstract class AbstractRoute
     }
 
     /** @param array<int, mixed> $params */
-    public function matchRoutines(Request $request, array $params = []): bool
+    public function matchRoutines(DispatchContext $context, array $params = []): bool
     {
         foreach ($this->routines as $routine) {
             if (
                 $routine instanceof ProxyableWhen
-                && !$request->routineCall(
+                && !$context->routineCall(
                     'when',
-                    $request->method,
+                    $context->method(),
                     $routine,
                     $params,
                 )
@@ -216,10 +216,10 @@ abstract class AbstractRoute
     }
 
     /** @param array<int, mixed> $params */
-    public function match(Request $request, array &$params = []): bool
+    public function match(DispatchContext $context, array &$params = []): bool
     {
         $params = [];
-        $matchUri = $request->uri;
+        $matchUri = $context->path();
 
         foreach ($this->routines as $routine) {
             if (!($routine instanceof IgnorableFileExtension)) {
@@ -229,8 +229,8 @@ abstract class AbstractRoute
             $matchUri = preg_replace(
                 '#(\.[\w\d\-_.~\+]+)*$#',
                 '',
-                $request->uri,
-            ) ?? $request->uri;
+                $context->path(),
+            ) ?? $context->path();
         }
 
         if (!preg_match($this->regexForMatch, $matchUri, $params)) {
@@ -268,7 +268,7 @@ abstract class AbstractRoute
     protected function resolveCallbackArguments(
         ReflectionFunctionAbstract $reflection,
         array $params,
-        Request $request,
+        DispatchContext $context,
     ): array {
         $refParams = $reflection->getParameters();
 
@@ -288,7 +288,7 @@ abstract class AbstractRoute
                 $typeName = $type->getName();
 
                 if (is_a($typeName, ServerRequestInterface::class, true)) {
-                    $args[] = $request->serverRequest;
+                    $args[] = $context->request;
                     $hasPsrInjection = true;
                     continue;
                 }

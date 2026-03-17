@@ -15,7 +15,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionMethod;
 use ReflectionObject;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Routable;
 use Respect\Rest\Router;
 use Respect\Rest\Routines;
@@ -226,7 +226,7 @@ final class RouterTest extends TestCase
         $router = new Router(new Psr17Factory());
         $nonStaticRoute = $router->get('/', $staticValue);
 
-        $router->run(new Request(new ServerRequest('GET', '/')));
+        $router->run(new DispatchContext(new ServerRequest('GET', '/')));
 
         self::assertNotInstanceOf(
             'Respect\\Rest\\Routes\\StaticValue',
@@ -327,7 +327,7 @@ final class RouterTest extends TestCase
     }
 
     /**
-     * @covers Respect\Rest\Router::dispatchRequest
+     * @covers Respect\Rest\Router::dispatchContext
      * @covers Respect\Rest\Router::isRoutelessDispatch
      * @covers Respect\Rest\Router::isDispatchedToGlobalOptionsMethod
      * @covers Respect\Rest\Router::getAllowedMethods
@@ -351,7 +351,22 @@ final class RouterTest extends TestCase
     }
 
     /**
-     * @covers Respect\Rest\Router::dispatchRequest
+     * @covers Respect\Rest\Router::dispatchContext
+     * @covers Respect\Rest\Router::isRoutelessDispatch
+     * @covers Respect\Rest\Router::isDispatchedToGlobalOptionsMethod
+     */
+    public function testGlobalOptionsMethodWithoutRoutesReturns404(): void
+    {
+        $router = new Router(new Psr17Factory());
+
+        $response = $router->dispatch(new ServerRequest('OPTIONS', '*'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame(404, $response->getStatusCode());
+    }
+
+    /**
+     * @covers Respect\Rest\Router::dispatchContext
      * @covers Respect\Rest\Router::isRoutelessDispatch
      * @covers Respect\Rest\Router::hasDispatchedOverridenMethod
      */
@@ -383,7 +398,7 @@ final class RouterTest extends TestCase
     }
 
     /**
-     * @covers  Respect\Rest\Router::dispatchRequest
+     * @covers  Respect\Rest\Router::dispatchContext
      * @covers  Respect\Rest\Router::isRoutelessDispatch
      * @covers  Respect\Rest\Router::hasDispatchedOverridenMethod
      */
@@ -410,7 +425,7 @@ final class RouterTest extends TestCase
     }
 
     /**
-     * @covers  Respect\Rest\Router::dispatchRequest
+     * @covers  Respect\Rest\Router::dispatchContext
      * @covers  Respect\Rest\Router::routeDispatch
      * @covers  Respect\Rest\Router::applyVirtualHost
      */
@@ -568,13 +583,13 @@ final class RouterTest extends TestCase
     public function testOptionsHandlerShouldMaterializeRoutelessResponseWhenNoExplicitRouteSurvives(): void
     {
         $router = new Router(new Psr17Factory());
-        $router->request = new Request(new ServerRequest('OPTIONS', '/asian'));
-        $router->request->responseFactory = new Psr17Factory();
+        $router->context = new DispatchContext(new ServerRequest('OPTIONS', '/asian'));
+        $router->context->responseFactory = new Psr17Factory();
 
         $handleOptionsRequest = new ReflectionMethod($router, 'handleOptionsRequest');
         $handleOptionsRequest->invoke($router, ['OPTIONS'], new SplObjectStorage());
 
-        $response = $router->request->response();
+        $response = $router->context->response();
 
         self::assertNotNull($response);
         self::assertSame(204, $response->getStatusCode());
@@ -1102,11 +1117,11 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept', 'application/json');
-        $request = new Request($serverRequest);
+        $request = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function () {
                 return range(0, 10);
         })->accept(['application/json' => 'json_encode']);
-        $r = self::responseBody($this->router->dispatchRequest($request));
+        $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals(json_encode(range(0, 10)), $r);
     }
 
@@ -1114,11 +1129,11 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Charset', 'utf-8');
-        $request = new Request($serverRequest);
+        $request = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function () {
                 return 'açaí';
         })->acceptCharset(['utf-8' => static fn($data) => mb_convert_encoding($data, 'ISO-8859-1', 'UTF-8')]);
-        $r = self::responseBody($this->router->dispatchRequest($request));
+        $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals(mb_convert_encoding('açaí', 'ISO-8859-1', 'UTF-8'), $r);
     }
 
@@ -1126,11 +1141,11 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Encoding', 'myenc');
-        $request = new Request($serverRequest);
+        $request = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function () {
                 return 'foobar';
         })->acceptEncoding(['myenc' => 'strrev']);
-        $r = self::responseBody($this->router->dispatchRequest($request));
+        $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals(strrev('foobar'), $r);
     }
 
@@ -1138,11 +1153,11 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet.json'))
             ->withHeader('Accept', '*/*');
-        $request = new Request($serverRequest);
+        $request = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function ($screenName) {
                 return range(0, 10);
         })->accept(['.json' => 'json_encode']);
-        $r = self::responseBody($this->router->dispatchRequest($request));
+        $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals(json_encode(range(0, 10)), $r);
     }
 
@@ -1150,23 +1165,23 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users.json'))
             ->withHeader('Accept', '*/*');
-        $request = new Request($serverRequest);
+        $request = new DispatchContext($serverRequest);
         $this->router->get('/users', static function () {
                 return range(0, 10);
         })->accept(['.json' => 'json_encode']);
-        $r = self::responseBody($this->router->dispatchRequest($request));
+        $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals(json_encode(range(0, 10)), $r);
     }
 
     public function testFileExtension(): void
     {
-        $request = new Request(new ServerRequest('get', '/users.json/10.20'));
+        $request = new DispatchContext(new ServerRequest('get', '/users.json/10.20'));
         $this->router->get('/users.json/*', static function ($param) {
                 [$min, $max] = explode('.', $param);
 
                 return range($min, $max);
         });
-        $r = self::responseBody($this->router->dispatchRequest($request));
+        $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals(json_encode(range(10, 20)), $r);
     }
 
@@ -1174,11 +1189,11 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept', '*/*');
-        $request = new Request($serverRequest);
+        $request = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function () {
                 return range(0, 10);
         })->accept(['application/json' => 'json_encode']);
-        $r = self::responseBody($this->router->dispatchRequest($request));
+        $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals(json_encode(range(0, 10)), $r);
     }
 
@@ -1186,7 +1201,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'en');
-        $request = new Request($serverRequest);
+        $request = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
             'en-US' => static function () {
@@ -1196,7 +1211,7 @@ final class RouterTest extends TestCase
                     return 'Olá!';
             },
         ]);
-        $r = self::responseBody($this->router->dispatchRequest($request));
+        $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals('Hi there', $r);
     }
 
@@ -1204,7 +1219,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'pt');
-        $request = new Request($serverRequest);
+        $request = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
             'en-US' => static function () {
@@ -1214,7 +1229,7 @@ final class RouterTest extends TestCase
                     return 'Olá!';
             },
         ]);
-        $r = self::responseBody($this->router->dispatchRequest($request));
+        $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals('Olá!', $r);
     }
 
@@ -1222,7 +1237,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'pt,en');
-        $requestBoth = new Request($serverRequest);
+        $requestBoth = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
             'en' => static function () {
@@ -1232,7 +1247,7 @@ final class RouterTest extends TestCase
                     return 'Olá!';
             },
         ]);
-        $r = self::responseBody($this->router->dispatchRequest($requestBoth));
+        $r = self::responseBody($this->router->dispatchContext($requestBoth));
         self::assertEquals('Olá!', $r);
     }
 
@@ -1240,7 +1255,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'pt,en');
-        $requestBoth = new Request($serverRequest);
+        $requestBoth = new DispatchContext($serverRequest);
         $neverRun = false;
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
@@ -1258,7 +1273,7 @@ final class RouterTest extends TestCase
                     return 'sdfsdfsdfdf!';
             },
         ]);
-        $this->router->dispatchRequest($requestBoth)->response();
+        $this->router->dispatchContext($requestBoth)->response();
         self::assertFalse($neverRun);
     }
 
@@ -1267,7 +1282,7 @@ final class RouterTest extends TestCase
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'pt,en')
             ->withHeader('Accept', 'application/json');
-        $requestBoth = new Request($serverRequest);
+        $requestBoth = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function ($data) {
                 return '034930984';
         })->acceptLanguage([
@@ -1278,7 +1293,7 @@ final class RouterTest extends TestCase
                     return 'Olá!';
             },
         ])->accept(['application/json' => 'json_encode']);
-        $r = self::responseBody($this->router->dispatchRequest($requestBoth));
+        $r = self::responseBody($this->router->dispatchContext($requestBoth));
         self::assertEquals('"Ol\u00e1!"', $r);
     }
 
@@ -1286,7 +1301,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'x-klingon,en');
-        $requestBoth = new Request($serverRequest);
+        $requestBoth = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
             'en' => static function () {
@@ -1296,7 +1311,7 @@ final class RouterTest extends TestCase
                     return 'nuqneH';
             },
         ]);
-        $r = self::responseBody($this->router->dispatchRequest($requestBoth));
+        $r = self::responseBody($this->router->dispatchContext($requestBoth));
         self::assertEquals('nuqneH', $r);
     }
 
@@ -1304,7 +1319,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'pt;q=0.7,en');
-        $requestBoth = new Request($serverRequest);
+        $requestBoth = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
             'en-US' => static function () {
@@ -1314,7 +1329,7 @@ final class RouterTest extends TestCase
                     return 'Olá!';
             },
         ]);
-        $r = self::responseBody($this->router->dispatchRequest($requestBoth));
+        $r = self::responseBody($this->router->dispatchContext($requestBoth));
         self::assertEquals('Hi there', $r);
     }
 
@@ -1322,7 +1337,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('If-Modified-Since', '2011-11-11 11:11:11');
-        $requestBoth = new Request($serverRequest);
+        $requestBoth = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function () {
                 return 'hi!';
         })->lastModified(
@@ -1330,7 +1345,7 @@ final class RouterTest extends TestCase
                 return new DateTime('2011-11-11 11:11:12');
             },
         );
-        $r = self::responseBody($this->router->dispatchRequest($requestBoth));
+        $r = self::responseBody($this->router->dispatchContext($requestBoth));
         self::assertEquals('hi!', $r);
     }
 
@@ -1338,7 +1353,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('If-Modified-Since', '2011-11-11 11:11:11');
-        $requestBoth = new Request($serverRequest);
+        $requestBoth = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function () {
                 return 'hi!';
         })->lastModified(
@@ -1346,7 +1361,7 @@ final class RouterTest extends TestCase
                 return new DateTime('2011-11-11 11:11:10');
             },
         );
-        $response = $this->router->dispatchRequest($requestBoth)->response();
+        $response = $this->router->dispatchContext($requestBoth)->response();
         self::assertNotNull($response);
         self::assertEquals(304, $response->getStatusCode());
         self::assertEquals('Fri, 11 Nov 2011 11:11:10 +0000', $response->getHeaderLine('Last-Modified'));
@@ -1356,7 +1371,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('If-Modified-Since', '2011-11-11 11:11:11');
-        $requestBoth = new Request($serverRequest);
+        $requestBoth = new DispatchContext($serverRequest);
         $this->router->get('/users/*', static function () {
                 return 'hi!';
         })->lastModified(
@@ -1364,7 +1379,7 @@ final class RouterTest extends TestCase
                 return new DateTime('2011-11-11 11:11:11');
             },
         );
-        $response = $this->router->dispatchRequest($requestBoth)->response();
+        $response = $this->router->dispatchContext($requestBoth)->response();
         self::assertNotNull($response);
         self::assertEquals(304, $response->getStatusCode());
         self::assertEquals('Fri, 11 Nov 2011 11:11:11 +0000', $response->getHeaderLine('Last-Modified'));
@@ -1374,7 +1389,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Content-Type', 'text/xml');
-        $requestBoth = new Request($serverRequest);
+        $requestBoth = new DispatchContext($serverRequest);
         $result = null;
         $this->router->get('/users/*', static function (): void {
         })->contentType([
@@ -1384,7 +1399,7 @@ final class RouterTest extends TestCase
                     $result = 'ok';
             },
         ]);
-        $this->router->dispatchRequest($requestBoth)->response();
+        $this->router->dispatchContext($requestBoth)->response();
         self::assertEquals('ok', $result);
     }
 
@@ -1793,7 +1808,7 @@ final class RouterTest extends TestCase
             return $response->withHeader('X-Handled-By', 'GET');
         });
 
-        $response = $router->run(new Request(new ServerRequest('HEAD', '/')));
+        $response = $router->run(new DispatchContext(new ServerRequest('HEAD', '/')));
 
         self::assertNotNull($response);
         self::assertSame('GET', $response->getHeaderLine('X-Handled-By'));
@@ -2007,7 +2022,7 @@ final class RouterTest extends TestCase
         $self                            = $this;
         $serverRequest                   = (new ServerRequest('GET', '/input'))
                                             ->withHeader('Accept-Encoding', 'deflate');
-        $request                         = new Request($serverRequest);
+        $request                         = new DispatchContext($serverRequest);
         $router = new Router(new Psr17Factory());
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
@@ -2374,7 +2389,7 @@ final class RouterTest extends TestCase
         $router->any('/moo/*', RouteKnowsNothing::class);
 
         $serverRequest = (new ServerRequest('get', '/meow/blub'))->withHeader('Accept', 'application/json');
-        $response = $router->run(new Request($serverRequest));
+        $response = $router->run(new DispatchContext($serverRequest));
         self::assertNotNull($response);
         $out = (string) $response->getBody();
 
@@ -2383,14 +2398,14 @@ final class RouterTest extends TestCase
 
     public function test_request_should_be_available_from_router_after_dispatching(): void
     {
-        $request = new Request(new ServerRequest('get', '/foo'));
+        $request = new DispatchContext(new ServerRequest('get', '/foo'));
         $router = new Router(new Psr17Factory());
         $router->isAutoDispatched = false;
         $phpunit = $this;
         $router->get('/foo', static function () use ($router, $request, $phpunit) {
-            $phpunit->assertSame($request, $router->request);
+            $phpunit->assertSame($request, $router->context);
 
-            return spl_object_hash($router->request);
+            return spl_object_hash($router->context);
         });
         $response = $router->run($request);
         self::assertNotNull($response);
@@ -2398,7 +2413,19 @@ final class RouterTest extends TestCase
         self::assertEquals($out, spl_object_hash($request));
     }
 
-    private static function responseBody(Request $request): string
+    /** @covers Respect\Rest\Router::__toString */
+    public function testToStringReturnsCurrentDispatchResponseBody(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->isAutoDispatched = false;
+        $router->get('/foo', 'bar');
+
+        $router->dispatch(new ServerRequest('GET', '/foo'));
+
+        self::assertSame('bar', (string) $router);
+    }
+
+    private static function responseBody(DispatchContext $request): string
     {
         $response = $request->response();
         self::assertNotNull($response);

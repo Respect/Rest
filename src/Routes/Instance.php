@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Routable;
 
 final class Instance extends ControllerRoute
@@ -21,7 +21,7 @@ final class Instance extends ControllerRoute
     }
 
     /** @param array<int, mixed> $params */
-    public function runTarget(string $method, array &$params, Request $request): mixed
+    public function runTarget(string $method, array &$params, DispatchContext $context): mixed
     {
         if (!$this->instance instanceof Routable) {
             throw new InvalidArgumentException(
@@ -29,6 +29,6 @@ final class Instance extends ControllerRoute
             );
         }
 
-        return $this->invokeTarget($this->instance, $method, $params, $request);
+        return $this->invokeTarget($this->instance, $method, $params, $context);
     }
 }
