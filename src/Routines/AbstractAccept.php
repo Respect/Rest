@@ -9,10 +9,13 @@ use SplObjectStorage;
 
 use function array_keys;
 use function array_pop;
-use function array_shift;
+use function array_slice;
+use function array_values;
 use function arsort;
 use function explode;
+use function implode;
 use function preg_replace;
+use function sprintf;
 use function str_replace;
 use function str_starts_with;
 use function stripos;
@@ -62,7 +65,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     {
         if (
             !$this->negotiated instanceof SplObjectStorage
-            || !$this->negotiated->contains($request)
+            || !$this->negotiated->offsetExists($request)
         ) {
             return null;
         }
@@ -95,7 +98,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
      * @param array<int, mixed> $params
      *
      * @return array<int, string>
-*/
+     */
     protected function identifyRequested(Request $request, array $params): array
     {
         $this->requestUri = $request->uri;
@@ -104,16 +107,17 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
         $acceptHeader = $request->serverRequest->getHeaderLine($headerName);
 
         if ($acceptHeader === '') {
-            return [];
+            return ['*'];
         }
 
-        $acceptParts = explode(',', $acceptHeader);
         $acceptList = [];
-        foreach ($acceptParts as $k => &$acceptPart) {
-            $parts = explode(';q=', trim($acceptPart));
-            $provided = array_shift($parts);
-            $quality = array_shift($parts) ?: (10000 - $k) / 10000;
-            $acceptList[$provided] = $quality;
+        foreach (explode(',', $acceptHeader) as $index => $acceptPart) {
+            $requested = $this->normalizeRequested($acceptPart);
+            if ($requested === '') {
+                continue;
+            }
+
+            $acceptList[$requested] = $this->extractQuality($acceptPart, $index);
         }
 
         arsort($acceptList);
@@ -139,14 +143,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
             return;
         }
 
-        $headerType = (string) preg_replace(
-            [
-                '/(^.*)(?=\w*$)/U',
-                '/(?!^)([A-Z]+)/',
-            ],
-            ['', '-$1'],
-            static::class,
-        );
+        $headerType = $this->getNegotiatedHeaderType();
 
         $contentHeader = 'Content-Type';
         if (strpos($headerType, '-') !== false) {
@@ -154,7 +151,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
         }
 
         $request->responseHeaders[$contentHeader] = $provided;
-        $request->responseHeaders['Vary'] = 'negotiate,' . strtolower($headerType);
+        $this->mergeResponseHeader($request, 'Vary', sprintf('negotiate, %s', strtolower($headerType)));
         $request->responseHeaders['Content-Location'] = (string) $request->serverRequest->getUri()->getPath();
         $request->responseHeaders['Expires'] = 'Thu, 01 Jan 1980 00:00:00 GMT';
         $request->responseHeaders['Cache-Control'] = 'max-age=86400';
@@ -171,12 +168,66 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     {
         // negotiate on file extension
         if (strpos($provided, '.') !== false) {
-            if (stripos($this->requestUri, $provided) !== false) {
-                return true;
-            }
+            return stripos($this->requestUri, $provided) !== false;
+        }
+
+        if ($requested === '*') {
+            return true;
         }
 
         // normal matching requirements
         return $requested == $provided;
+    }
+
+    protected function getNegotiatedHeaderType(): string
+    {
+        return (string) preg_replace(
+            [
+                '/(^.*)(?=\w*$)/U',
+                '/(?!^)([A-Z]+)/',
+            ],
+            ['', '-$1'],
+            static::class,
+        );
+    }
+
+    protected function mergeResponseHeader(Request $request, string $name, string $value): void
+    {
+        if (!isset($request->responseHeaders[$name])) {
+            $request->responseHeaders[$name] = $value;
+
+            return;
+        }
+
+        $mergedValues = [];
+        foreach (explode(',', $request->responseHeaders[$name] . ',' . $value) as $headerValue) {
+            $headerValue = trim($headerValue);
+            if ($headerValue === '') {
+                continue;
+            }
+
+            $mergedValues[strtolower($headerValue)] = $headerValue;
+        }
+
+        $request->responseHeaders[$name] = implode(', ', array_values($mergedValues));
+    }
+
+    private function extractQuality(string $acceptPart, int $index): float
+    {
+        foreach (array_slice(explode(';', $acceptPart), 1) as $parameter) {
+            $parameter = trim($parameter);
+            if (!str_starts_with(strtolower($parameter), 'q=')) {
+                continue;
+            }
+
+            return (float) substr($parameter, 2);
+        }
+
+        return (10000 - $index) / 10000;
+    }
+
+    private function normalizeRequested(string $requested): string
+    {
+        return trim(explode(';', $requested, 2)[0]);
     }
 }

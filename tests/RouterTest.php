@@ -1571,9 +1571,43 @@ final class RouterTest extends TestCase
                     return $d;
                 },
             ]);
-        $response = $router->dispatch(new ServerRequest('get', '/'))->response();
+        $response = $router->dispatch(
+            (new ServerRequest('get', '/'))->withHeader('Accept', 'text/plain'),
+        )->response();
         self::assertNotNull($response);
         self::assertEquals(406, $response->getStatusCode());
+    }
+
+    public function test_missing_accept_header_is_permissive(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->get('/', static function () {
+            return range(0, 2);
+        })->accept(['application/json' => 'json_encode']);
+
+        $response = $router->dispatch(new ServerRequest('get', '/'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(json_encode(range(0, 2)), (string) $response->getBody());
+        self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
+    }
+
+    public function test_accept_matches_media_type_with_parameters(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->get('/', static function () {
+            return range(0, 2);
+        })->accept(['application/json' => 'json_encode']);
+
+        $response = $router->dispatch(
+            (new ServerRequest('get', '/'))->withHeader('Accept', 'application/json; charset=utf-8'),
+        )->response();
+
+        self::assertNotNull($response);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame(json_encode(range(0, 2)), (string) $response->getBody());
+        self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
     }
 
     public function test_append_routine_honours_routine_chaining(): void
@@ -1966,10 +2000,41 @@ final class RouterTest extends TestCase
         self::assertNotNull($response);
         self::assertEquals('ok', (string) $response->getBody());
         self::assertEquals('foo/bar', $response->getHeaderLine('Content-Type'));
+        self::assertStringContainsString('accept', $response->getHeaderLine('Vary'));
         self::assertStringContainsString('accept-language', $response->getHeaderLine('Vary'));
         self::assertEquals('/accept', $response->getHeaderLine('Content-Location'));
         self::assertNotEmpty($response->getHeaderLine('Expires'));
         self::assertNotEmpty($response->getHeaderLine('Cache-Control'));
+    }
+
+    public function test_negotiate_merges_vary_headers(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->get('/', static function () {
+            return 'ok';
+        })
+            ->accept([
+                'foo/bar' => static function ($data) {
+                    return $data;
+                },
+            ])
+            ->acceptLanguage([
+                'en' => static function ($data) {
+                    return $data;
+                },
+            ]);
+
+        $response = $router->dispatch(
+            (new ServerRequest('get', '/'))
+                ->withHeader('Accept', 'foo/bar')
+                ->withHeader('Accept-Language', 'en'),
+        )->response();
+
+        self::assertNotNull($response);
+        self::assertEqualsCanonicalizing(
+            ['negotiate', 'accept', 'accept-language'],
+            array_map('trim', explode(',', $response->getHeaderLine('Vary'))),
+        );
     }
 
     public function test_accept_content_type_header(): void
