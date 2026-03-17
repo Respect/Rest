@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Respect\Rest\Routines;
 
 use ArrayObject;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 
 use function array_merge_recursive;
 use function is_array;
@@ -39,7 +39,7 @@ final class Rel extends ArrayObject implements Routinable, ProxyableThrough
     }
 
     /** @param array<int, mixed> $params */
-    public function through(Request $request, array $params): mixed
+    public function through(DispatchContext $context, array $params): mixed
     {
         $rels = $this;
 

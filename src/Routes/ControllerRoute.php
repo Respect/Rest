@@ -6,7 +6,7 @@ namespace Respect\Rest\Routes;
 
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 
 use function method_exists;
 
@@ -93,11 +93,11 @@ abstract class ControllerRoute extends AbstractRoute
     }
 
     /** @param array<int, mixed> $params */
-    protected function invokeTarget(object $target, string $method, array &$params, Request $request): mixed
+    protected function invokeTarget(object $target, string $method, array &$params, DispatchContext $context): mixed
     {
         $reflection = $this->getReflection($method);
         if ($reflection !== null) {
-            $args = $this->resolveCallbackArguments($reflection, $params, $request);
+            $args = $this->resolveCallbackArguments($reflection, $params, $context);
 
             return $target->$method(...$args);
         }

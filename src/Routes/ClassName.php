@@ -6,7 +6,7 @@ namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
 use ReflectionClass;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Routable;
 
 use function assert;
@@ -29,13 +29,13 @@ final class ClassName extends ControllerRoute
     }
 
     /** @param array<int, mixed> $params */
-    public function runTarget(string $method, array &$params, Request $request): mixed
+    public function runTarget(string $method, array &$params, DispatchContext $context): mixed
     {
         if ($this->instance === null) {
             $this->instance = $this->createInstance();
         }
 
-        return $this->invokeTarget($this->instance, $method, $params, $request);
+        return $this->invokeTarget($this->instance, $method, $params, $context);
     }
 
     protected function createInstance(): Routable

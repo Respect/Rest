@@ -6,7 +6,7 @@ namespace Respect\Rest\Test\Routines;
 
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Test\Stubs\Negotiator;
 use TypeError;
 
@@ -35,13 +35,13 @@ final class CallbackMediatorTest extends TestCase
     /** @covers Respect\Rest\Routines\AbstractCallbackMediator::identifyRequested */
     public function testIdentifyRequested(): void
     {
-        self::assertContains('a', $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/'))));
+        self::assertContains('a', $this->neg->pubIdentifyRequested(new DispatchContext(new ServerRequest('GET', '/'))));
     }
 
     /** @covers Respect\Rest\Routines\AbstractCallbackMediator::considerProvisions */
     public function testConsiderProvisions(): void
     {
-        $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
+        $r = $this->neg->pubIdentifyRequested(new DispatchContext(new ServerRequest('GET', '/')));
         self::assertContains('a', $this->neg->pubConsiderProvisions($r[0]));
     }
 
@@ -49,7 +49,7 @@ final class CallbackMediatorTest extends TestCase
     public function testNotifyApproved(): void
     {
         $asrt = 'a';
-        $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
+        $r = $this->neg->pubIdentifyRequested(new DispatchContext(new ServerRequest('GET', '/')));
         $p = $this->neg->pubConsiderProvisions($r[0]);
         $this->neg->pubNotifyApproved($r[0], $p[0]);
         self::assertContains($asrt, $this->neg->outcome);
@@ -62,7 +62,7 @@ final class CallbackMediatorTest extends TestCase
     public function testNotifyDeclined(): void
     {
         $asrt = 'a';
-        $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
+        $r = $this->neg->pubIdentifyRequested(new DispatchContext(new ServerRequest('GET', '/')));
         $p = $this->neg->pubConsiderProvisions($r[0]);
         $this->neg->pubNotifyDeclined($r[0], $p[0]);
         self::assertContains($asrt, $this->neg->outcome);
@@ -113,7 +113,7 @@ final class CallbackMediatorTest extends TestCase
 
     /**
      * @covers Respect\Rest\Routines\AbstractCallbackMediator::mediate
-     * @covers Respect\Rest\Request
+     * @covers Respect\Rest\DispatchContext
      * @covers Respect\Rest\Routines\CallbackList
      */
     public function testMediate(): void
@@ -128,7 +128,7 @@ final class CallbackMediatorTest extends TestCase
     /** @covers Respect\Rest\Routines\AbstractCallbackMediator::authorize */
     public function testAuthorize(): void
     {
-        $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
+        $r = $this->neg->pubIdentifyRequested(new DispatchContext(new ServerRequest('GET', '/')));
         $p = $this->neg->pubConsiderProvisions($r[0]);
         self::assertTrue($this->neg->pubAuthorize($r[0], $p[0]));
         self::assertFalse($this->neg->pubAuthorize($r[0], $p[0] . 'a'));

@@ -8,7 +8,7 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use ReflectionObject;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Router;
 use Respect\Rest\Routines\By;
 use Respect\Rest\Test\Stubs\ByClassWithInvoke;
@@ -28,12 +28,12 @@ final class ByTest extends TestCase
     /** @covers Respect\Rest\Routines\By::by */
     public function test_by_with_an_anonymous_function(): void
     {
-        $request = new Request(new ServerRequest('GET', '/'));
+        $context = new DispatchContext(new ServerRequest('GET', '/'));
         $params  = [];
         $routine = new By(static function () {
             return 'from by callback';
         });
-        self::assertEquals('from by callback', $routine->by($request, $params));
+        self::assertEquals('from by callback', $routine->by($context, $params));
     }
 
     /**

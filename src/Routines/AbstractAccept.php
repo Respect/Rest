@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 
 use function array_keys;
 use function array_pop;
@@ -34,9 +34,9 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     protected string $requestUri = '';
 
     /** @param array<int, mixed> $params */
-    public function by(Request $request, array $params): mixed
+    public function by(DispatchContext $context, array $params): mixed
     {
-        $unsyncedParams = $request->params;
+        $unsyncedParams = $context->params;
         $extensions = $this->filterKeysContain('.');
 
         if (empty($extensions) || empty($unsyncedParams)) {
@@ -48,15 +48,15 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
             '',
             array_pop($unsyncedParams),
         );
-        $request->params = $unsyncedParams;
+        $context->params = $unsyncedParams;
 
         return null;
     }
 
     /** @param array<int, mixed> $params */
-    public function through(Request $request, array $params): mixed
+    public function through(DispatchContext $context, array $params): mixed
     {
-        return $this->getNegotiatedCallback($request);
+        return $this->getNegotiatedCallback($context);
     }
 
     /**
@@ -85,12 +85,12 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
      *
      * @return array<int, string>
      */
-    protected function identifyRequested(Request $request, array $params): array
+    protected function identifyRequested(DispatchContext $context, array $params): array
     {
-        $this->requestUri = $request->uri;
+        $this->requestUri = $context->path();
 
         $headerName = $this->getAcceptHeaderName();
-        $acceptHeader = $request->serverRequest->getHeaderLine($headerName);
+        $acceptHeader = $context->request->getHeaderLine($headerName);
 
         if ($acceptHeader === '') {
             return ['*'];
@@ -118,9 +118,13 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     }
 
     /** @param array<int, mixed> $params */
-    protected function notifyApproved(string $requested, string $provided, Request $request, array $params): void
-    {
-        $this->rememberNegotiatedCallback($request, $this->getCallback($provided));
+    protected function notifyApproved(
+        string $requested,
+        string $provided,
+        DispatchContext $context,
+        array $params,
+    ): void {
+        $this->rememberNegotiatedCallback($context, $this->getCallback($provided));
 
         if (strpos($provided, '.') !== false) {
             return;
@@ -133,20 +137,24 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
             $contentHeader = str_replace('Accept', 'Content', $headerType);
         }
 
-        $request->setResponseHeader($contentHeader, $provided);
-        $request->appendResponseHeader('Vary', 'negotiate');
-        $request->appendResponseHeader('Vary', strtolower($headerType));
-        $request->defaultResponseHeader(
+        $context->setResponseHeader($contentHeader, $provided);
+        $context->appendResponseHeader('Vary', 'negotiate');
+        $context->appendResponseHeader('Vary', strtolower($headerType));
+        $context->defaultResponseHeader(
             'Content-Location',
-            (string) $request->serverRequest->getUri()->getPath(),
+            (string) $context->request->getUri()->getPath(),
         );
     }
 
     /** @param array<int, mixed> $params */
-    protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
-    {
+    protected function notifyDeclined(
+        string $requested,
+        string $provided,
+        DispatchContext $context,
+        array $params,
+    ): void {
         $this->forgetNegotiatedCallback();
-        $request->prepareResponse(406);
+        $context->prepareResponse(406);
     }
 
     protected function authorize(string $requested, string $provided): mixed

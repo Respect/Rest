@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 
 use function array_merge;
 use function assert;
@@ -20,11 +20,11 @@ final class AuthBasic extends AbstractRoutine implements ProxyableBy
     }
 
     /** @param array<int, mixed> $params */
-    public function by(Request $request, array $params): mixed
+    public function by(DispatchContext $context, array $params): mixed
     {
         $callbackResponse = false;
 
-        $authorization = $request->serverRequest->getHeaderLine('Authorization');
+        $authorization = $context->request->getHeaderLine('Authorization');
 
         if ($authorization !== '') {
             $callbackResponse = ($this->callback)(
@@ -33,8 +33,8 @@ final class AuthBasic extends AbstractRoutine implements ProxyableBy
         }
 
         if ($callbackResponse === false) {
-            assert($request->route?->responseFactory !== null);
-            $response = $request->route->responseFactory->createResponse(401);
+            assert($context->route?->responseFactory !== null);
+            $response = $context->route->responseFactory->createResponse(401);
             $response = $response->withHeader('WWW-Authenticate', 'Basic realm="' . $this->realm . '"');
             $response->getBody()->write((string) ($this->callback)(null, null));
 

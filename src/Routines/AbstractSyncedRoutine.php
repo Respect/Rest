@@ -15,7 +15,7 @@ use ReflectionNamedType;
 use ReflectionObject;
 use ReflectionParameter;
 use Reflector;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 
 use function assert;
 use function is_a;
@@ -41,7 +41,7 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
     }
 
     /** @param array<int, mixed> $params */
-    public function execute(Request $request, array $params): mixed
+    public function execute(DispatchContext $context, array $params): mixed
     {
         $callback = $this->getCallback();
         if (is_string($callback)) {
@@ -56,7 +56,7 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
 
         $reflection = $this->getReflection();
         if ($reflection instanceof ReflectionFunction || $reflection instanceof ReflectionMethod) {
-            $args = $this->resolveCallbackArguments($reflection, $params, $request);
+            $args = $this->resolveCallbackArguments($reflection, $params, $context);
 
             return $callback(...$args);
         }
@@ -74,7 +74,7 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
     protected function resolveCallbackArguments(
         ReflectionFunctionAbstract $reflection,
         array $params,
-        Request $request,
+        DispatchContext $context,
     ): array {
         $refParams = $reflection->getParameters();
 
@@ -93,13 +93,13 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
                 $typeName = $type->getName();
 
                 if (is_a($typeName, ServerRequestInterface::class, true)) {
-                    $args[] = $request->serverRequest;
+                    $args[] = $context->request;
                     $hasPsrInjection = true;
                     continue;
                 }
 
-                if (is_a($typeName, ResponseInterface::class, true) && $request->route?->responseFactory !== null) {
-                    $args[] = $request->route->responseFactory->createResponse();
+                if (is_a($typeName, ResponseInterface::class, true) && $context->route?->responseFactory !== null) {
+                    $args[] = $context->route->responseFactory->createResponse();
                     $hasPsrInjection = true;
                     continue;
                 }

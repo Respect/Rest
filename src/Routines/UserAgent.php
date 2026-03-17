@@ -7,7 +7,7 @@ namespace Respect\Rest\Routines;
 use Closure;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionFunction;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Routes\AbstractRoute;
 
 use function is_callable;
@@ -21,9 +21,9 @@ final class UserAgent extends AbstractCallbackMediator implements ProxyableBy, P
     private const string THROUGH_UNSET = '__userAgentThroughUnset';
 
     /** @param array<int, mixed> $params */
-    public function by(Request $request, array $params): mixed
+    public function by(DispatchContext $context, array $params): mixed
     {
-        $callback = $this->getNegotiatedCallback($request);
+        $callback = $this->getNegotiatedCallback($context);
         if ($callback === null || !$this->canRunBeforeRoute($callback)) {
             return null;
         }
@@ -38,7 +38,7 @@ final class UserAgent extends AbstractCallbackMediator implements ProxyableBy, P
             return $result;
         }
 
-        $request->serverRequest = $request->serverRequest->withAttribute(
+        $context->request = $context->request->withAttribute(
             self::THROUGH_ATTRIBUTE,
             $this->normalizeThroughResult($result),
         );
@@ -47,9 +47,9 @@ final class UserAgent extends AbstractCallbackMediator implements ProxyableBy, P
     }
 
     /** @param array<int, mixed> $params */
-    public function through(Request $request, array $params): mixed
+    public function through(DispatchContext $context, array $params): mixed
     {
-        $preparedResult = $request->serverRequest->getAttribute(
+        $preparedResult = $context->request->getAttribute(
             self::THROUGH_ATTRIBUTE,
             self::THROUGH_UNSET,
         );
@@ -57,7 +57,7 @@ final class UserAgent extends AbstractCallbackMediator implements ProxyableBy, P
             return $preparedResult ?: null;
         }
 
-        return $this->getNegotiatedCallback($request);
+        return $this->getNegotiatedCallback($context);
     }
 
     /**
@@ -65,9 +65,9 @@ final class UserAgent extends AbstractCallbackMediator implements ProxyableBy, P
      *
      * @return array<int, string>
      */
-    protected function identifyRequested(Request $request, array $params): array
+    protected function identifyRequested(DispatchContext $context, array $params): array
     {
-        $userAgent = $request->serverRequest->getHeaderLine('User-Agent');
+        $userAgent = $context->request->getHeaderLine('User-Agent');
 
         return [$userAgent];
     }
@@ -79,14 +79,22 @@ final class UserAgent extends AbstractCallbackMediator implements ProxyableBy, P
     }
 
     /** @param array<int, mixed> $params */
-    protected function notifyApproved(string $requested, string $provided, Request $request, array $params): void
-    {
-        $this->rememberNegotiatedCallback($request, $this->getCallback($provided));
+    protected function notifyApproved(
+        string $requested,
+        string $provided,
+        DispatchContext $context,
+        array $params,
+    ): void {
+        $this->rememberNegotiatedCallback($context, $this->getCallback($provided));
     }
 
     /** @param array<int, mixed> $params */
-    protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
-    {
+    protected function notifyDeclined(
+        string $requested,
+        string $provided,
+        DispatchContext $context,
+        array $params,
+    ): void {
         $this->forgetNegotiatedCallback();
     }
 

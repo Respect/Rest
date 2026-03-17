@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Throwable;
 
 final class Exception extends Callback
@@ -20,7 +20,7 @@ final class Exception extends Callback
     }
 
     /** @param array<int, mixed> $params */
-    public function runTarget(string $method, array &$params, Request $request): mixed
+    public function runTarget(string $method, array &$params, DispatchContext $context): mixed
     {
         return ($this->callback)($this->exception);
     }

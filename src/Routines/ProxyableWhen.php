@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 
 /** Routine that runs before the route matching */
 interface ProxyableWhen
@@ -14,5 +14,5 @@ interface ProxyableWhen
      *
      * @param array<int, mixed> $params
      */
-    public function when(Request $request, array $params): mixed;
+    public function when(DispatchContext $context, array $params): mixed;
 }

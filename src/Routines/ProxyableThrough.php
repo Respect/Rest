@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 
 /** Routine that runs after the route */
 interface ProxyableThrough
@@ -14,5 +14,5 @@ interface ProxyableThrough
      *
      * @param array<int, mixed> $params
      */
-    public function through(Request $request, array $params): mixed;
+    public function through(DispatchContext $context, array $params): mixed;
 }

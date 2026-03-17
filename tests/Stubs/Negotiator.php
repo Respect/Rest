@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Respect\Rest\Test\Stubs;
 
 use Nyholm\Psr7\ServerRequest;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Routines\AbstractCallbackMediator;
 
 use function array_keys;
@@ -29,9 +29,9 @@ class Negotiator extends AbstractCallbackMediator
      *
      * @return array<int, string>
      */
-    public function pubIdentifyRequested(Request|null $request = null, array $params = []): array
+    public function pubIdentifyRequested(DispatchContext|null $context = null, array $params = []): array
     {
-        return $this->identifyRequested(new Request(new ServerRequest('GET', '/')), $params);
+        return $this->identifyRequested(new DispatchContext(new ServerRequest('GET', '/')), $params);
     }
 
     /** @return array<int, string> */
@@ -44,20 +44,20 @@ class Negotiator extends AbstractCallbackMediator
     public function pubNotifyApproved(
         string $requested,
         string $provided,
-        Request|null $request = null,
+        DispatchContext|null $context = null,
         array $params = [],
     ): void {
-        $this->notifyApproved($requested, $provided, new Request(new ServerRequest('GET', '/')), $params);
+        $this->notifyApproved($requested, $provided, new DispatchContext(new ServerRequest('GET', '/')), $params);
     }
 
     /** @param array<int, mixed> $params */
     public function pubNotifyDeclined(
         string $requested,
         string $provided,
-        Request|null $request = null,
+        DispatchContext|null $context = null,
         array $params = [],
     ): void {
-        $this->notifyDeclined($requested, $provided, new Request(new ServerRequest('GET', '/')), $params);
+        $this->notifyDeclined($requested, $provided, new DispatchContext(new ServerRequest('GET', '/')), $params);
     }
 
     public function pubAuthorize(string $requested, string $provided): mixed
@@ -76,7 +76,7 @@ class Negotiator extends AbstractCallbackMediator
 
         $this->outcome = [];
 
-        return (bool) $this->when(new Request(new ServerRequest('GET', '/')), []);
+        return (bool) $this->when(new DispatchContext(new ServerRequest('GET', '/')), []);
     }
 
     /**
@@ -84,7 +84,7 @@ class Negotiator extends AbstractCallbackMediator
      *
      * @return array<int, string>
      */
-    protected function identifyRequested(Request $request, array $params): array
+    protected function identifyRequested(DispatchContext $context, array $params): array
     {
         return array_keys($this->decisionmap);
     }
@@ -96,8 +96,12 @@ class Negotiator extends AbstractCallbackMediator
     }
 
     /** @param array<int, mixed> $params */
-    protected function notifyApproved(string $requested, string $provided, Request $request, array $params): void
-    {
+    protected function notifyApproved(
+        string $requested,
+        string $provided,
+        DispatchContext $context,
+        array $params,
+    ): void {
         $this->outcome = [
             'approved' => true,
             'requested' => $requested,
@@ -106,8 +110,12 @@ class Negotiator extends AbstractCallbackMediator
     }
 
     /** @param array<int, mixed> $params */
-    protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
-    {
+    protected function notifyDeclined(
+        string $requested,
+        string $provided,
+        DispatchContext $context,
+        array $params,
+    ): void {
         $this->outcome = [
             'approved' => false,
             'requested' => $requested,

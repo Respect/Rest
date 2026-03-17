@@ -8,7 +8,7 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use ReflectionObject;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Router;
 use Respect\Rest\Routines\When;
 use Respect\Rest\Test\Stubs\WhenAlwaysTrue;
@@ -71,18 +71,18 @@ final class WhenTest extends TestCase
     /** @covers Respect\Rest\Routines\When::when */
     public function testWhen(): void
     {
-        $request = new Request(new ServerRequest('GET', '/'));
+        $context = new DispatchContext(new ServerRequest('GET', '/'));
         $params = [];
 
         $when = new When(static function () {
                 return true;
         });
-        self::assertTrue($when->when($request, $params));
+        self::assertTrue($when->when($context, $params));
 
         $when = new When(static function () {
                 return false;
         });
-        self::assertFalse($when->when($request, $params));
+        self::assertFalse($when->when($context, $params));
     }
 
     public function test_when_with_a_callable_class_within_a_route(): void

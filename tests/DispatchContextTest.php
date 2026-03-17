@@ -14,7 +14,7 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionFunction;
-use Respect\Rest\Request;
+use Respect\Rest\DispatchContext;
 use Respect\Rest\Routes;
 use Respect\Rest\Routines;
 
@@ -28,112 +28,112 @@ use function rand;
 use function str_replace;
 use function strtolower;
 
-/** @covers Respect\Rest\Request */
+/** @covers Respect\Rest\DispatchContext */
 #[AllowMockObjectsWithoutExpectations]
-final class RequestTest extends TestCase
+final class DispatchContextTest extends TestCase
 {
-    /** @covers  Respect\Rest\Request::__construct */
-    public function testIsPossibleToConstructUsingValuesFromSuperglobals(): Request
+    /** @covers  Respect\Rest\DispatchContext::__construct */
+    public function testIsPossibleToConstructUsingValuesFromSuperglobals(): DispatchContext
     {
         $_SERVER['REQUEST_URI'] = '/users';
         $_SERVER['REQUEST_METHOD'] = 'GET';
 
-        $request = new Request(new ServerRequest('GET', '/users'));
+        $context = new DispatchContext(new ServerRequest('GET', '/users'));
 
         self::assertEquals(
             '/users',
-            $request->uri,
+            $context->path(),
             'Should inherit the path from $_SERVER',
         );
         self::assertEquals(
             'GET',
-            $request->method,
+            $context->method(),
             'Should inherit the method from $_SERVER',
         );
 
-        return $request;
+        return $context;
     }
 
-    /** @covers  Respect\Rest\Request::__construct */
+    /** @covers  Respect\Rest\DispatchContext::__construct */
     public function testIsPossibleToConstructWithCustomMethod(): void
     {
         $_SERVER['REQUEST_URI'] = '/documents';
         $_SERVER['REQUEST_METHOD'] = 'NOTPATCH';
 
-        $request = new Request(new ServerRequest('PATCH', '/documents'));
+        $context = new DispatchContext(new ServerRequest('PATCH', '/documents'));
 
         self::assertNotEquals(
             'NOTPATCH',
-            $request->method,
+            $context->method(),
             'Should ignore $_SERVER if method was passed on constructor',
         );
         self::assertEquals(
             'PATCH',
-            $request->method,
+            $context->method(),
             'Should use constructor method',
         );
     }
 
-    /** @covers  Respect\Rest\Request::__construct */
+    /** @covers  Respect\Rest\DispatchContext::__construct */
     public function testIsPossibleToConstructWithCustomUri(): void
     {
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['REQUEST_URI'] = '/videos';
 
-        $request = new Request(new ServerRequest('POST', '/images'));
+        $context = new DispatchContext(new ServerRequest('POST', '/images'));
 
         self::assertNotEquals(
             '/videos',
-            $request->uri,
+            $context->path(),
             'Should ignore $_SERVER if path was passed on constructor',
         );
 
         self::assertEquals(
             '/images',
-            $request->uri,
+            $context->path(),
             'Should use constructor path',
         );
     }
 
-    /** @covers      Respect\Rest\Request::__construct */
+    /** @covers      Respect\Rest\DispatchContext::__construct */
     public function testAbsoluteUrisShouldBeParsedToExtractThePathOnConstructor(): void
     {
         $_SERVER['REQUEST_URI'] = 'http://google.com/search?q=foo';
 
-        $request = new Request(new ServerRequest('GET', 'http://google.com/search?q=foo'));
+        $context = new DispatchContext(new ServerRequest('GET', 'http://google.com/search?q=foo'));
 
         self::assertNotEquals(
             'http://google.com/search?q=foo',
-            $request->uri,
+            $context->path(),
             'Absolute URI should not be on path',
         );
 
         self::assertEquals(
             '/search',
-            $request->uri,
+            $context->path(),
             'Path should be extracted from absolute URI',
         );
     }
 
-    /** @covers  Respect\Rest\Request::response */
+    /** @covers  Respect\Rest\DispatchContext::response */
     #[Depends('testIsPossibleToConstructUsingValuesFromSuperglobals')]
-    public function testResponseIsNullWithoutSettingARoute(Request $request): void
+    public function testResponseIsNullWithoutSettingARoute(DispatchContext $context): void
     {
-        $response = $request->response();
+        $response = $context->response();
 
         self::assertNull($response, 'Response should be null if no route is set');
     }
 
-    /** @covers  Respect\Rest\Request::response */
+    /** @covers  Respect\Rest\DispatchContext::response */
     #[Depends('testIsPossibleToConstructUsingValuesFromSuperglobals')]
-    public function testRequestIsAbleToDeliverAResponseWithoutSettingPathParams(Request $request): void
+    public function testContextIsAbleToDeliverAResponseWithoutSettingPathParams(DispatchContext $context): void
     {
-        $request->route = $this->getMockForRoute(
+        $context->route = $this->getMockForRoute(
             'GET',
             '/notebooks',
             ['Vaio', 'MacBook', 'ThinkPad'],
         );
-        $response = $request->response();
+        $response = $context->response();
 
         self::assertNotNull($response, 'Response should not be null');
         self::assertEquals(
@@ -143,19 +143,19 @@ final class RequestTest extends TestCase
         );
     }
 
-    /** @covers  Respect\Rest\Request::response */
+    /** @covers  Respect\Rest\DispatchContext::response */
     #[Depends('testIsPossibleToConstructUsingValuesFromSuperglobals')]
-    public function testRequestIsAbleToDeliverAResponseUsingPreviouslySetPathParams(Request $request): void
+    public function testContextIsAbleToDeliverAResponseUsingPreviouslySetPathParams(DispatchContext $context): void
     {
-        $request->route = $this->getMockForRoute(
+        $context->route = $this->getMockForRoute(
             'GET',
             '/printers',
             'Some Printers Response',
             'GET',
             ['dpi', 'price'],
         );
-        $request->params = ['dpi', 'price'];
-        $response = $request->response();
+        $context->params = ['dpi', 'price'];
+        $response = $context->response();
 
         self::assertNotNull($response);
         self::assertEquals(
@@ -165,28 +165,28 @@ final class RequestTest extends TestCase
         );
     }
 
-    /** @covers  Respect\Rest\Request::forward */
+    /** @covers  Respect\Rest\DispatchContext::forward */
     public function testForwardReplacesRouteAndReturnsResponse(): void
     {
-        $request = new Request(new ServerRequest('GET', '/users/alganet/lists'));
+        $context = new DispatchContext(new ServerRequest('GET', '/users/alganet/lists'));
         $inactiveRoute  = $this->getMockForRoute('GET', '/users/alganet/lists');
         $forwardedRoute = $this->getMockForRoute('GET', '/lists/12345', 'Some list items');
-        $request->route = $inactiveRoute;
-        $request->forward($forwardedRoute);
+        $context->route = $inactiveRoute;
+        $context->forward($forwardedRoute);
 
         self::assertNotSame(
             $inactiveRoute,
-            $request->route,
+            $context->route,
             'After forwarding a route, the previous one should not be in the route attribute',
         );
         self::assertSame(
             $forwardedRoute,
-            $request->route,
+            $context->route,
             'After forwarding a route, the forwarded route should be in the route attribute',
         );
     }
 
-    /** @covers       Respect\Rest\Request::response */
+    /** @covers       Respect\Rest\DispatchContext::response */
     #[Depends('testForwardReplacesRouteAndReturnsResponse')]
     #[DataProvider('providerForUserImplementedForwards')]
     public function testDeveloperCanForwardRoutesByReturningThemOnTheirImplementation(
@@ -228,9 +228,9 @@ final class RequestTest extends TestCase
                 self::fail('Unknown provider scenario');
         }
 
-        $request = new Request(new ServerRequest('GET', '/cupcakes'));
-        $request->route = $userImplementedRoute;
-        $response = $request->response();
+        $context = new DispatchContext(new ServerRequest('GET', '/cupcakes'));
+        $context->route = $userImplementedRoute;
+        $response = $context->response();
 
         self::assertNotNull($response);
         self::assertSame('Delicious Cupcake Internally Forwarded', (string) $response->getBody());
@@ -245,19 +245,19 @@ final class RequestTest extends TestCase
         ];
     }
 
-    /** @covers Respect\Rest\Request::response */
+    /** @covers Respect\Rest\DispatchContext::response */
     public function testDeveloperCanAbortRequestReturningFalseOnByRoutine(): void
     {
-        $request = new Request(new ServerRequest('GET', '/protected-area'));
+        $context = new DispatchContext(new ServerRequest('GET', '/protected-area'));
         $route = $this->getMockForRoute('GET', '/protected-area', 'Protected Content!!!');
         $routine = $this->getMockForRoutine('ProxyableBy');
         $routine->expects($this->once())
             ->method('by')
             ->willReturn(false);
         $route->appendRoutine($routine);
-        $request->route = $route;
+        $context->route = $route;
 
-        $response = $request->response();
+        $response = $context->response();
 
         self::assertNotNull($response);
         self::assertNotSame(
@@ -276,10 +276,10 @@ final class RequestTest extends TestCase
         );
     }
 
-    /** @covers Respect\Rest\Request::response */
+    /** @covers Respect\Rest\DispatchContext::response */
     public function testDeveloperCanReturnCallablesToProcessOutputAfterTargetRuns(): void
     {
-        $request = new Request(new ServerRequest('GET', '/logs'));
+        $context = new DispatchContext(new ServerRequest('GET', '/logs'));
         $route = $this->getMockForRoute(
             'GET',
             '/logs',
@@ -294,8 +294,8 @@ final class RequestTest extends TestCase
                     return str_replace('-', ' ', $thatLogStubReturnedAbove);
             });
         $route->appendRoutine($routine);
-        $request->route = $route;
-        $response = $request->response();
+        $context->route = $route;
+        $response = $context->response();
 
         self::assertNotNull($response);
         self::assertSame(
@@ -308,15 +308,15 @@ final class RequestTest extends TestCase
     /**
      * @param array<int, mixed> $params
      *
-     * @covers       Respect\Rest\Request::response
+     * @covers       Respect\Rest\DispatchContext::response
      */
     #[DataProvider('providerForParamSyncedRoutines')]
     public function testParamSyncedRoutinesShouldAllReferenceTheSameValuesByTheirNames(
         string $scenario,
         array $params,
     ): void {
-        $request = new Request(new ServerRequest('GET', '/version'));
-        $request->params = $params;
+        $context = new DispatchContext(new ServerRequest('GET', '/version'));
+        $context->params = $params;
 
         $route = $this->getMockForRoute(
             'GET',
@@ -427,9 +427,9 @@ final class RequestTest extends TestCase
             $route->appendRoutine($this->getMockForProxyableRoutine($route, 'By', $checker));
         }
 
-        $request->route = $route;
+        $context->route = $route;
 
-        $response = $request->response();
+        $response = $context->response();
 
         self::assertNotNull($response);
         self::assertEquals('MySoftwareName', (string) $response->getBody());
@@ -448,26 +448,26 @@ final class RequestTest extends TestCase
 
     public function testConvertingToStringCallsResponse(): void
     {
-        $request = new Request(new ServerRequest('GET', '/users/alganet/lists'));
-        $request->route = $this->getMockForRoute('GET', '/users/alganet/lists', 'Some list items');
-        $toString = (string) $request;
+        $context = new DispatchContext(new ServerRequest('GET', '/users/alganet/lists'));
+        $context->route = $this->getMockForRoute('GET', '/users/alganet/lists', 'Some list items');
+        $toString = (string) $context;
 
         self::assertSame('Some list items', $toString);
     }
 
     public function test_unsynced_param_comes_as_null(): void
     {
-        $request = new Request(new ServerRequest('GET', '/'));
-        $request->route = new Routes\Callback('GET', '/', static function ($bar) {
+        $context = new DispatchContext(new ServerRequest('GET', '/'));
+        $context->route = new Routes\Callback('GET', '/', static function ($bar) {
             return 'ok';
         });
         $args = [];
         $routine = new Routines\By(static function ($foo, $bar, $baz) use (&$args): void {
             $args = func_get_args();
         });
-        $request->route->appendRoutine($routine);
+        $context->route->appendRoutine($routine);
         $dummy = ['bar'];
-        $request->routineCall('by', 'GET', $routine, $dummy);
+        $context->routineCall('by', 'GET', $routine, $dummy);
         self::assertEquals([null, 'bar', null], $args);
     }
 
