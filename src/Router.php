@@ -346,6 +346,7 @@ final class Router
         AbstractRoute $route,
         array $params = [],
     ): Request {
+        $request->responseStatus = null;
         $request->route = $route;
         $request->params = $params;
 
@@ -477,6 +478,7 @@ final class Router
 
                 /** @var array<int, mixed> $tempParams */
                 $tempParams = $matchedByPath[$route];
+                $this->request->route = $route;
                 if ($route->matchRoutines($this->request, $tempParams)) {
                     return $this->configureRequest(
                         $this->request,

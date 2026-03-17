@@ -12,6 +12,7 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\ServerRequestInterface;
 use ReflectionMethod;
 use ReflectionObject;
 use Respect\Rest\Request;
@@ -35,6 +36,7 @@ use function func_get_arg;
 use function func_get_args;
 use function implode;
 use function is_numeric;
+use function json_decode;
 use function json_encode;
 use function mb_convert_encoding;
 use function range;
@@ -1384,6 +1386,123 @@ final class RouterTest extends TestCase
         ]);
         $this->router->dispatchRequest($requestBoth)->response();
         self::assertEquals('ok', $result);
+    }
+
+    public function testContentTypeDecodesPayloadIntoServerRequest(): void
+    {
+        $factory = new Psr17Factory();
+        $serverRequest = (new ServerRequest('post', '/timeline'))
+            ->withHeader('Content-Type', 'application/json')
+            ->withBody($factory->createStream('{"user":"alice"}'));
+
+        $this->router
+            ->post('/timeline', static function (ServerRequestInterface $request) {
+                return json_encode([
+                    'parsed' => $request->getParsedBody(),
+                    'attribute' => $request->getAttribute(Routines\ContentType::ATTRIBUTE),
+                ]);
+            })
+            ->contentType([
+                'application/json' => static function (string $input): array {
+                    return json_decode($input, true);
+                },
+            ]);
+
+        $psrResponse = $this->router->dispatch($serverRequest)->response();
+
+        self::assertNotNull($psrResponse);
+        self::assertSame(
+            json_encode([
+                'parsed' => ['user' => 'alice'],
+                'attribute' => ['user' => 'alice'],
+            ]),
+            (string) $psrResponse->getBody(),
+        );
+    }
+
+    public function testContentTypeRejectsUnsupportedMediaType(): void
+    {
+        $factory = new Psr17Factory();
+        $ran = false;
+        $serverRequest = (new ServerRequest('post', '/timeline'))
+            ->withHeader('Content-Type', 'text/xml')
+            ->withBody($factory->createStream('<user>alice</user>'));
+
+        $this->router
+            ->post('/timeline', static function () use (&$ran) {
+                $ran = true;
+
+                return 'ok';
+            })
+            ->contentType([
+                'application/json' => static function (string $input): array {
+                    return json_decode($input, true);
+                },
+            ]);
+
+        $response = $this->router->dispatch($serverRequest)->response();
+
+        self::assertNotNull($response);
+        self::assertSame(415, $response->getStatusCode());
+        self::assertSame('', (string) $response->getBody());
+        self::assertFalse($ran);
+    }
+
+    public function testContentTypeMatchesParameterizedMediaType(): void
+    {
+        $factory = new Psr17Factory();
+        $serverRequest = (new ServerRequest('post', '/timeline'))
+            ->withHeader('Content-Type', 'application/json; charset=utf-8')
+            ->withBody($factory->createStream('{"user":"alice"}'));
+
+        $this->router
+            ->post('/timeline', static function (ServerRequestInterface $request) {
+                return json_encode($request->getParsedBody());
+            })
+            ->contentType([
+                'application/json' => static function (string $input): array {
+                    return json_decode($input, true);
+                },
+            ]);
+
+        $response = $this->router->dispatch($serverRequest)->response();
+
+        self::assertNotNull($response);
+        self::assertSame(json_encode(['user' => 'alice']), (string) $response->getBody());
+    }
+
+    public function testContentTypeDoesNotLeakUnsupportedStatusIntoLaterMatch(): void
+    {
+        $factory = new Psr17Factory();
+        $serverRequest = (new ServerRequest('post', '/timeline'))
+            ->withHeader('Content-Type', 'text/xml')
+            ->withBody($factory->createStream('<user>alice</user>'));
+
+        $this->router
+            ->post('/timeline', static function () {
+                return 'json';
+            })
+            ->contentType([
+                'application/json' => static function (string $input): array {
+                    return json_decode($input, true);
+                },
+            ]);
+
+        $this->router
+            ->post('/timeline', static function (ServerRequestInterface $request) {
+                return (string) $request->getAttribute(Routines\ContentType::ATTRIBUTE);
+            })
+            ->contentType([
+                'text/xml' => static function (string $input): string {
+                    return $input;
+                },
+            ]);
+
+        $response = $this->router->dispatch($serverRequest)->response();
+
+        self::assertNotNull($response);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('<user>alice</user>', (string) $response->getBody());
     }
 
     public function testVirtualHost(): void
