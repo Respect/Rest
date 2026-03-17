@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Stubs;
@@ -7,15 +8,17 @@ use Respect\Rest\Routable;
 
 class HeadTest implements Routable
 {
-    private $expectedHeader;
-
-    public function __construct($expectedHeader)
+    public function __construct(private readonly string $expectedHeader)
     {
-        $this->expectedHeader = $expectedHeader;
     }
 
-    public function get()
+    public function get(): string
     {
         return 'ok';
+    }
+
+    public function getExpectedHeader(): string
+    {
+        return $this->expectedHeader;
     }
 }

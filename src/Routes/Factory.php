@@ -12,8 +12,9 @@ use Respect\Rest\Routable;
 
 final class Factory extends AbstractRoute
 {
-    protected ?object $instance = null;
-    protected ?ReflectionMethod $reflection = null;
+    protected object|null $instance = null;
+
+    protected ReflectionMethod|null $reflection = null;
 
     public function __construct(
         string $method,
@@ -25,18 +26,19 @@ final class Factory extends AbstractRoute
         parent::__construct($method, $pattern);
     }
 
-    public function getReflection(string $method): ?ReflectionFunctionAbstract
+    public function getReflection(string $method): ReflectionFunctionAbstract
     {
         if ($this->reflection === null) {
             $this->reflection = new ReflectionMethod(
                 $this->class,
-                $method
+                $method,
             );
         }
 
         return $this->reflection;
     }
 
+    /** @param array<int, mixed> $params */
     public function runTarget(string $method, array &$params, Request $request): mixed
     {
         if ($this->instance === null) {
@@ -45,16 +47,13 @@ final class Factory extends AbstractRoute
 
         if (!$this->instance instanceof Routable) {
             throw new InvalidArgumentException(
-                'Routed classes must implement the Respect\\Rest\\Routable interface'
+                'Routed classes must implement the Respect\\Rest\\Routable interface',
             );
         }
 
         $reflection = $this->getReflection($method);
-        if ($reflection !== null) {
-            $args = $this->resolveCallbackArguments($reflection, $params, $request);
-            return $this->instance->$method(...$args);
-        }
+        $args = $this->resolveCallbackArguments($reflection, $params, $request);
 
-        return $this->instance->$method(...$params);
+        return $this->instance->$method(...$args);
     }
 }

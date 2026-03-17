@@ -4,12 +4,38 @@ declare(strict_types=1);
 
 namespace Respect\Rest;
 
+use InvalidArgumentException;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
-use InvalidArgumentException;
 use Respect\Rest\Routes\AbstractRoute;
+use SplObjectStorage;
+use Throwable;
+
+use function array_filter;
+use function array_pop;
+use function array_unique;
+use function array_values;
+use function assert;
+use function class_exists;
+use function count;
+use function in_array;
+use function interface_exists;
+use function is_array;
+use function is_callable;
+use function is_string;
+use function iterator_to_array;
+use function preg_match;
+use function preg_quote;
+use function preg_replace;
+use function stripos;
+use function strtoupper;
+use function substr_count;
+use function trigger_error;
+use function usort;
+
+use const E_USER_ERROR;
 
 /**
  * A router that contains many instances of routes.
@@ -26,9 +52,10 @@ use Respect\Rest\Routes\AbstractRoute;
 final class Router
 {
     public bool $isAutoDispatched = true;
+
     public bool $methodOverriding = false;
-    public ResponseFactoryInterface $responseFactory;
-    public ?Request $request = null;
+
+    public Request|null $request = null;
 
     /** @var array<int, Routines\Routinable> */
     protected array $globalRoutines = [];
@@ -39,97 +66,18 @@ final class Router
     /** @var array<int, AbstractRoute> */
     protected array $sideRoutes = [];
 
-    protected ?string $virtualHost = null;
-
     /** Used by tests for named route attributes */
     public mixed $allMembers = null;
 
-    public function __construct(ResponseFactoryInterface $responseFactory, ?string $virtualHost = null)
-    {
-        $this->responseFactory = $responseFactory;
-        $this->virtualHost = $virtualHost;
-    }
-
-    public function __destruct()
-    {
-        if (!$this->isAutoDispatched || !$this->request) {
-            return;
-        }
-
-        $response = $this->request->response();
-        if ($response !== null) {
-            echo (string) $response->getBody();
-        }
-    }
-
-    public function __toString(): string
-    {
-        $string = '';
-        try {
-            $response = $this->request?->response();
-            if ($response !== null) {
-                $string = (string) $response->getBody();
-            }
-        } catch (\Exception $exception) {
-            trigger_error($exception->getMessage(), E_USER_ERROR);
-        }
-
-        return $string;
-    }
-
-    /** @param array<int, mixed> $args */
-    public function __call(string $method, array $args): AbstractRoute
-    {
-        if (count($args) < 2) {
-            throw new InvalidArgumentException(
-                'Any route binding must have at least 2 arguments'
-            );
-        }
-
-        [$path, $routeTarget] = $args;
-
-        if (is_array($path)) {
-            $lastPath = array_pop($path);
-            foreach ($path as $p) {
-                $this->$method($p, $routeTarget);
-            }
-
-            return $this->$method($lastPath, $routeTarget);
-        }
-
-        if (is_callable($routeTarget)) {
-            if (!isset($args[2])) {
-                return $this->callbackRoute($method, $path, $routeTarget);
-            }
-
-            return $this->callbackRoute($method, $path, $routeTarget, $args[2]);
-        }
-
-        if ($routeTarget instanceof Routable) {
-            return $this->instanceRoute($method, $path, $routeTarget);
-        }
-
-        if (!is_string($routeTarget)) {
-            return $this->staticRoute($method, $path, $routeTarget);
-        }
-
-        if (!class_exists($routeTarget) && !interface_exists($routeTarget)) {
-            return $this->staticRoute($method, $path, $routeTarget);
-        }
-
-        if (!isset($args[2])) {
-            return $this->classRoute($method, $path, $routeTarget);
-        }
-
-        if (is_callable($args[2])) {
-            return $this->factoryRoute($method, $path, $routeTarget, $args[2]);
-        }
-
-        return $this->classRoute($method, $path, $routeTarget, $args[2]);
+    public function __construct(
+        public ResponseFactoryInterface $responseFactory,
+        protected string|null $virtualHost = null,
+    ) {
     }
 
     public function always(string $routineName, mixed ...$params): static
     {
+        /** @var class-string<Routines\Routinable> $routineClassName */
         $routineClassName = 'Respect\\Rest\\Routines\\' . $routineName;
         $routineClass = new ReflectionClass($routineClassName);
         $routineInstance = $routineClass->newInstanceArgs($params);
@@ -205,11 +153,11 @@ final class Router
         $request->responseFactory ??= $this->responseFactory;
         $this->isRoutelessDispatch($request);
 
-        if ($this->request->route === null) {
+        if ($request->route === null) {
             $this->routeDispatch();
         }
 
-        return $this->request;
+        return $request;
     }
 
     public function exceptionRoute(string $className, callable $callback): Routes\Exception
@@ -236,7 +184,11 @@ final class Router
         return $route;
     }
 
-    /** @param array<int, AbstractRoute> $routes */
+    /**
+     * @param array<int, AbstractRoute> $routes
+     *
+     * @return array<int, string>
+     */
     public function getAllowedMethods(array $routes): array
     {
         $allowedMethods = [];
@@ -258,7 +210,7 @@ final class Router
         $parsedBody = $this->request->serverRequest->getParsedBody();
         $queryParams = $this->request->serverRequest->getQueryParams();
 
-        return isset($parsedBody['_method']) || isset($queryParams['_method']);
+        return (is_array($parsedBody) && isset($parsedBody['_method'])) || isset($queryParams['_method']);
     }
 
     public function instanceRoute(string $method, string $path, object $instance): Routes\Instance
@@ -271,7 +223,8 @@ final class Router
 
     public function isDispatchedToGlobalOptionsMethod(): bool
     {
-        return $this->request->method === 'OPTIONS'
+        return $this->request !== null
+            && $this->request->method === 'OPTIONS'
             && $this->request->uri === '*';
     }
 
@@ -283,7 +236,8 @@ final class Router
         if ($this->hasDispatchedOverridenMethod()) {
             $parsedBody = $request->serverRequest->getParsedBody();
             $queryParams = $request->serverRequest->getQueryParams();
-            $overrideMethod = $parsedBody['_method'] ?? $queryParams['_method'] ?? null;
+            $bodyMethod = is_array($parsedBody) ? ($parsedBody['_method'] ?? null) : null;
+            $overrideMethod = $bodyMethod ?? $queryParams['_method'] ?? null;
             if ($overrideMethod !== null) {
                 $request->method = strtoupper((string) $overrideMethod);
             }
@@ -305,24 +259,26 @@ final class Router
 
     public function routeDispatch(): void
     {
+        assert($this->request !== null);
+        $request = $this->request;
         $this->applyVirtualHost();
 
         $matchedByPath = $this->getMatchedRoutesByPath();
-        $allowedMethods = $this->getAllowedMethods(
-            iterator_to_array($matchedByPath)
-        );
+        /** @var array<int, AbstractRoute> $matchedArray */
+        $matchedArray = iterator_to_array($matchedByPath);
+        $allowedMethods = $this->getAllowedMethods($matchedArray);
 
-        if ($this->request->method === 'OPTIONS' && $allowedMethods) {
+        if ($request->method === 'OPTIONS' && $allowedMethods) {
             $this->handleOptionsRequest($allowedMethods, $matchedByPath);
         } elseif (count($matchedByPath) === 0) {
             // No routes matched — 404 handled via null route in response()
-            $this->request->route = null;
+            $request->route = null;
         } elseif (!$this->routineMatch($matchedByPath) instanceof Request) {
             $this->informMethodNotAllowed($allowedMethods);
         }
     }
 
-    public function run(Request $request): ?ResponseInterface
+    public function run(Request $request): ResponseInterface|null
     {
         $route = $this->dispatchRequest($request);
 
@@ -346,26 +302,33 @@ final class Router
         return substr_count($patternA, $sub) < substr_count($patternB, $sub);
     }
 
-    /** @return array<int, mixed> */
+    /**
+     * @param array<int, mixed> $params
+     *
+     * @return array<int, mixed>
+     */
     protected static function cleanUpParams(array $params): array
     {
         return array_values(
             array_filter(
                 $params,
-                static fn(mixed $param): bool => $param !== ''
-            )
+                static fn(mixed $param): bool => $param !== '',
+            ),
         );
     }
 
     protected function applyVirtualHost(): void
     {
-        if ($this->virtualHost) {
-            $this->request->uri = preg_replace(
-                '#^' . preg_quote($this->virtualHost) . '#',
-                '',
-                $this->request->uri
-            );
+        assert($this->request !== null);
+        if (!$this->virtualHost) {
+            return;
         }
+
+        $this->request->uri = preg_replace(
+            '#^' . preg_quote($this->virtualHost) . '#',
+            '',
+            $this->request->uri,
+        ) ?? $this->request->uri;
     }
 
     /** @param array<int, mixed> $params */
@@ -380,15 +343,20 @@ final class Router
         return $request;
     }
 
-    protected function getMatchedRoutesByPath(): \SplObjectStorage
+    /** @return SplObjectStorage<AbstractRoute, array<int, mixed>> */
+    protected function getMatchedRoutesByPath(): SplObjectStorage
     {
-        $matched = new \SplObjectStorage();
+        assert($this->request !== null);
+        /** @var SplObjectStorage<AbstractRoute, array<int, mixed>> $matched */
+        $matched = new SplObjectStorage();
 
         foreach ($this->routes as $route) {
             $params = [];
-            if ($this->matchRoute($this->request, $route, $params)) {
-                $matched[$route] = $params;
+            if (!$this->matchRoute($this->request, $route, $params)) {
+                continue;
             }
+
+            $matched[$route] = $params;
         }
 
         return $matched;
@@ -397,6 +365,7 @@ final class Router
     /** @param array<string> $allowedMethods */
     protected function informMethodNotAllowed(array $allowedMethods): void
     {
+        assert($this->request !== null);
         // 405 status is communicated via null route — response() returns null
         if (!$allowedMethods) {
             return;
@@ -405,9 +374,13 @@ final class Router
         $this->request->route = null;
     }
 
-    /** @param array<string> $allowedMethods */
-    protected function handleOptionsRequest(array $allowedMethods, \SplObjectStorage $matchedByPath): void
+    /**
+     * @param array<string> $allowedMethods
+     * @param SplObjectStorage<AbstractRoute, array<int, mixed>> $matchedByPath
+     */
+    protected function handleOptionsRequest(array $allowedMethods, SplObjectStorage $matchedByPath): void
     {
+        assert($this->request !== null);
         if (in_array('OPTIONS', $allowedMethods)) {
             $this->routineMatch($matchedByPath);
         } else {
@@ -417,13 +390,13 @@ final class Router
 
     protected function matchesMethod(AbstractRoute $route, string $methodName): bool
     {
-        return 0 !== stripos($methodName, '__')
+        assert($this->request !== null);
+
+        return stripos($methodName, '__') !== 0
             && ($route->method === $this->request->method
                 || $route->method === 'ANY'
                 || ($route->method === 'GET'
-                    && $this->request->method === 'HEAD'
-                )
-            );
+                    && $this->request->method === 'HEAD'));
     }
 
     /** @param array<int, mixed> $params */
@@ -441,23 +414,28 @@ final class Router
         return false;
     }
 
-    protected function routineMatch(\SplObjectStorage $matchedByPath): Request|bool|null
+    /** @param SplObjectStorage<AbstractRoute, array<int, mixed>> $matchedByPath */
+    protected function routineMatch(SplObjectStorage $matchedByPath): Request|bool|null
     {
+        assert($this->request !== null);
         $badRequest = false;
 
         foreach ($matchedByPath as $route) {
-            if ($this->matchesMethod($route, $this->request->method)) {
-                $tempParams = $matchedByPath[$route];
-                if ($route->matchRoutines($this->request, $tempParams)) {
-                    return $this->configureRequest(
-                        $this->request,
-                        $route,
-                        static::cleanUpParams($tempParams)
-                    );
-                }
-
-                $badRequest = true;
+            if (!$this->matchesMethod($route, $this->request->method)) {
+                continue;
             }
+
+            /** @var array<int, mixed> $tempParams */
+            $tempParams = $matchedByPath[$route];
+            if ($route->matchRoutines($this->request, $tempParams)) {
+                return $this->configureRequest(
+                    $this->request,
+                    $route,
+                    static::cleanUpParams($tempParams),
+                );
+            }
+
+            $badRequest = true;
         }
 
         return $badRequest ? false : null;
@@ -482,6 +460,7 @@ final class Router
                 if ($aCatchall != $bCatchall) {
                     return $aCatchall ? 1 : -1;
                 }
+
                 if ($aCatchall && $bCatchall) {
                     return $slashCount ? 1 : -1;
                 }
@@ -491,7 +470,87 @@ final class Router
                 }
 
                 return $slashCount ? -1 : 1;
-            }
+            },
         );
+    }
+
+    public function __destruct()
+    {
+        if (!$this->isAutoDispatched || !$this->request) {
+            return;
+        }
+
+        $response = $this->request->response();
+        if ($response === null) {
+            return;
+        }
+
+        echo (string) $response->getBody();
+    }
+
+    public function __toString(): string
+    {
+        $string = '';
+        try {
+            $response = $this->request?->response();
+            if ($response !== null) {
+                $string = (string) $response->getBody();
+            }
+        } catch (Throwable $exception) {
+            trigger_error($exception->getMessage(), E_USER_ERROR);
+        }
+
+        return $string;
+    }
+
+    /** @param array<int, mixed> $args */
+    public function __call(string $method, array $args): AbstractRoute
+    {
+        if (count($args) < 2) {
+            throw new InvalidArgumentException(
+                'Any route binding must have at least 2 arguments',
+            );
+        }
+
+        [$path, $routeTarget] = $args;
+
+        if (is_array($path)) {
+            $lastPath = array_pop($path);
+            foreach ($path as $p) {
+                $this->$method($p, $routeTarget);
+            }
+
+            return $this->$method($lastPath, $routeTarget);
+        }
+
+        if (is_callable($routeTarget)) {
+            if (!isset($args[2])) {
+                return $this->callbackRoute($method, $path, $routeTarget);
+            }
+
+            return $this->callbackRoute($method, $path, $routeTarget, $args[2]);
+        }
+
+        if ($routeTarget instanceof Routable) {
+            return $this->instanceRoute($method, $path, $routeTarget);
+        }
+
+        if (!is_string($routeTarget)) {
+            return $this->staticRoute($method, $path, $routeTarget);
+        }
+
+        if (!class_exists($routeTarget) && !interface_exists($routeTarget)) {
+            return $this->staticRoute($method, $path, $routeTarget);
+        }
+
+        if (!isset($args[2])) {
+            return $this->classRoute($method, $path, $routeTarget);
+        }
+
+        if (is_callable($args[2])) {
+            return $this->factoryRoute($method, $path, $routeTarget, $args[2]);
+        }
+
+        return $this->classRoute($method, $path, $routeTarget, $args[2]);
     }
 }

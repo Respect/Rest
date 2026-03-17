@@ -1,7 +1,7 @@
 parameters:
   fileExtensions:
     - php
-  level: 5
+  level: 8
   paths:
     - src/
     - tests/
@@ -9,25 +9,3 @@ parameters:
     # By-ref param type narrowing in match() — preg_match output type varies
     - message: '/Parameter &\$params by-ref type of method .+::match\(\)/'
       path: src/Routes/AbstractRoute.php
-    # getReflection() null return required by abstract parent signature
-    - message: '/never returns null so it can be removed from the return type/'
-      paths:
-        - src/Routes/Factory.php
-        - src/Routes/Instance.php
-    # Test-specific issues
-    - message: '/Call to an undefined method/'
-      path: tests/
-    - message: '/will always evaluate to/'
-      path: tests/
-    - message: '/with return type void returns/'
-      path: tests/
-    - message: '/Parameter #1 .+ expects resource/'
-      path: tests/
-    - message: '/invoked with 3 parameters, 2 required/'
-      path: tests/
-    - message: '/Anonymous function has an unused use/'
-      path: tests/
-    - message: '/is never read, only written/'
-      path: tests/
-    - message: '/Call to an undefined static method Respect\\Rest\\Routes\\Factory::respond/'
-      path: tests/Routes/AbstractRouteTest.php

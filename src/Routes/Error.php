@@ -19,6 +19,7 @@ final class Error extends Callback
         parent::__construct('ANY', '^$', $callback);
     }
 
+    /** @param array<int, mixed> $params */
     public function runTarget(string $method, array &$params, Request $request): mixed
     {
         return ($this->callback)($this->errors);

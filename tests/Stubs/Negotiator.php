@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Stubs;
@@ -7,30 +8,94 @@ use Nyholm\Psr7\ServerRequest;
 use Respect\Rest\Request;
 use Respect\Rest\Routines\AbstractCallbackMediator;
 
+use function array_keys;
+use function is_array;
+
 class Negotiator extends AbstractCallbackMediator
 {
-    public $decisionmap = [];
-    public $outcome = [];
+    /** @var array<string, array<int, string>> */
+    public array $decisionmap = [];
+
+    /** @var array<string, mixed> */
+    public array $outcome = [];
 
     public function __construct()
     {
         parent::__construct(['a' => 'is_numeric']);
     }
 
-    protected function identifyRequested(Request $request, array $params): array
+    /**
+     * @param array<int, mixed> $params
+     *
+     * @return array<int, string>
+     */
+    public function pubIdentifyRequested(Request|null $request = null, array $params = []): array
     {
-        if (is_array($this->decisionmap)) {
-            return array_keys($this->decisionmap);
-        }
-
-        return [];
+        return $this->identifyRequested(new Request(new ServerRequest('GET', '/')), $params);
     }
 
+    /** @return array<int, string> */
+    public function pubConsiderProvisions(string $requested): array
+    {
+        return $this->considerProvisions($requested);
+    }
+
+    /** @param array<int, mixed> $params */
+    public function pubNotifyApproved(
+        string $requested,
+        string $provided,
+        Request|null $request = null,
+        array $params = [],
+    ): void {
+        $this->notifyApproved($requested, $provided, new Request(new ServerRequest('GET', '/')), $params);
+    }
+
+    /** @param array<int, mixed> $params */
+    public function pubNotifyDeclined(
+        string $requested,
+        string $provided,
+        Request|null $request = null,
+        array $params = [],
+    ): void {
+        $this->notifyDeclined($requested, $provided, new Request(new ServerRequest('GET', '/')), $params);
+    }
+
+    public function pubAuthorize(string $requested, string $provided): mixed
+    {
+        return $this->authorize($requested, $provided);
+    }
+
+    /** @param array<string, array<int, string>>|string $decisionmap */
+    public function getMediated(array|string $decisionmap): bool
+    {
+        if (is_array($decisionmap)) {
+            $this->decisionmap = $decisionmap;
+        } else {
+            $this->decisionmap = [];
+        }
+
+        $this->outcome = [];
+
+        return (bool) $this->when(new Request(new ServerRequest('GET', '/')), []);
+    }
+
+    /**
+     * @param array<int, mixed> $params
+     *
+     * @return array<int, string>
+     */
+    protected function identifyRequested(Request $request, array $params): array
+    {
+        return array_keys($this->decisionmap);
+    }
+
+    /** @return array<int, string> */
     protected function considerProvisions(string $requested): array
     {
         return !empty($this->decisionmap[$requested]) ? $this->decisionmap[$requested] : [];
     }
 
+    /** @param array<int, mixed> $params */
     protected function notifyApproved(string $requested, string $provided, Request $request, array $params): void
     {
         $this->outcome = [
@@ -40,6 +105,7 @@ class Negotiator extends AbstractCallbackMediator
         ];
     }
 
+    /** @param array<int, mixed> $params */
     protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
     {
         $this->outcome = [
@@ -47,37 +113,5 @@ class Negotiator extends AbstractCallbackMediator
             'requested' => $requested,
             'provided' => $provided,
         ];
-    }
-
-    public function pubIdentifyRequested($request = null, $params = [])
-    {
-        return $this->identifyRequested(new Request(new ServerRequest('GET', '/')), $params);
-    }
-
-    public function pubConsiderProvisions($requested)
-    {
-        return $this->considerProvisions($requested);
-    }
-
-    public function pubNotifyApproved($requested, $provided, $request = null, $params = [])
-    {
-        $this->notifyApproved($requested, $provided, new Request(new ServerRequest('GET', '/')), $params);
-    }
-
-    public function pubNotifyDeclined($requested, $provided, $request = null, $params = [])
-    {
-        $this->notifyDeclined($requested, $provided, new Request(new ServerRequest('GET', '/')), $params);
-    }
-
-    public function pubAuthorize($requested, $provided)
-    {
-        return $this->authorize($requested, $provided);
-    }
-
-    public function getMediated($decisionmap)
-    {
-        $this->decisionmap = $decisionmap;
-        $this->outcome = [];
-        return $this->when(new Request(new ServerRequest('GET', '/')), []);
     }
 }

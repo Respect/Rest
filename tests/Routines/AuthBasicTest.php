@@ -1,28 +1,29 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Routines;
 
-use Nyholm\Psr7\ServerRequest;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\Request;
 use Respect\Rest\Router;
+use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routines\AuthBasic;
 use Respect\Rest\Test\Stubs\DummyRoutine;
 
-/**
- * @covers Respect\Rest\Routines\AuthBasic
- */
+use function base64_encode;
+use function class_alias;
+use function func_get_args;
+
+/** @covers Respect\Rest\Routines\AuthBasic */
 final class AuthBasicTest extends TestCase
 {
-    private static $wantedParams;
-    private $router;
+    private Router $router;
 
-    public function shunt_wantedParams()
-    {
-        self::assertSame(self::$wantedParams, func_get_args(), 'wrong arguments were passed to the routine\'s callback');
-    }
+    /** @var array<int, mixed> */
+    private static array $wantedParams = [];
 
     protected function setUp(): void
     {
@@ -31,10 +32,17 @@ final class AuthBasicTest extends TestCase
         $this->router->methodOverriding = false;
     }
 
-    /**
-     * @covers Respect\Rest\Routes\AbstractRoute::appendRoutine
-     */
-    public function test_pass_all_params_to_callback()
+    public function shunt_wantedParams(): void
+    {
+        self::assertSame(
+            self::$wantedParams,
+            func_get_args(),
+            'wrong arguments were passed to the routine\'s callback',
+        );
+    }
+
+    /** @covers Respect\Rest\Routes\AbstractRoute::appendRoutine */
+    public function test_pass_all_params_to_callback(): void
     {
         $user = 'John';
         $pass = 'Doe';
@@ -42,7 +50,7 @@ final class AuthBasicTest extends TestCase
         $param2 = 'def';
         self::$wantedParams = [$user, $pass, $param1, $param2];
 
-        $serverRequest = (new ServerRequest('GET', "/$param1/$param2"))
+        $serverRequest = (new ServerRequest('GET', '/' . $param1 . '/' . $param2))
             ->withHeader('Authorization', 'Basic ' . base64_encode($user . ':' . $pass));
         $request = new Request($serverRequest);
         $request->route = $this->createRouteWithResponseFactory();
@@ -51,98 +59,113 @@ final class AuthBasicTest extends TestCase
         $routine->by($request, [$param1, $param2]);
     }
 
-    private function createRouteWithResponseFactory()
+    public function test_http_auth_should_send_401_and_WWW_headers_when_authentication_fails(): void
     {
-        $route = $this->createStub(\Respect\Rest\Routes\AbstractRoute::class);
-        $route->responseFactory = new Psr17Factory();
-        return $route;
-    }
-
-    public function test_http_auth_should_send_401_and_WWW_headers_when_authentication_fails()
-    {
-        $auth = function($username, $password) {
+        $auth = static function ($username, $password) {
                         return true;
-            };
-        $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
+        };
+        $this->router->get('/', 'ok')->authBasic('Test Realm', $auth);
         $response = $this->router->dispatch(new ServerRequest('get', '/'))->response();
+        self::assertNotNull($response);
         self::assertEquals(401, $response->getStatusCode());
         self::assertEquals('Basic realm="Test Realm"', $response->getHeaderLine('WWW-Authenticate'));
     }
 
-    public function test_http_auth_should_return_401_with_body_on_failure()
+    public function test_http_auth_should_return_401_with_body_on_failure(): void
     {
-        $auth = function($username, $password) {
-                    if ($username === null && $password === null) {
-                        return 'Login';
-                    }
+        $auth = static function ($username, $password) {
+            if ($username === null && $password === null) {
+                return 'Login';
+            }
+
                     return true;
-            };
-        $this->router->get('/', 'ok')->authBasic("Test Realm", $auth);
+        };
+        $this->router->get('/', 'ok')->authBasic('Test Realm', $auth);
         $response = $this->router->dispatch(new ServerRequest('get', '/'))->response();
+        self::assertNotNull($response);
         self::assertEquals(401, $response->getStatusCode());
         self::assertEquals('Login', (string) $response->getBody());
         self::assertEquals('Basic realm="Test Realm"', $response->getHeaderLine('WWW-Authenticate'));
     }
 
-    public function test_auth_basic_request_should_be_aware_of_Authorization_headers()
+    public function test_auth_basic_request_should_be_aware_of_Authorization_headers(): void
     {
         $user           = 'John';
         $pass           = 'Doe';
         $checkpoint     = false;
         $serverRequest = (new ServerRequest('GET', '/'))
-            ->withHeader('Authorization', 'Basic ' . base64_encode($user.':'.$pass));
-        $this->router->get('/', 'ok')->authBasic("Test Realm", function($username, $password) use (&$checkpoint, $user, $pass) {
-                        if (($username == $user) && ($password == $pass)) {
-                            $checkpoint = true;
-                            return true;
-                        }
-                        return false;
-                     });
+            ->withHeader('Authorization', 'Basic ' . base64_encode($user . ':' . $pass));
+        $this->router->get('/', 'ok')->authBasic(
+            'Test Realm',
+            static function ($username, $password) use (&$checkpoint, $user, $pass) {
+                if (($username == $user) && ($password == $pass)) {
+                    $checkpoint = true;
+
+                    return true;
+                }
+
+                return false;
+            },
+        );
         $response = $this->router->dispatch($serverRequest)->response();
+        self::assertNotNull($response);
         self::assertTrue($checkpoint, 'Auth not run');
         self::assertNotEquals(401, $response->getStatusCode());
     }
 
-    public function test_auth_basic_authorized_via_authorization_header()
+    public function test_auth_basic_authorized_via_authorization_header(): void
     {
         $user           = 'John';
         $pass           = 'Doe';
         $checkpoint     = false;
         $serverRequest = (new ServerRequest('GET', '/'))
-            ->withHeader('Authorization', 'Basic ' . base64_encode($user.':'.$pass));
-        $this->router->get('/', 'ok')->authBasic("Test Realm", function($username, $password) use (&$checkpoint, $user, $pass) {
-                        if (($username == $user) && ($password == $pass)) {
-                            $checkpoint = true;
-                            return true;
-                        }
-                        return false;
-                     });
+            ->withHeader('Authorization', 'Basic ' . base64_encode($user . ':' . $pass));
+        $this->router->get('/', 'ok')->authBasic(
+            'Test Realm',
+            static function ($username, $password) use (&$checkpoint, $user, $pass) {
+                if (($username == $user) && ($password == $pass)) {
+                    $checkpoint = true;
+
+                    return true;
+                }
+
+                return false;
+            },
+        );
         $response = $this->router->dispatch($serverRequest)->response();
+        self::assertNotNull($response);
         self::assertTrue($checkpoint, 'Auth not run');
         self::assertNotEquals(401, $response->getStatusCode());
     }
 
-    public function test_auth_basic_pass_all_parameters_to_routine()
+    public function test_auth_basic_pass_all_parameters_to_routine(): void
     {
         $user = 'John';
         $pass = 'Doe';
         $param1 = 'parameterX';
         $param2 = 'parameterY';
         $checkpoint = false;
-        $serverRequest = (new ServerRequest('GET', "/$param1/$param2"))
-            ->withHeader('Authorization', 'Basic ' . base64_encode($user.':'.$pass));
-        $this->router->get('/*/*', 'ok')->authBasic("Test Realm", function($username, $password, $p1=null, $p2=null) use (&$checkpoint, $user, $pass, $param1, $param2)
-        {
-            if ($username === null && $password === null) {
-                return 'Unauthorized';
-            }
-            if (($p1 === $param1) && $p2 === $param2) {
-                $checkpoint = true;
-                return true;
-            }
-            return false;
-        });
-        (string)$this->router->dispatch($serverRequest)->response()->getBody();
+        $serverRequest = (new ServerRequest('GET', '/' . $param1 . '/' . $param2))
+            ->withHeader('Authorization', 'Basic ' . base64_encode($user . ':' . $pass));
+        $this->router->get('/*/*', 'ok')->authBasic(
+            'Test Realm',
+            static function ($username, $password, $p1 = null, $p2 = null) use (&$checkpoint, $param1, $param2) {
+                if ($username === null && $password === null) {
+                    return 'Unauthorized';
+                }
+
+                if (($p1 === $param1) && $p2 === $param2) {
+                    $checkpoint = true;
+
+                    return true;
+                }
+
+                return false;
+            },
+        );
+        $resp = $this->router->dispatch($serverRequest)->response();
+        self::assertNotNull($resp);
+        (string) $resp->getBody();
         self::assertTrue($checkpoint, 'Parameters passed incorrectly');
     }
 
@@ -151,24 +174,23 @@ final class AuthBasicTest extends TestCase
      * @group issues
      * @ticket 49
      */
-    public function test_http_auth_should_send_401_and_WWW_headers_when_authBasic_returns_false()
+    public function test_http_auth_should_send_401_and_WWW_headers_when_authBasic_returns_false(): void
     {
         $user = 'John';
         $pass = 'Doe';
         $serverRequest = (new ServerRequest('GET', '/'))
-            ->withHeader('Authorization', 'Basic ' . base64_encode($user.':'.$pass));
-        $this->router->get('/', 'ok')->authBasic('Test Realm', function($username, $password) {
-            return (($username == 'user') && ($password == 'pass'));
+            ->withHeader('Authorization', 'Basic ' . base64_encode($user . ':' . $pass));
+        $this->router->get('/', 'ok')->authBasic('Test Realm', static function ($username, $password) {
+            return ($username == 'user') && ($password == 'pass');
         });
         $response = $this->router->dispatch($serverRequest)->response();
+        self::assertNotNull($response);
         self::assertEquals(401, $response->getStatusCode());
         self::assertEquals('Basic realm="Test Realm"', $response->getHeaderLine('WWW-Authenticate'));
     }
 
-    /**
-     * @covers Respect\Rest\Router::always
-     */
-    public function test_always_can_take_multiple_parameters_for_routine_constructor()
+    /** @covers Respect\Rest\Router::always */
+    public function test_always_can_take_multiple_parameters_for_routine_constructor(): void
     {
         // Router::always() resolves routines by name under Respect\Rest\Routines\
         class_alias(DummyRoutine::class, 'Respect\Rest\Routines\DummyRoutine');
@@ -177,5 +199,13 @@ final class AuthBasicTest extends TestCase
         $r3 = new Router(new Psr17Factory());
         $r3->always('dummyRoutine', 'arg1', 'arg2', 'arg3');
         self::assertEquals('arg1, arg2, arg3', DummyRoutine::$result);
+    }
+
+    private function createRouteWithResponseFactory(): AbstractRoute
+    {
+        $route = $this->createStub(AbstractRoute::class);
+        $route->responseFactory = new Psr17Factory();
+
+        return $route;
     }
 }

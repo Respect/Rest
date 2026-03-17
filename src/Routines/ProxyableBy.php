@@ -9,6 +9,10 @@ use Respect\Rest\Request;
 /** Routine that runs before the route */
 interface ProxyableBy
 {
-    /** Executed before the route */
+    /**
+     * Executed before the route
+     *
+     * @param array<int, mixed> $params
+     */
     public function by(Request $request, array $params): mixed;
 }

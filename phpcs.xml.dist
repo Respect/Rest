@@ -14,4 +14,12 @@
     <file>tests/</file>
 
     <rule ref="Respect" />
+
+    <!-- Snake_case test method names are a legitimate convention -->
+    <rule ref="Generic.NamingConventions.CamelCapsFunctionName.ScopeNotCamelCaps">
+        <exclude-pattern>tests/</exclude-pattern>
+    </rule>
+    <rule ref="PSR1.Methods.CamelCapsMethodName.NotCamelCaps">
+        <exclude-pattern>tests/</exclude-pattern>
+    </rule>
 </ruleset>

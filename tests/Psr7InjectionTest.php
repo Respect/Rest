@@ -1,15 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test;
 
-use Nyholm\Psr7\ServerRequest;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Respect\Rest\Router;
+
+use function func_get_args;
+use function implode;
+use function strtoupper;
 
 /**
  * Tests that route callbacks and routines can type-hint PSR-7 interfaces
@@ -27,7 +32,7 @@ final class Psr7InjectionTest extends TestCase
     #[Test]
     public function callbackReceivesServerRequestWhenTypeHinted(): void
     {
-        $this->router->get('/users/*', function (string $name, ServerRequestInterface $request) {
+        $this->router->get('/users/*', static function (string $name, ServerRequestInterface $request) {
             return $name . ':' . $request->getHeaderLine('X-Custom');
         });
 
@@ -42,10 +47,10 @@ final class Psr7InjectionTest extends TestCase
     #[Test]
     public function callbackReceivesResponseInterfaceWhenTypeHinted(): void
     {
-        $this->router->get('/download/*', function (string $file, ResponseInterface $response) {
+        $this->router->get('/download/*', static function (string $file, ResponseInterface $response) {
             return $response
                 ->withHeader('Content-Type', 'application/octet-stream')
-                ->withHeader('Content-Disposition', "attachment; filename=\"{$file}\"");
+                ->withHeader('Content-Disposition', 'attachment; filename="' . $file . '"');
         });
 
         $response = $this->router->dispatch(new ServerRequest('GET', '/download/report.pdf'))->response();
@@ -58,9 +63,10 @@ final class Psr7InjectionTest extends TestCase
     #[Test]
     public function callbackReceivesBothRequestAndResponse(): void
     {
-        $this->router->get('/echo', function (ServerRequestInterface $req, ResponseInterface $res) {
+        $this->router->get('/echo', static function (ServerRequestInterface $req, ResponseInterface $res) {
             $body = $req->getHeaderLine('X-Echo');
             $res->getBody()->write($body);
+
             return $res->withHeader('X-Echoed', 'true');
         });
 
@@ -76,8 +82,8 @@ final class Psr7InjectionTest extends TestCase
     #[Test]
     public function callbackWithoutTypeHintsStillWorks(): void
     {
-        $this->router->get('/simple/*', function ($name) {
-            return "Hello, {$name}!";
+        $this->router->get('/simple/*', static function ($name) {
+            return 'Hello, ' . $name . '!';
         });
 
         $response = $this->router->dispatch(new ServerRequest('GET', '/simple/world'))->response();
@@ -89,7 +95,7 @@ final class Psr7InjectionTest extends TestCase
     #[Test]
     public function callbackWithNoParametersStillReceivesUrlParams(): void
     {
-        $this->router->get('/variadic/*', function () {
+        $this->router->get('/variadic/*', static function () {
             return implode(',', func_get_args());
         });
 
@@ -102,13 +108,14 @@ final class Psr7InjectionTest extends TestCase
     #[Test]
     public function psrParametersCanAppearAnywhere(): void
     {
-        $this->router->get('/mixed/*/*', function (
+        $this->router->get('/mixed/*/*', static function (
             string $first,
             ServerRequestInterface $req,
             string $second,
             ResponseInterface $res,
         ) {
-            $res->getBody()->write("{$first}-{$second}-" . $req->getMethod());
+            $res->getBody()->write($first . '-' . $second . '-' . $req->getMethod());
+
             return $res;
         });
 
@@ -122,9 +129,9 @@ final class Psr7InjectionTest extends TestCase
     public function routineByCallbackReceivesRequestWhenTypeHinted(): void
     {
         $captured = null;
-        $this->router->get('/guarded', function () {
+        $this->router->get('/guarded', static function () {
             return 'ok';
-        })->by(function (ServerRequestInterface $req) use (&$captured) {
+        })->by(static function (ServerRequestInterface $req) use (&$captured): void {
             $captured = $req->getHeaderLine('Authorization');
         });
 
@@ -138,10 +145,10 @@ final class Psr7InjectionTest extends TestCase
     #[Test]
     public function routineThroughCallbackReceivesResponseWhenTypeHinted(): void
     {
-        $this->router->get('/wrapped', function () {
+        $this->router->get('/wrapped', static function () {
             return 'content';
-        })->through(function (ResponseInterface $res) {
-            return function ($data) {
+        })->through(static function (ResponseInterface $res) {
+            return static function ($data) {
                 return strtoupper($data);
             };
         });

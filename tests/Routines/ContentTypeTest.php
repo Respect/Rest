@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Routines;
@@ -8,25 +9,25 @@ use PHPUnit\Framework\TestCase;
 use Respect\Rest\Request;
 use Respect\Rest\Routines\ContentType;
 
-/**
- * @covers Respect\Rest\Routines\ContentType
- */
+/** @covers Respect\Rest\Routines\ContentType */
 final class ContentTypeTest extends TestCase
 {
-    protected $object;
+    protected ContentType $object;
 
     protected function setUp(): void
     {
         $this->object = new ContentType([
-            'text/html' => function (){return 'from html callback';},
-            'application/json' => function (){return 'from json callback';},
+            'text/html' => static function () {
+                return 'from html callback';
+            },
+            'application/json' => static function () {
+                return 'from json callback';
+            },
         ]);
     }
 
-    /**
-     * @covers Respect\Rest\Routines\ContentType::by
-     */
-    public function testBy()
+    /** @covers Respect\Rest\Routines\ContentType::by */
+    public function testBy(): void
     {
         $params = [];
         $alias = &$this->object;

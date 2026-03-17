@@ -15,6 +15,7 @@ final class StaticValue extends AbstractRoute
     public function __construct(string $method, string $pattern, protected mixed $value)
     {
         parent::__construct($method, $pattern);
+
         $this->reflection = new ReflectionMethod($this, 'returnValue');
     }
 
@@ -23,6 +24,7 @@ final class StaticValue extends AbstractRoute
         return $this->reflection;
     }
 
+    /** @param array<int, mixed> $params */
     public function runTarget(string $method, array &$params, Request $request): mixed
     {
         return $this->returnValue();

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Routines;
@@ -7,13 +8,12 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\Request;
 use Respect\Rest\Test\Stubs\Negotiator;
+use TypeError;
 
-/**
- * @covers Respect\Rest\Routines\AbstractCallbackMediator
- */
+/** @covers Respect\Rest\Routines\AbstractCallbackMediator */
 final class CallbackMediatorTest extends TestCase
 {
-    protected $neg;
+    protected Negotiator $neg;
 
     protected function setUp(): void
     {
@@ -23,12 +23,7 @@ final class CallbackMediatorTest extends TestCase
         $this->neg->getMediated($a);
     }
 
-    protected function tearDown(): void
-    {
-        unset($this->neg);
-    }
-
-    public function testNegatiatorMock()
+    public function testNegatiatorMock(): void
     {
         $neg = new Negotiator();
         $a = ['ZZ' => ['ZZ']];
@@ -37,27 +32,21 @@ final class CallbackMediatorTest extends TestCase
         self::assertTrue($neg->outcome['approved']);
     }
 
-    /**
-     * @covers Respect\Rest\Routines\AbstractCallbackMediator::identifyRequested
-     */
-    public function testIdentifyRequested()
+    /** @covers Respect\Rest\Routines\AbstractCallbackMediator::identifyRequested */
+    public function testIdentifyRequested(): void
     {
         self::assertContains('a', $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/'))));
     }
 
-    /**
-     * @covers Respect\Rest\Routines\AbstractCallbackMediator::considerProvisions
-     */
-    public function testConsiderProvisions()
+    /** @covers Respect\Rest\Routines\AbstractCallbackMediator::considerProvisions */
+    public function testConsiderProvisions(): void
     {
         $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
         self::assertContains('a', $this->neg->pubConsiderProvisions($r[0]));
     }
 
-    /**
-     * @covers Respect\Rest\Routines\AbstractCallbackMediator::notifyApproved
-     */
-    public function testNotifyApproved()
+    /** @covers Respect\Rest\Routines\AbstractCallbackMediator::notifyApproved */
+    public function testNotifyApproved(): void
     {
         $asrt = 'a';
         $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
@@ -69,10 +58,8 @@ final class CallbackMediatorTest extends TestCase
         self::assertTrue($this->neg->outcome['approved']);
     }
 
-    /**
-     * @covers Respect\Rest\Routines\AbstractCallbackMediator::notifyDeclined
-     */
-    public function testNotifyDeclined()
+    /** @covers Respect\Rest\Routines\AbstractCallbackMediator::notifyDeclined */
+    public function testNotifyDeclined(): void
     {
         $asrt = 'a';
         $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
@@ -84,10 +71,8 @@ final class CallbackMediatorTest extends TestCase
         self::assertFalse($this->neg->outcome['approved']);
     }
 
-    /**
-     * @covers Respect\Rest\Routines\AbstractCallbackMediator::when
-     */
-    public function testWhen()
+    /** @covers Respect\Rest\Routines\AbstractCallbackMediator::when */
+    public function testWhen(): void
     {
         $neg = new Negotiator();
         $asrt = 'h';
@@ -131,7 +116,7 @@ final class CallbackMediatorTest extends TestCase
      * @covers Respect\Rest\Request
      * @covers Respect\Rest\Routines\CallbackList
      */
-    public function testMediate()
+    public function testMediate(): void
     {
         $neg = new Negotiator();
         $a = ['ZZ' => ['ZZ']];
@@ -140,15 +125,13 @@ final class CallbackMediatorTest extends TestCase
         self::assertTrue($neg->outcome['approved']);
     }
 
-    /**
-     * @covers Respect\Rest\Routines\AbstractCallbackMediator::authorize
-     */
-    public function testAuthorize()
+    /** @covers Respect\Rest\Routines\AbstractCallbackMediator::authorize */
+    public function testAuthorize(): void
     {
         $r = $this->neg->pubIdentifyRequested(new Request(new ServerRequest('GET', '/')));
         $p = $this->neg->pubConsiderProvisions($r[0]);
         self::assertTrue($this->neg->pubAuthorize($r[0], $p[0]));
-        self::assertFalse($this->neg->pubAuthorize($r[0], $p[0].'a'));
+        self::assertFalse($this->neg->pubAuthorize($r[0], $p[0] . 'a'));
     }
 
     public function test_requested_non_array_returns_false(): void
@@ -160,7 +143,13 @@ final class CallbackMediatorTest extends TestCase
     public function test_provisions_exception(): void
     {
         $neg = new Negotiator();
-        self::expectException(\TypeError::class);
+        self::expectException(TypeError::class);
+        /** @phpstan-ignore-next-line intentionally passing invalid type to test TypeError */
         $neg->getMediated(['a' => 'not an array']);
+    }
+
+    protected function tearDown(): void
+    {
+        unset($this->neg);
     }
 }

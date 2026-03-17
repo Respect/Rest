@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test;
@@ -9,12 +10,19 @@ use Psr\Http\Message\StreamInterface;
 use Respect\Rest\Stream;
 use RuntimeException;
 
+use function fopen;
+use function fread;
+use function fwrite;
+use function rewind;
+
 final class StreamTest extends TestCase
 {
     #[Test]
     public function implementsStreamInterface(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
         self::assertInstanceOf(StreamInterface::class, $stream);
     }
 
@@ -22,6 +30,7 @@ final class StreamTest extends TestCase
     public function constructorRejectsNonResource(): void
     {
         self::expectException(RuntimeException::class);
+        /** @phpstan-ignore-next-line intentionally passing invalid type */
         new Stream('not a resource');
     }
 
@@ -29,6 +38,7 @@ final class StreamTest extends TestCase
     public function toStringReturnsContents(): void
     {
         $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
         fwrite($resource, 'hello world');
         $stream = new Stream($resource);
 
@@ -39,6 +49,7 @@ final class StreamTest extends TestCase
     public function toStringReturnsEmptyAfterDetach(): void
     {
         $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
         fwrite($resource, 'data');
         $stream = new Stream($resource);
         $stream->detach();
@@ -50,6 +61,7 @@ final class StreamTest extends TestCase
     public function closeReleasesResource(): void
     {
         $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
         $stream = new Stream($resource);
         $stream->close();
 
@@ -61,6 +73,7 @@ final class StreamTest extends TestCase
     public function detachReturnsResourceAndNullsInternal(): void
     {
         $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
         $stream = new Stream($resource);
         $detached = $stream->detach();
 
@@ -72,6 +85,7 @@ final class StreamTest extends TestCase
     public function getSizeReturnsStreamSize(): void
     {
         $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
         fwrite($resource, 'abcdef');
         $stream = new Stream($resource);
 
@@ -82,6 +96,7 @@ final class StreamTest extends TestCase
     public function getSizeReturnsNullAfterDetach(): void
     {
         $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
         $stream = new Stream($resource);
         $stream->detach();
 
@@ -92,6 +107,7 @@ final class StreamTest extends TestCase
     public function tellReportsPosition(): void
     {
         $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
         fwrite($resource, 'abcdef');
         rewind($resource);
         fread($resource, 3);
@@ -103,7 +119,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function tellThrowsAfterDetach(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
         $stream->detach();
 
         self::expectException(RuntimeException::class);
@@ -114,6 +132,7 @@ final class StreamTest extends TestCase
     public function eofReturnsTrueAtEnd(): void
     {
         $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
         fwrite($resource, 'ab');
         rewind($resource);
         fread($resource, 10);
@@ -125,7 +144,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function eofReturnsTrueAfterDetach(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
         $stream->detach();
 
         self::assertTrue($stream->eof());
@@ -134,7 +155,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function isSeekableForTempStream(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
 
         self::assertTrue($stream->isSeekable());
     }
@@ -143,6 +166,7 @@ final class StreamTest extends TestCase
     public function seekAndRewind(): void
     {
         $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
         fwrite($resource, 'abcdef');
         $stream = new Stream($resource);
 
@@ -156,7 +180,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function seekThrowsOnNonSeekableAfterDetach(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
         $stream->detach();
 
         self::expectException(RuntimeException::class);
@@ -166,7 +192,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function streamIsNotWritable(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
 
         self::assertFalse($stream->isWritable());
     }
@@ -174,7 +202,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function writeThrows(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
 
         self::expectException(RuntimeException::class);
         $stream->write('data');
@@ -183,7 +213,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function streamIsReadable(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
 
         self::assertTrue($stream->isReadable());
     }
@@ -192,6 +224,7 @@ final class StreamTest extends TestCase
     public function readReturnsData(): void
     {
         $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
         fwrite($resource, 'hello');
         rewind($resource);
         $stream = new Stream($resource);
@@ -203,7 +236,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function readThrowsAfterDetach(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
         $stream->detach();
 
         self::expectException(RuntimeException::class);
@@ -214,6 +249,7 @@ final class StreamTest extends TestCase
     public function getContentsFromCurrentPosition(): void
     {
         $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
         fwrite($resource, 'abcdef');
         rewind($resource);
         fread($resource, 2);
@@ -225,7 +261,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function getContentsThrowsAfterDetach(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
         $stream->detach();
 
         self::expectException(RuntimeException::class);
@@ -235,7 +273,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function getMetadataReturnsArray(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
         $meta = $stream->getMetadata();
 
         self::assertIsArray($meta);
@@ -245,7 +285,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function getMetadataByKey(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
 
         self::assertEquals('php://temp', $stream->getMetadata('uri'));
         self::assertNull($stream->getMetadata('nonexistent'));
@@ -254,7 +296,9 @@ final class StreamTest extends TestCase
     #[Test]
     public function getMetadataAfterDetach(): void
     {
-        $stream = new Stream(fopen('php://temp', 'r+'));
+        $resource = fopen('php://temp', 'r+');
+        self::assertIsResource($resource);
+        $stream = new Stream($resource);
         $stream->detach();
 
         self::assertEquals([], $stream->getMetadata());

@@ -7,8 +7,14 @@ namespace Respect\Rest\Routines;
 use ArrayObject;
 use Respect\Rest\Request;
 
+use function array_merge_recursive;
+use function is_array;
+use function is_callable;
+
+/** @extends ArrayObject<string, mixed> */
 final class Rel extends ArrayObject implements Routinable, ProxyableThrough
 {
+    /** @param array<string, mixed> $list */
     public function __construct(array $list)
     {
         $this->setFlags(self::ARRAY_AS_PROPS);
@@ -19,7 +25,9 @@ final class Rel extends ArrayObject implements Routinable, ProxyableThrough
     {
         if (is_callable($relSpec)) {
             return $relSpec($data);
-        } elseif ($deep && is_array($relSpec)) {
+        }
+
+        if ($deep && is_array($relSpec)) {
             foreach ($relSpec as &$r) {
                 $r = $this->extractLinks($data, $r, false);
             }
@@ -30,11 +38,12 @@ final class Rel extends ArrayObject implements Routinable, ProxyableThrough
         return $relSpec;
     }
 
+    /** @param array<int, mixed> $params */
     public function through(Request $request, array $params): mixed
     {
         $rels = $this;
 
-        return function ($data) use ($rels) {
+        return static function ($data) use ($rels) {
             foreach ($rels as &$r) {
                 $r = $rels->extractLinks($data, $r);
             }

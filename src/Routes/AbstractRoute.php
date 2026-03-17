@@ -4,18 +4,44 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
+use JsonSerializable;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
 use ReflectionFunctionAbstract;
 use ReflectionNamedType;
-use Respect\Rest\Stream;
 use Respect\Rest\Request;
 use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\Unique;
+use Respect\Rest\Stream;
+
+use function array_pop;
+use function array_shift;
+use function assert;
+use function end;
+use function explode;
+use function is_a;
+use function is_array;
+use function is_resource;
+use function is_string;
+use function json_encode;
+use function ltrim;
+use function preg_match;
+use function preg_quote;
+use function preg_replace;
+use function rtrim;
+use function spl_object_hash;
+use function sprintf;
+use function str_replace;
+use function stripos;
+use function strlen;
+use function strripos;
+use function strtoupper;
+use function substr;
+use function ucfirst;
 
 /**
  * Base class for all Routes
@@ -32,31 +58,149 @@ use Respect\Rest\Routines\Unique;
  * @method self userAgent(mixed ...$args)
  * @method self when(mixed ...$args)
  */
+// phpcs:ignore SlevomatCodingStandard.Classes.SuperfluousAbstractClassNaming.SuperfluousPrefix
 abstract class AbstractRoute
 {
-    const string CATCHALL_IDENTIFIER = '/**';
-    const string PARAM_IDENTIFIER = '/*';
-    const string QUOTED_PARAM_IDENTIFIER = '/\*';
-    const string REGEX_CATCHALL = '(/.*)?';
-    const string REGEX_SINGLE_PARAM = '/([^/]+)';
-    const string REGEX_ENDING_PARAM = '#/\(\[\^/\]\+\)#';
-    const string REGEX_OPTIONAL_PARAM = '(?:/([^/]+))?';
-    const string REGEX_INVALID_OPTIONAL_PARAM = '#\(\?\:/\(\[\^/\]\+\)\)\?/#';
+    public const string CATCHALL_IDENTIFIER = '/**';
+    public const string PARAM_IDENTIFIER = '/*';
+    public const string QUOTED_PARAM_IDENTIFIER = '/\*';
+    public const string REGEX_CATCHALL = '(/.*)?';
+    public const string REGEX_SINGLE_PARAM = '/([^/]+)';
+    public const string REGEX_ENDING_PARAM = '#/\(\[\^/\]\+\)#';
+    public const string REGEX_OPTIONAL_PARAM = '(?:/([^/]+))?';
+    public const string REGEX_INVALID_OPTIONAL_PARAM = '#\(\?\:/\(\[\^/\]\+\)\)\?/#';
 
     public string $method = '';
-    public string $pattern = '';
+
     public string $regexForMatch = '';
+
     public string $regexForReplace = '';
+
     /** @var array<string, Routinable> */
     public array $routines = [];
+
     /** @var array<int, AbstractRoute> */
     public array $sideRoutes = [];
-    public ?string $virtualHost = null;
-    public ?ResponseFactoryInterface $responseFactory = null;
 
-    abstract public function getReflection(string $method): ?ReflectionFunctionAbstract;
+    public string|null $virtualHost = null;
 
+    public ResponseFactoryInterface|null $responseFactory = null;
+
+    public function __construct(string $method, public string $pattern = '')
+    {
+        $this->method = strtoupper($method);
+
+        [$this->regexForMatch, $this->regexForReplace]
+            = $this->createRegexPatterns($pattern);
+    }
+
+    abstract public function getReflection(string $method): ReflectionFunctionAbstract|null;
+
+    /** @param array<int, mixed> $params */
     abstract public function runTarget(string $method, array &$params, Request $request): mixed;
+
+    /** Wraps a mixed value into a PSR-7 ResponseInterface */
+    public function wrapResponse(mixed $result): ResponseInterface
+    {
+        if ($result instanceof ResponseInterface) {
+            return $result;
+        }
+
+        assert($this->responseFactory !== null);
+        $response = $this->responseFactory->createResponse();
+
+        if (is_resource($result)) {
+            return $response->withBody(new Stream($result));
+        }
+
+        if (is_array($result) || $result instanceof JsonSerializable) {
+            $response->getBody()->write((string) json_encode($result));
+
+            return $response->withHeader('Content-Type', 'application/json');
+        }
+
+        $response->getBody()->write((string) $result);
+
+        return $response;
+    }
+
+    /** @return static */
+    public function appendRoutine(Routinable $routine): static
+    {
+        $key = $routine instanceof Unique ? $routine::class : spl_object_hash($routine);
+
+        $this->routines[$key] = $routine;
+
+        return $this;
+    }
+
+    public function createUri(mixed ...$params): string
+    {
+        $params = preg_replace('#(?<!^)/? *$#', '', $params);
+
+        // phpcs:ignore SlevomatCodingStandard.PHP.OptimizedFunctionsWithoutUnpacking.UnpackingUsed
+        return rtrim((string) $this->virtualHost, ' /') . sprintf($this->regexForReplace, ...$params);
+    }
+
+    /** @param array<int, mixed> $params */
+    public function matchRoutines(Request $request, array $params = []): bool
+    {
+        foreach ($this->routines as $routine) {
+            if (
+                $routine instanceof ProxyableWhen
+                && !$request->routineCall(
+                    'when',
+                    $request->method,
+                    $routine,
+                    $params,
+                )
+            ) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /** @param array<int, mixed> $params */
+    public function match(Request $request, array &$params = []): bool
+    {
+        $params = [];
+        $matchUri = $request->uri;
+
+        foreach ($this->routines as $routine) {
+            if (!($routine instanceof IgnorableFileExtension)) {
+                continue;
+            }
+
+            $matchUri = preg_replace(
+                '#(\.[\w\d\-_.~\+]+)*$#',
+                '',
+                $request->uri,
+            ) ?? $request->uri;
+        }
+
+        if (!preg_match($this->regexForMatch, $matchUri, $params)) {
+            return false;
+        }
+
+        array_shift($params);
+
+        $lastParam = end($params);
+        if (
+            stripos($this->pattern, '/**') !== false
+            && is_string($lastParam) && stripos($lastParam, '/') !== false
+        ) {
+            $lastParam = (string) array_pop($params);
+            $params[] = explode('/', ltrim($lastParam, '/'));
+        } elseif (
+            stripos($this->pattern, '/**') !== false && !isset($params[0])
+        ) {
+            $params[] = [];
+        }
+
+        return true;
+    }
 
     /**
      * Resolves callback arguments by inspecting parameter types via reflection.
@@ -65,6 +209,7 @@ abstract class AbstractRoute
      * injected automatically. All other parameters consume URL params positionally.
      *
      * @param array<int, mixed> $params URL-extracted parameters
+     *
      * @return array<int, mixed> Resolved argument list
      */
     protected function resolveCallbackArguments(
@@ -95,14 +240,15 @@ abstract class AbstractRoute
                     continue;
                 }
 
-                if (is_a($typeName, ResponseInterface::class, true)) {
+                if (is_a($typeName, ResponseInterface::class, true) && $this->responseFactory !== null) {
                     $args[] = $this->responseFactory->createResponse();
                     $hasPsrInjection = true;
                     continue;
                 }
             }
 
-            $args[] = $params[$paramIndex] ?? ($refParam->isDefaultValueAvailable() ? $refParam->getDefaultValue() : null);
+            $default = $refParam->isDefaultValueAvailable() ? $refParam->getDefaultValue() : null;
+            $args[] = $params[$paramIndex] ?? $default;
             $paramIndex++;
         }
 
@@ -114,163 +260,37 @@ abstract class AbstractRoute
         return $args;
     }
 
-    /** Wraps a mixed value into a PSR-7 ResponseInterface */
-    public function wrapResponse(mixed $result): ResponseInterface
-    {
-        if ($result instanceof ResponseInterface) {
-            return $result;
-        }
-
-        $response = $this->responseFactory->createResponse();
-
-        if (is_resource($result)) {
-            return $response->withBody(new Stream($result));
-        }
-
-        if (is_array($result) || $result instanceof \JsonSerializable) {
-            $response->getBody()->write(json_encode($result));
-            return $response->withHeader('Content-Type', 'application/json');
-        }
-
-        $response->getBody()->write((string) $result);
-
-        return $response;
-    }
-
-    public function __construct(string $method, string $pattern)
-    {
-        $this->pattern = $pattern;
-        $this->method = strtoupper($method);
-
-        [$this->regexForMatch, $this->regexForReplace]
-            = $this->createRegexPatterns($pattern);
-    }
-
-    /**
-     * Magic routine builder — instantiates a Routine by name and appends it.
-     *
-     * @return static
-     */
-    public function __call(string $method, array $arguments): static
-    {
-        $reflection = new ReflectionClass(
-            'Respect\\Rest\\Routines\\' . ucfirst($method)
-        );
-
-        return $this->appendRoutine($reflection->newInstanceArgs($arguments));
-    }
-
-    /** @return static */
-    public function appendRoutine(Routinable $routine): static
-    {
-        $key = $routine instanceof Unique
-            ? get_class($routine)
-            : spl_object_hash($routine);
-
-        $this->routines[$key] = $routine;
-
-        return $this;
-    }
-
-    public function createUri(mixed ...$params): string
-    {
-        array_unshift($params, $this->regexForReplace);
-
-        $params = preg_replace('#(?<!^)/? *$#', '', $params);
-
-        return rtrim((string) $this->virtualHost, ' /') . sprintf(...$params);
-    }
-
-    /** @param array<int, mixed> $params */
-    public function matchRoutines(Request $request, array $params = []): bool
-    {
-        foreach ($this->routines as $routine) {
-            if (
-                $routine instanceof ProxyableWhen
-                && !$request->routineCall(
-                    'when',
-                    $request->method,
-                    $routine,
-                    $params
-                )
-            ) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    /** @param array<int, mixed> $params */
-    public function match(Request $request, array &$params = []): bool
-    {
-        $params = [];
-        $matchUri = $request->uri;
-
-        foreach ($this->routines as $routine) {
-            if ($routine instanceof IgnorableFileExtension) {
-                $matchUri = preg_replace(
-                    '#(\.[\w\d\-_.~\+]+)*$#',
-                    '',
-                    $request->uri
-                );
-            }
-        }
-
-        if (!preg_match($this->regexForMatch, $matchUri, $params)) {
-            return false;
-        }
-
-        array_shift($params);
-
-        $lastParam = end($params);
-        if (
-            false !== stripos($this->pattern, '/**')
-            && is_string($lastParam) && false !== stripos($lastParam, '/')
-        ) {
-            $lastParam = array_pop($params);
-            $params[] = explode('/', ltrim($lastParam, '/'));
-        } elseif (
-            false !== stripos($this->pattern, '/**') && !isset($params[0])
-        ) {
-            $params[] = [];
-        }
-
-        return true;
-    }
-
     /** @return array{string, string} */
     protected function createRegexPatterns(string $pattern): array
     {
         $extra = $this->extractCatchAllPattern($pattern);
 
         $matchPattern = str_replace(
-            static::QUOTED_PARAM_IDENTIFIER,
-            static::REGEX_SINGLE_PARAM,
+            self::QUOTED_PARAM_IDENTIFIER,
+            self::REGEX_SINGLE_PARAM,
             preg_quote(rtrim($pattern, ' /')),
-            $paramCount
+            $paramCount,
         );
 
         $pattern = rtrim($pattern);
 
         $replacePattern = str_replace(
-            static::PARAM_IDENTIFIER,
+            self::PARAM_IDENTIFIER,
             '/%s',
-            $pattern
+            $pattern,
         );
         $matchPattern = $this->fixOptionalParams($matchPattern);
-        $matchRegex = "#^{$matchPattern}{$extra}$#";
+        $matchRegex = '#^' . $matchPattern . $extra . '$#';
 
         return [$matchRegex, $replacePattern];
     }
 
     protected function extractCatchAllPattern(string &$pattern): string
     {
-        $extra = static::REGEX_CATCHALL;
+        $extra = self::REGEX_CATCHALL;
 
         if (
-            (strlen($pattern) - strlen(static::CATCHALL_IDENTIFIER))
-                === strripos($pattern, static::CATCHALL_IDENTIFIER)
+            strlen($pattern) - strlen(self::CATCHALL_IDENTIFIER) === strripos($pattern, self::CATCHALL_IDENTIFIER)
         ) {
             $pattern = substr($pattern, 0, -3);
         } else {
@@ -278,9 +298,9 @@ abstract class AbstractRoute
         }
 
         $pattern = str_replace(
-            static::CATCHALL_IDENTIFIER,
-            static::PARAM_IDENTIFIER,
-            $pattern
+            self::CATCHALL_IDENTIFIER,
+            self::PARAM_IDENTIFIER,
+            $pattern,
         );
 
         return $extra;
@@ -288,23 +308,40 @@ abstract class AbstractRoute
 
     protected function fixOptionalParams(string $quotedPattern): string
     {
+        $lastPos = strripos($quotedPattern, self::REGEX_SINGLE_PARAM);
         if (
-            strlen($quotedPattern) - strlen(static::REGEX_SINGLE_PARAM)
-            === strripos($quotedPattern, static::REGEX_SINGLE_PARAM)
+            strlen($quotedPattern) - strlen(self::REGEX_SINGLE_PARAM) === $lastPos
         ) {
             $quotedPattern = preg_replace(
-                static::REGEX_ENDING_PARAM,
-                static::REGEX_OPTIONAL_PARAM,
-                $quotedPattern
-            );
+                self::REGEX_ENDING_PARAM,
+                self::REGEX_OPTIONAL_PARAM,
+                $quotedPattern,
+            ) ?? $quotedPattern;
         }
 
-        $quotedPattern = preg_replace(
-            static::REGEX_INVALID_OPTIONAL_PARAM,
-            static::REGEX_SINGLE_PARAM . '/',
-            $quotedPattern
-        );
+        return preg_replace(
+            self::REGEX_INVALID_OPTIONAL_PARAM,
+            self::REGEX_SINGLE_PARAM . '/',
+            $quotedPattern,
+        ) ?? $quotedPattern;
+    }
 
-        return $quotedPattern;
+    /**
+     * Magic routine builder — instantiates a Routine by name and appends it.
+     *
+     * @param array<int, mixed> $arguments
+     *
+     * @return static
+     */
+    public function __call(string $method, array $arguments): static
+    {
+        /** @var class-string<Routinable> $className */
+        $className = 'Respect\\Rest\\Routines\\' . ucfirst($method);
+        $reflection = new ReflectionClass($className);
+        // phpcs:ignore SlevomatCodingStandard.PHP.RequireExplicitAssertion
+        /** @var Routinable $instance */
+        $instance = $reflection->newInstanceArgs($arguments);
+
+        return $this->appendRoutine($instance);
     }
 }

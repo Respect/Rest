@@ -6,7 +6,13 @@ namespace Respect\Rest\Routines;
 
 use InvalidArgumentException;
 
+use function class_exists;
+use function is_callable;
+use function is_string;
+use function method_exists;
+
 /** Base class for callback routines */
+// phpcs:ignore SlevomatCodingStandard.Classes.SuperfluousAbstractClassNaming.SuperfluousPrefix
 abstract class AbstractRoutine implements Routinable
 {
     protected mixed $callback;

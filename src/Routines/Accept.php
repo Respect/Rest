@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
+use function explode;
+use function strpos;
+
 /** Handles mime type content negotiation */
 final class Accept extends AbstractAccept
 {
-    const string ACCEPT_HEADER = 'HTTP_ACCEPT';
+    public const string ACCEPT_HEADER = 'HTTP_ACCEPT';
 
     protected function authorize(string $requested, string $provided): mixed
     {
@@ -15,7 +18,7 @@ final class Accept extends AbstractAccept
             return $provided;
         }
 
-        if (false !== strpos($requested, '/')) {
+        if (strpos($requested, '/') !== false) {
             [$requestedA, $requestedB] = explode('/', $requested);
             [$providedA] = explode('/', $provided);
 

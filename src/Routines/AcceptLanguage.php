@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
+use function explode;
+use function preg_replace;
+use function stripos;
+
 /** Handles Language content negotiation */
 final class AcceptLanguage extends AbstractAccept
 {
-    const string ACCEPT_HEADER = 'HTTP_ACCEPT_LANGUAGE';
+    public const string ACCEPT_HEADER = 'HTTP_ACCEPT_LANGUAGE';
 
     protected function authorize(string $requested, string $provided): mixed
     {
-        $requested = preg_replace('/^x\-/', '', $requested);
-        $provided = preg_replace('/^x\-/', '', $provided);
+        $requested = (string) preg_replace('/^x\-/', '', $requested);
+        $provided = (string) preg_replace('/^x\-/', '', $provided);
 
         if ($requested == $provided) {
             return $provided;
