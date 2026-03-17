@@ -11,8 +11,6 @@ use ReflectionFunctionAbstract;
 use ReflectionParameter;
 use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routines\ParamSynced;
-use Respect\Rest\Routines\ProxyableBy;
-use Respect\Rest\Routines\ProxyableThrough;
 use Respect\Rest\Routines\Routinable;
 use Throwable;
 
@@ -20,7 +18,6 @@ use function array_values;
 use function assert;
 use function explode;
 use function implode;
-use function is_callable;
 use function rawurldecode;
 use function rtrim;
 use function set_error_handler;
@@ -49,6 +46,8 @@ final class DispatchContext
     public int|null $responseStatus = null;
 
     public ResponseFactoryInterface|null $responseFactory = null;
+
+    private RoutinePipeline|null $routinePipeline = null;
 
     private string $effectiveMethod = '';
 
@@ -137,9 +136,13 @@ final class DispatchContext
             }
 
             $errorHandler = $this->prepareForErrorForwards();
-            $preRoutineResult = $this->processPreRoutines();
+            $preRoutineResult = $this->routinePipeline()->processBy($this);
 
             if ($preRoutineResult !== null) {
+                if ($preRoutineResult instanceof AbstractRoute) {
+                    return $this->forward($preRoutineResult);
+                }
+
                 if ($preRoutineResult instanceof ResponseInterface) {
                     return $this->finalizeResponse($preRoutineResult);
                 }
@@ -157,7 +160,7 @@ final class DispatchContext
                 return $this->forward($rawResult);
             }
 
-            $processedResult = $this->processPosRoutines($rawResult);
+            $processedResult = $this->routinePipeline()->processThrough($this, $rawResult);
             $errorResponse = $this->forwardErrors($errorHandler);
 
             if ($errorResponse !== null) {
@@ -205,6 +208,11 @@ final class DispatchContext
         return $this->response();
     }
 
+    public function setRoutinePipeline(RoutinePipeline $routinePipeline): void
+    {
+        $this->routinePipeline = $routinePipeline;
+    }
+
     /** @return callable|null The previous error handler, or null */
     protected function prepareForErrorForwards(): callable|null
     {
@@ -227,70 +235,6 @@ final class DispatchContext
         }
 
         return null;
-    }
-
-    protected function processPreRoutines(): mixed
-    {
-        assert($this->route !== null);
-        foreach ($this->route->routines as $routine) {
-            if (!$routine instanceof ProxyableBy) {
-                continue;
-            }
-
-            $result = $this->routineCall(
-                'by',
-                $this->method(),
-                $routine,
-                $this->params,
-            );
-
-            if ($result instanceof AbstractRoute) {
-                return $this->forward($result);
-            }
-
-            if ($result instanceof ResponseInterface) {
-                return $result;
-            }
-
-            if ($result === false) {
-                return false;
-            }
-        }
-
-        return null;
-    }
-
-    /**
-     * Processes post-routines on the raw handler result.
-     * Routines still receive raw values (arrays, strings, etc.) — not ResponseInterface.
-     */
-    protected function processPosRoutines(mixed $response): mixed
-    {
-        $proxyResults = [];
-        assert($this->route !== null);
-
-        foreach ($this->route->routines as $routine) {
-            if (!($routine instanceof ProxyableThrough)) {
-                continue;
-            }
-
-            $proxyResults[] = $this->routineCall(
-                'through',
-                $this->method(),
-                $routine,
-                $this->params,
-            );
-        }
-
-        foreach ($proxyResults as $proxyCallback) {
-            if (!is_callable($proxyCallback)) {
-                continue;
-            }
-
-            $response = $proxyCallback($response);
-        }
-
-        return $response;
     }
 
     protected function forwardErrors(callable|null $errorHandler): ResponseInterface|null
@@ -393,6 +337,11 @@ final class DispatchContext
         }
 
         return $response->withBody($this->responseFactory->createResponse()->getBody());
+    }
+
+    private function routinePipeline(): RoutinePipeline
+    {
+        return $this->routinePipeline ??= new RoutinePipeline();
     }
 
     private function mergeHeaderValues(string $existing, string $appended): string
