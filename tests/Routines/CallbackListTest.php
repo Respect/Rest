@@ -1,40 +1,36 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Routines;
 
+use Closure;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\Test\Stubs\FunkyCallbackList;
 
-/**
- * @covers Respect\Rest\Routines\CallbackList
- */
+/** @covers Respect\Rest\Routines\CallbackList */
 final class CallbackListTest extends TestCase
 {
-    protected $object;
+    protected FunkyCallbackList $object;
 
     protected function setUp(): void
     {
         $ar = [
-                'a' => 'htmlentities',
-                'b' => function () { return true; },
-                'c' => 'strpos',
-                'd' => 'this is invalid',
-                'e' => 'is_numeric',
+            'a' => 'htmlentities',
+            'b' => static function () {
+                return true;
+            },
+            'c' => 'strpos',
+            'd' => 'this is invalid',
+            'e' => 'is_numeric',
         ];
 
+        /** @phpstan-ignore-next-line intentionally passing non-callable to test filtering */
         $this->object = new FunkyCallbackList($ar);
     }
 
-    protected function tearDown(): void
-    {
-        unset($this->object);
-    }
-
-    /**
-     * @covers Respect\Rest\Routines\CallbackList::executeCallback
-     */
-    public function testExecuteCallback()
+    /** @covers Respect\Rest\Routines\CallbackList::executeCallback */
+    public function testExecuteCallback(): void
     {
         self::assertEquals('&lt;p&gt;&lt;/p&gt;', $this->object->funkyExecuteCallback('a', ['<p></p>']));
         self::assertTrue($this->object->funkyExecuteCallback('b', []));
@@ -42,21 +38,17 @@ final class CallbackListTest extends TestCase
         self::assertTrue($this->object->funkyExecuteCallback('e', [4]));
     }
 
-    /**
-     * @covers Respect\Rest\Routines\CallbackList::getCallback
-     */
-    public function testGetCallback()
+    /** @covers Respect\Rest\Routines\CallbackList::getCallback */
+    public function testGetCallback(): void
     {
-        self::assertIsCallable($this->object->funkyGetCallback('a'));
-        self::assertIsCallable($this->object->funkyGetCallback('b'));
-        self::assertIsCallable($this->object->funkyGetCallback('c'));
-        self::assertIsCallable($this->object->funkyGetCallback('e'));
+        self::assertSame('htmlentities', $this->object->funkyGetCallback('a'));
+        self::assertInstanceOf(Closure::class, $this->object->funkyGetCallback('b'));
+        self::assertSame('strpos', $this->object->funkyGetCallback('c'));
+        self::assertSame('is_numeric', $this->object->funkyGetCallback('e'));
     }
 
-    /**
-     * @covers Respect\Rest\Routines\CallbackList::__construct
-     */
-    public function testLoad()
+    /** @covers Respect\Rest\Routines\CallbackList::__construct */
+    public function testLoad(): void
     {
         $a = $this->object->getKeys();
         self::assertCount(4, $a);
@@ -67,10 +59,8 @@ final class CallbackListTest extends TestCase
         self::assertContains('e', $a);
     }
 
-    /**
-     * @covers Respect\Rest\Routines\CallbackList::getKeys
-     */
-    public function testGetKeys()
+    /** @covers Respect\Rest\Routines\CallbackList::getKeys */
+    public function testGetKeys(): void
     {
         $a = $this->object->getKeys();
         self::assertCount(4, $a);
@@ -81,10 +71,8 @@ final class CallbackListTest extends TestCase
         self::assertContains('e', $a);
     }
 
-    /**
-     * @covers Respect\Rest\Routines\CallbackList::hasKey
-     */
-    public function testHasKey()
+    /** @covers Respect\Rest\Routines\CallbackList::hasKey */
+    public function testHasKey(): void
     {
         self::assertTrue($this->object->hasKey('a'));
         self::assertTrue($this->object->hasKey('b'));
@@ -93,10 +81,8 @@ final class CallbackListTest extends TestCase
         self::assertTrue($this->object->hasKey('e'));
     }
 
-    /**
-     * @covers Respect\Rest\Routines\CallbackList::filterKeysContain
-     */
-    public function testFilterKeysContain()
+    /** @covers Respect\Rest\Routines\CallbackList::filterKeysContain */
+    public function testFilterKeysContain(): void
     {
         $a = $this->object->filterKeysContain('b');
         self::assertCount(1, $a);
@@ -107,10 +93,8 @@ final class CallbackListTest extends TestCase
         self::assertNotContains('e', $a);
     }
 
-    /**
-     * @covers Respect\Rest\Routines\CallbackList::filterKeysNotContain
-     */
-    public function testFilterKeysNotContain()
+    /** @covers Respect\Rest\Routines\CallbackList::filterKeysNotContain */
+    public function testFilterKeysNotContain(): void
     {
         $a = $this->object->filterKeysNotContain('b');
         self::assertCount(3, $a);
@@ -119,5 +103,10 @@ final class CallbackListTest extends TestCase
         self::assertContains('c', $a);
         self::assertNotContains('d', $a);
         self::assertContains('e', $a);
+    }
+
+    protected function tearDown(): void
+    {
+        unset($this->object);
     }
 }

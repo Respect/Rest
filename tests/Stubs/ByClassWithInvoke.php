@@ -1,15 +1,17 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Stubs;
 
 final class ByClassWithInvoke
 {
-    public $invoked = false;
+    public bool $invoked = false;
 
-    public function __invoke()
+    public function __invoke(): string
     {
         $this->invoked = true;
-        return __CLASS__;
+
+        return self::class;
     }
 }

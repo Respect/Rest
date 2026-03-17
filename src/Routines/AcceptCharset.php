@@ -7,5 +7,5 @@ namespace Respect\Rest\Routines;
 /** Handles charset content negotiation */
 final class AcceptCharset extends AbstractAccept
 {
-    const string ACCEPT_HEADER = 'HTTP_ACCEPT_CHARSET';
+    public const string ACCEPT_HEADER = 'HTTP_ACCEPT_CHARSET';
 }

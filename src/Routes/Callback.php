@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
+use Closure;
 use ReflectionFunction;
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
 use Respect\Rest\Request;
 
+use function array_merge;
+use function is_array;
+
 class Callback extends AbstractRoute
 {
-    protected ?ReflectionFunctionAbstract $reflection = null;
+    protected ReflectionFunctionAbstract|null $reflection = null;
 
     /** @param array<int, mixed> $arguments */
     public function __construct(
@@ -31,7 +35,7 @@ class Callback extends AbstractRoute
             return new ReflectionMethod($this->callback[0], $this->callback[1]);
         }
 
-        return new ReflectionFunction($this->callback);
+        return new ReflectionFunction(Closure::fromCallable($this->callback));
     }
 
     public function getReflection(string $method): ReflectionFunctionAbstract
@@ -43,6 +47,7 @@ class Callback extends AbstractRoute
         return $this->reflection;
     }
 
+    /** @param array<int, mixed> $params */
     public function runTarget(string $method, array &$params, Request $request): mixed
     {
         $reflection = $this->getReflection($method);

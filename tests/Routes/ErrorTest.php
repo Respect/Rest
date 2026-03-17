@@ -1,17 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Routes;
 
-use Nyholm\Psr7\ServerRequest;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\Router;
 
-/**
- * @covers Respect\Rest\Routes\Error
- */
+use function trigger_error;
+
+use const E_USER_WARNING;
+
+/** @covers Respect\Rest\Routes\Error */
 final class ErrorTest extends TestCase
 {
     /**
@@ -20,31 +23,34 @@ final class ErrorTest extends TestCase
      * @covers Respect\Rest\Router::errorRoute
      */
     #[RunInSeparateProcess]
-    public function testMagicConstuctorCanCreateRoutesToErrors()
+    public function testMagicConstuctorCanCreateRoutesToErrors(): void
     {
         $router = new Router(new Psr17Factory());
         $called = false;
         $phpUnit = $this;
-        $router->errorRoute(function ($err) use (&$called, $phpUnit) {
+        $router->errorRoute(static function ($err) use (&$called, $phpUnit) {
             $called = true;
             $phpUnit->assertContains(
                 'Oops',
                 $err[0],
-                'The error message should be available in the error route'
+                'The error message should be available in the error route',
             );
+
             return 'There has been an error.';
         });
-        $router->get('/', function () {
+        $router->get('/', static function (): void {
             trigger_error('Oops', E_USER_WARNING);
         });
-        $response = (string) $router->dispatch(new ServerRequest('GET', '/'))->response()->getBody();
+        $resp = $router->dispatch(new ServerRequest('GET', '/'))->response();
+        self::assertNotNull($resp);
+        $response = (string) $resp->getBody();
 
         self::assertTrue($called, 'The error route must have been called');
 
         self::assertEquals(
             'There has been an error.',
             $response,
-            'An error should be caught by the router and forwarded'
+            'An error should be caught by the router and forwarded',
         );
     }
 }

@@ -1,37 +1,32 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Routines;
 
-use Nyholm\Psr7\ServerRequest;
+use DateTime;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
+use Psr\Http\Message\ResponseInterface;
 use Respect\Rest\Request;
+use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routines\LastModified;
 
-/**
- * @covers Respect\Rest\Routines\LastModified
- */
+/** @covers Respect\Rest\Routines\LastModified */
 final class LastModifiedTest extends TestCase
 {
-    protected $object;
+    protected LastModified $object;
 
     protected function setUp(): void
     {
-        $this->object = new LastModified(function () {
-                return new \DateTime('2011-11-11 11:11:12');
-            });
+        $this->object = new LastModified(static function () {
+                return new DateTime('2011-11-11 11:11:12');
+        });
     }
 
-    protected function tearDown(): void
-    {
-        unset($this->object);
-    }
-
-    /**
-     * @covers Respect\Rest\Routines\LastModified::by
-     */
-    public function testBy()
+    /** @covers Respect\Rest\Routines\LastModified::by */
+    public function testBy(): void
     {
         $alias = &$this->object;
         $params = [];
@@ -50,15 +45,21 @@ final class LastModifiedTest extends TestCase
         $request = new Request($serverRequest);
         $request->route = $this->createRouteWithResponseFactory();
         $response = $alias->by($request, $params);
-        self::assertInstanceOf(\Psr\Http\Message\ResponseInterface::class, $response);
+        self::assertInstanceOf(ResponseInterface::class, $response);
         self::assertEquals(304, $response->getStatusCode());
         self::assertEquals('Fri, 11 Nov 2011 11:11:12 +0000', $response->getHeaderLine('Last-Modified'));
     }
 
-    private function createRouteWithResponseFactory()
+    protected function tearDown(): void
     {
-        $route = $this->createStub(\Respect\Rest\Routes\AbstractRoute::class);
+        unset($this->object);
+    }
+
+    private function createRouteWithResponseFactory(): AbstractRoute
+    {
+        $route = $this->createStub(AbstractRoute::class);
         $route->responseFactory = new Psr17Factory();
+
         return $route;
     }
 }

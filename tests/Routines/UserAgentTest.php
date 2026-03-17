@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Routines;
@@ -8,27 +9,22 @@ use PHPUnit\Framework\TestCase;
 use Respect\Rest\Request;
 use Respect\Rest\Routines\UserAgent;
 
-/**
- * @covers Respect\Rest\Routines\UserAgent
- */
+/** @covers Respect\Rest\Routines\UserAgent */
 final class UserAgentTest extends TestCase
 {
-    protected $object;
+    protected UserAgent $object;
 
     protected function setUp(): void
     {
         $this->object = new UserAgent([
-            'FIREFOX' => function (){},
-            'InhernetExplorer' => function (){},
+            'FIREFOX' => static function (): void {
+            },
+            'InhernetExplorer' => static function (): void {
+            },
         ]);
     }
 
-    protected function tearDown(): void
-    {
-        unset($this->object);
-    }
-
-    public function testThrough()
+    public function testThrough(): void
     {
         $params = [];
         $alias = &$this->object;
@@ -42,7 +38,7 @@ final class UserAgentTest extends TestCase
         self::assertInstanceOf('Closure', $alias->through($request, $params));
     }
 
-    public function testThroughInvalid()
+    public function testThroughInvalid(): void
     {
         $params = [];
         $alias = &$this->object;
@@ -50,5 +46,10 @@ final class UserAgentTest extends TestCase
         self::assertInstanceOf('Respect\\Rest\\Routines\\UserAgent', $alias);
         self::assertFalse($alias->when($request, $params));
         self::assertNull($alias->through($request, $params));
+    }
+
+    protected function tearDown(): void
+    {
+        unset($this->object);
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Routines;
@@ -8,34 +9,32 @@ use PHPUnit\Framework\TestCase;
 use Respect\Rest\Request;
 use Respect\Rest\Routines\Through;
 
-/**
- * @covers Respect\Rest\Routines\Through
- */
+/** @covers Respect\Rest\Routines\Through */
 final class ThroughTest extends TestCase
 {
-    protected $object;
+    protected Through $object;
 
     protected function setUp(): void
     {
-        $this->object = new Through(function () {
+        $this->object = new Through(static function () {
             return 'from through callback';
-            });
+        });
+    }
+
+    /** @covers Respect\Rest\Routines\Through::through */
+    public function testThrough(): void
+    {
+        $request = new Request(new ServerRequest('GET', '/'));
+        $params = [];
+        $alias = &$this->object;
+        self::assertEquals(
+            'from through callback',
+            $alias->through($request, $params),
+        );
     }
 
     protected function tearDown(): void
     {
         unset($this->object);
-    }
-
-    /**
-     * @covers Respect\Rest\Routines\Through::through
-     */
-    public function testThrough()
-    {
-        $request = new Request(new ServerRequest('GET', '/'));
-        $params = [];
-        $alias = &$this->object;
-        self::assertEquals('from through callback',
-                $alias->through($request, $params));
     }
 }

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace Respect\Rest\Test\Routines;
@@ -9,9 +10,7 @@ use Respect\Rest\Routines\AbstractSyncedRoutine;
 use Respect\Rest\Routines\By;
 use Respect\Rest\Test\Stubs\ByClassWithInvoke;
 
-/**
- * @covers Respect\Rest\Routines\ParamSynced
- */
+/** @covers Respect\Rest\Routines\ParamSynced */
 #[AllowMockObjectsWithoutExpectations]
 final class AbstractSyncedRoutineTest extends TestCase
 {
@@ -19,14 +18,12 @@ final class AbstractSyncedRoutineTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->object = new By(function ($userId, $blogId) {
+        $this->object = new By(static function ($userId, $blogId) {
               return 'from AbstractSyncedRoutine implementation callback';
-            });
+        });
     }
 
-    /**
-     * @covers Respect\Rest\Routines\AbstractSyncedRoutine
-     */
+    /** @covers Respect\Rest\Routines\AbstractSyncedRoutine */
     public function testGetParameters(): void
     {
         self::assertInstanceOf('Respect\Rest\Routines\ParamSynced', $this->object);
@@ -52,7 +49,7 @@ final class AbstractSyncedRoutineTest extends TestCase
 
         self::assertContainsOnlyInstancesOf(
             'ReflectionParameter',
-            $result = $stub->getParameters()
+            $result = $stub->getParameters(),
         );
         self::assertCount(3, $result);
     }
@@ -63,7 +60,9 @@ final class AbstractSyncedRoutineTest extends TestCase
      */
     public function test_getParameters_with_function(): void
     {
-        $callback = function($name) { return 'Hello '.$name; };
+        $callback = static function ($name) {
+            return 'Hello ' . $name;
+        };
         $stub = $this->getMockBuilder(AbstractSyncedRoutine::class)
             ->onlyMethods(['getCallback'])
             ->disableOriginalConstructor()
@@ -72,7 +71,7 @@ final class AbstractSyncedRoutineTest extends TestCase
 
         self::assertContainsOnlyInstancesOf(
             'ReflectionParameter',
-            $result = $stub->getParameters()
+            $result = $stub->getParameters(),
         );
         self::assertCount(1, $result);
     }
@@ -84,7 +83,6 @@ final class AbstractSyncedRoutineTest extends TestCase
     public function test_getParameters_with_callable_instance(): void
     {
         $callableInstance = new ByClassWithInvoke();
-        self::assertIsCallable($callableInstance, 'Callable instance does not pass the is_callable test.');
 
         $stub = $this->getMockBuilder(AbstractSyncedRoutine::class)
             ->onlyMethods(['getCallback'])

@@ -29,10 +29,10 @@ jobs:
         run: composer install --prefer-dist
 
       - name: Run Unit Tests
-        run: ./vendor/bin/phpunit
+        run: vendor/bin/phpunit
 
   code-coverage:
-    name: Code coverage
+    name: Code Coverage
 
     runs-on: ubuntu-latest
 
@@ -49,8 +49,8 @@ jobs:
       - name: Install Dependencies
         run: composer install --prefer-dist
 
-      - name: Generating Code Coverage Report
-        run: ./vendor/bin/phpunit --coverage-clover=coverage.xml
+      - name: Generate Code Coverage Report
+        run: vendor/bin/phpunit --coverage-clover=coverage.xml
 
       - name: Send Code Coverage Report to Codecov.io
         uses: codecov/codecov-action@v5
@@ -72,8 +72,11 @@ jobs:
           php-version: 8.5
           coverage: none
 
-      - name: Install dependencies
+      - name: Install Dependencies
         run: composer install --prefer-dist
+
+      - name: Run PHP_CodeSniffer
+        run: vendor/bin/phpcs
 
       - name: Run PHPStan
         run: vendor/bin/phpstan analyze
