@@ -7,9 +7,16 @@ namespace Respect\Rest\Routines;
 use Respect\Rest\Request;
 use SplObjectStorage;
 
+use function explode;
+use function is_array;
+use function is_object;
+use function trim;
+
 /** Handles content type content negotiation */
 final class ContentType extends AbstractCallbackMediator implements ProxyableBy, Unique
 {
+    public const string ATTRIBUTE = 'contentType';
+
     /** @var array<string, callable> */
     protected array $contentMap = [];
 
@@ -19,11 +26,29 @@ final class ContentType extends AbstractCallbackMediator implements ProxyableBy,
     /** @param array<int, mixed> $params */
     public function by(Request $request, array $params): mixed
     {
-        if ($this->negotiated instanceof SplObjectStorage && $this->negotiated->offsetExists($request)) {
-            return ($this->negotiated[$request])();
+        if (!$this->negotiated instanceof SplObjectStorage || !$this->negotiated->offsetExists($request)) {
+            return null;
         }
 
+        $payload = ($this->negotiated[$request])($this->extractInput($request));
+        $serverRequest = $request->serverRequest->withAttribute(self::ATTRIBUTE, $payload);
+        if (is_array($payload) || is_object($payload) || $payload === null) {
+            $serverRequest = $serverRequest->withParsedBody($payload);
+        }
+
+        $request->serverRequest = $serverRequest;
+
         return null;
+    }
+
+    /** @param array<int, mixed> $params */
+    public function when(Request $request, array $params): mixed
+    {
+        if ($request->serverRequest->getHeaderLine('Content-Type') === '') {
+            return true;
+        }
+
+        return parent::when($request, $params);
     }
 
     /**
@@ -35,7 +60,7 @@ final class ContentType extends AbstractCallbackMediator implements ProxyableBy,
     {
         $contentType = $request->serverRequest->getHeaderLine('Content-Type');
 
-        return $contentType !== '' ? [$contentType] : [];
+        return $contentType !== '' ? [trim(explode(';', $contentType, 2)[0])] : [];
     }
 
     /** @return array<int, string> */
@@ -57,5 +82,16 @@ final class ContentType extends AbstractCallbackMediator implements ProxyableBy,
     protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
     {
         $this->negotiated = false;
+        $request->prepareResponse(415);
+    }
+
+    protected function extractInput(Request $request): mixed
+    {
+        $body = (string) $request->serverRequest->getBody();
+        if ($body !== '') {
+            return $body;
+        }
+
+        return $request->serverRequest->getParsedBody();
     }
 }

@@ -161,7 +161,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     protected function notifyDeclined(string $requested, string $provided, Request $request, array $params): void
     {
         $this->negotiated = false;
-        $request->responseStatus = 406;
+        $request->prepareResponse(406);
     }
 
     protected function authorize(string $requested, string $provided): mixed
