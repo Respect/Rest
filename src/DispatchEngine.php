@@ -22,8 +22,11 @@ use function stripos;
 
 final class DispatchEngine
 {
+    private RoutinePipeline $routinePipeline;
+
     public function __construct(private Router $router)
     {
+        $this->routinePipeline = new RoutinePipeline();
     }
 
     public function dispatch(ServerRequestInterface $serverRequest): DispatchContext
@@ -39,6 +42,7 @@ final class DispatchEngine
         $this->router->isAutoDispatched = false;
         $this->router->context = $context;
         $context->responseFactory ??= $this->router->responseFactory;
+        $context->setRoutinePipeline($this->routinePipeline);
 
         if (!$this->isRoutelessDispatch($context) && $context->route === null) {
             $this->routeDispatch($context);
@@ -302,7 +306,7 @@ final class DispatchEngine
                 $tempParams = $matchedByPath[$route];
                 $context->clearResponseMeta();
                 $context->route = $route;
-                if ($route->matchRoutines($context, $tempParams)) {
+                if ($this->routinePipeline->matches($context, $tempParams)) {
                     return $this->configureContext(
                         $context,
                         $route,

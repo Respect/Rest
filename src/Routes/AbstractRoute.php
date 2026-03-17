@@ -13,7 +13,6 @@ use ReflectionFunctionAbstract;
 use ReflectionNamedType;
 use Respect\Rest\DispatchContext;
 use Respect\Rest\Routines\IgnorableFileExtension;
-use Respect\Rest\Routines\ProxyableWhen;
 use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\Unique;
 use Respect\Rest\Stream;
@@ -193,26 +192,6 @@ abstract class AbstractRoute
 
         // phpcs:ignore SlevomatCodingStandard.PHP.OptimizedFunctionsWithoutUnpacking.UnpackingUsed
         return rtrim((string) $this->virtualHost, ' /') . sprintf($this->regexForReplace, ...$params);
-    }
-
-    /** @param array<int, mixed> $params */
-    public function matchRoutines(DispatchContext $context, array $params = []): bool
-    {
-        foreach ($this->routines as $routine) {
-            if (
-                $routine instanceof ProxyableWhen
-                && !$context->routineCall(
-                    'when',
-                    $context->method(),
-                    $routine,
-                    $params,
-                )
-            ) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /** @param array<int, mixed> $params */
