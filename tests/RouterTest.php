@@ -1924,6 +1924,83 @@ final class RouterTest extends TestCase
         self::assertEquals('IE', $response);
     }
 
+    public function test_user_agent_can_block_before_handler_runs(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->isAutoDispatched = false;
+        $router->methodOverriding = false;
+        $ran = false;
+        $router->get('/', static function () use (&$ran) {
+            $ran = true;
+
+            return 'unknown';
+        })->userAgent([
+            'FIREFOX' => static function (): bool {
+                return false;
+            },
+        ]);
+
+        $response = $router->dispatch((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame('', (string) $response->getBody());
+        self::assertFalse($ran);
+    }
+
+    public function test_user_agent_single_routine_can_run_before_and_after_route(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->isAutoDispatched = false;
+        $router->methodOverriding = false;
+        $calls = [];
+        $router->get('/', static function () use (&$calls) {
+            $calls[] = 'route';
+
+            return 'unknown';
+        })->userAgent([
+            'FIREFOX' => static function () use (&$calls) {
+                $calls[] = 'by';
+
+                return static function (string $output) use (&$calls): string {
+                    $calls[] = 'through';
+
+                    return $output . '-FIREFOX';
+                };
+            },
+        ]);
+
+        $response = $router->dispatch((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame('unknown-FIREFOX', (string) $response->getBody());
+        self::assertSame(['by', 'route', 'through'], $calls);
+    }
+
+    public function test_user_agent_with_response_transformer_signature_skips_pre_route_execution(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->isAutoDispatched = false;
+        $router->methodOverriding = false;
+        $calls = [];
+        $router->get('/', static function () use (&$calls) {
+            $calls[] = 'route';
+
+            return 'unknown';
+        })->userAgent([
+            'FIREFOX' => static function (string $output) use (&$calls): string {
+                $calls[] = 'through';
+
+                return $output . '-FIREFOX';
+            },
+        ]);
+
+        $response = $router->dispatch((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame('unknown-FIREFOX', (string) $response->getBody());
+        self::assertSame(['route', 'through'], $calls);
+    }
+
     public function test_stream_routine(): void
     {
         $done                            = false;
