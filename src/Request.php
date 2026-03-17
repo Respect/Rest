@@ -16,12 +16,17 @@ use Respect\Rest\Routines\ProxyableThrough;
 use Respect\Rest\Routines\Routinable;
 use Throwable;
 
+use function array_values;
 use function assert;
+use function explode;
+use function implode;
 use function is_callable;
 use function rawurldecode;
 use function rtrim;
 use function set_error_handler;
+use function strtolower;
 use function strtoupper;
+use function trim;
 
 /** Internal routing context wrapping a PSR-7 server request */
 final class Request
@@ -37,6 +42,12 @@ final class Request
 
     /** @var array<string, string> Headers to apply to the final response (set by routines) */
     public array $responseHeaders = [];
+
+    /** @var array<string, string> Comma-merged headers to append to the final response */
+    public array $responseAppendedHeaders = [];
+
+    /** @var array<string, string> Headers to apply only when the response does not already have them */
+    public array $responseDefaultHeaders = [];
 
     /** HTTP status code override set by routines (e.g. 406 for content negotiation failure) */
     public int|null $responseStatus = null;
@@ -54,12 +65,41 @@ final class Request
         return $this->responseStatus !== null;
     }
 
+    public function clearResponseMeta(): void
+    {
+        $this->responseStatus = null;
+        $this->responseHeaders = [];
+        $this->responseAppendedHeaders = [];
+        $this->responseDefaultHeaders = [];
+    }
+
+    public function setResponseHeader(string $name, string $value): void
+    {
+        $this->responseHeaders[$name] = $value;
+    }
+
+    public function appendResponseHeader(string $name, string $value): void
+    {
+        $this->responseAppendedHeaders[$name] = $this->mergeHeaderValues(
+            $this->responseAppendedHeaders[$name] ?? '',
+            $value,
+        );
+    }
+
+    public function defaultResponseHeader(string $name, string $value): void
+    {
+        $this->responseDefaultHeaders[$name] ??= $value;
+    }
+
     /** @param array<string, string> $headers */
     public function prepareResponse(int $status, array $headers = []): void
     {
         $this->route = null;
+        $this->clearResponseMeta();
         $this->responseStatus = $status;
-        $this->responseHeaders = $headers;
+        foreach ($headers as $name => $value) {
+            $this->setResponseHeader($name, $value);
+        }
     }
 
     /** Generates the PSR-7 response from the current route */
@@ -302,6 +342,21 @@ final class Request
             $response = $response->withStatus($this->responseStatus);
         }
 
+        foreach ($this->responseDefaultHeaders as $name => $value) {
+            if ($response->hasHeader($name)) {
+                continue;
+            }
+
+            $response = $response->withHeader($name, $value);
+        }
+
+        foreach ($this->responseAppendedHeaders as $name => $value) {
+            $response = $response->withHeader(
+                $name,
+                $this->mergeHeaderValues($response->getHeaderLine($name), $value),
+            );
+        }
+
         foreach ($this->responseHeaders as $name => $value) {
             $response = $response->withHeader($name, $value);
         }
@@ -318,6 +373,21 @@ final class Request
         }
 
         return $response->withBody($this->responseFactory->createResponse()->getBody());
+    }
+
+    private function mergeHeaderValues(string $existing, string $appended): string
+    {
+        $mergedValues = [];
+        foreach (explode(',', $existing . ',' . $appended) as $headerValue) {
+            $headerValue = trim($headerValue);
+            if ($headerValue === '') {
+                continue;
+            }
+
+            $mergedValues[strtolower($headerValue)] = $headerValue;
+        }
+
+        return implode(', ', array_values($mergedValues));
     }
 
     public function __toString(): string

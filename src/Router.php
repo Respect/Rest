@@ -346,7 +346,6 @@ final class Router
         AbstractRoute $route,
         array $params = [],
     ): Request {
-        $request->responseStatus = null;
         $request->route = $route;
         $request->params = $params;
 
@@ -385,12 +384,12 @@ final class Router
     protected function handleOptionsRequest(array $allowedMethods, SplObjectStorage $matchedByPath): void
     {
         if ($this->hasExplicitOptionsRoute($matchedByPath)) {
-            assert($this->request !== null);
-            $this->request->responseHeaders['Allow'] = $this->getAllowHeaderValue($allowedMethods);
-            $this->resolveRouteMatch(
-                $this->routineMatch($matchedByPath),
-                $allowedMethods,
-            );
+            $matchedRequest = $this->routineMatch($matchedByPath);
+            if ($matchedRequest instanceof Request) {
+                $matchedRequest->setResponseHeader('Allow', $this->getAllowHeaderValue($allowedMethods));
+            }
+
+            $this->resolveRouteMatch($matchedRequest, $allowedMethods);
 
             return;
         }
@@ -478,6 +477,7 @@ final class Router
 
                 /** @var array<int, mixed> $tempParams */
                 $tempParams = $matchedByPath[$route];
+                $this->request->clearResponseMeta();
                 $this->request->route = $route;
                 if ($route->matchRoutines($this->request, $tempParams)) {
                     return $this->configureRequest(

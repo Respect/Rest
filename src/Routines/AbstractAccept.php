@@ -9,12 +9,9 @@ use Respect\Rest\Request;
 use function array_keys;
 use function array_pop;
 use function array_slice;
-use function array_values;
 use function arsort;
 use function explode;
-use function implode;
 use function preg_replace;
-use function sprintf;
 use function str_replace;
 use function str_starts_with;
 use function stripos;
@@ -136,11 +133,13 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
             $contentHeader = str_replace('Accept', 'Content', $headerType);
         }
 
-        $request->responseHeaders[$contentHeader] = $provided;
-        $this->mergeResponseHeader($request, 'Vary', sprintf('negotiate, %s', strtolower($headerType)));
-        $request->responseHeaders['Content-Location'] = (string) $request->serverRequest->getUri()->getPath();
-        $request->responseHeaders['Expires'] = 'Thu, 01 Jan 1980 00:00:00 GMT';
-        $request->responseHeaders['Cache-Control'] = 'max-age=86400';
+        $request->setResponseHeader($contentHeader, $provided);
+        $request->appendResponseHeader('Vary', 'negotiate');
+        $request->appendResponseHeader('Vary', strtolower($headerType));
+        $request->defaultResponseHeader(
+            'Content-Location',
+            (string) $request->serverRequest->getUri()->getPath(),
+        );
     }
 
     /** @param array<int, mixed> $params */
@@ -175,27 +174,6 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
             ['', '-$1'],
             static::class,
         );
-    }
-
-    protected function mergeResponseHeader(Request $request, string $name, string $value): void
-    {
-        if (!isset($request->responseHeaders[$name])) {
-            $request->responseHeaders[$name] = $value;
-
-            return;
-        }
-
-        $mergedValues = [];
-        foreach (explode(',', $request->responseHeaders[$name] . ',' . $value) as $headerValue) {
-            $headerValue = trim($headerValue);
-            if ($headerValue === '') {
-                continue;
-            }
-
-            $mergedValues[strtolower($headerValue)] = $headerValue;
-        }
-
-        $request->responseHeaders[$name] = implode(', ', array_values($mergedValues));
     }
 
     private function extractQuality(string $acceptPart, int $index): float
