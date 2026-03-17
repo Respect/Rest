@@ -49,6 +49,19 @@ final class Request
         $this->method = strtoupper($serverRequest->getMethod());
     }
 
+    public function hasPreparedResponse(): bool
+    {
+        return $this->responseStatus !== null;
+    }
+
+    /** @param array<string, string> $headers */
+    public function prepareResponse(int $status, array $headers = []): void
+    {
+        $this->route = null;
+        $this->responseStatus = $status;
+        $this->responseHeaders = $headers;
+    }
+
     /** Generates the PSR-7 response from the current route */
     public function response(): ResponseInterface|null
     {

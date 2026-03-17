@@ -23,8 +23,10 @@ use Respect\Rest\Test\Stubs\MyController;
 use Respect\Rest\Test\Stubs\MyOptionalParamRoute;
 use Respect\Rest\Test\Stubs\RouteKnowsNothing;
 use Respect\Rest\Test\Stubs\StubRoutable;
+use SplObjectStorage;
 use stdClass;
 
+use function array_map;
 use function array_shift;
 use function explode;
 use function fopen;
@@ -337,7 +339,12 @@ final class RouterTest extends TestCase
         $router->eat('/mongolian', 'Mongolian Food!');
         $response = $router->dispatch(new ServerRequest('OPTIONS', '*'))->response();
 
-        self::assertNull($response);
+        self::assertNotNull($response);
+        self::assertSame(204, $response->getStatusCode());
+        self::assertEqualsCanonicalizing(
+            ['GET', 'POST', 'EAT'],
+            array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
+        );
     }
 
     /**
@@ -439,7 +446,8 @@ final class RouterTest extends TestCase
         $router = new Router(new Psr17Factory());
         $response = $router->dispatch(new ServerRequest('GET', '/'))->response();
 
-        self::assertNull($response, 'No routes — response should be null (404)');
+        self::assertNotNull($response);
+        self::assertSame(404, $response->getStatusCode());
     }
 
     /**
@@ -452,7 +460,8 @@ final class RouterTest extends TestCase
         $router->get('/foo', 'This exists.');
         $response = $router->dispatch(new ServerRequest('GET', '/'))->response();
 
-        self::assertNull($response, 'No route matched — response should be null (404)');
+        self::assertNotNull($response);
+        self::assertSame(404, $response->getStatusCode());
     }
 
     /** @covers Respect\Rest\Router::appendRoute */
@@ -502,9 +511,12 @@ final class RouterTest extends TestCase
 
         $response = $router->dispatch(new ServerRequest('OPTIONS', '/asian'))->response();
 
-        self::assertNull(
-            $response,
-            'OPTIONS request should not call any of the other registered handlers.',
+        self::assertNotNull($response);
+        self::assertSame(204, $response->getStatusCode());
+        self::assertSame('', (string) $response->getBody());
+        self::assertEqualsCanonicalizing(
+            ['GET', 'POST'],
+            array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
         );
     }
 
@@ -524,6 +536,42 @@ final class RouterTest extends TestCase
             (string) $response->getBody(),
             'OPTIONS request should call the correct custom OPTIONS handler.',
         );
+    }
+
+    /** @covers Respect\Rest\Router::handleOptionsRequest */
+    public function testOptionsRequestShouldReturnBadRequestWhenExplicitOptionsRouteFailsRoutines(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->get('/asian', 'GET: Asian Food!');
+        $router->options('/asian', static function (): string {
+            return 'OPTIONS: Asian Food!';
+        })->when(static function (): bool {
+            return false;
+        });
+        $router->post('/asian', 'POST: Asian Food!');
+
+        $response = $router->dispatch(new ServerRequest('OPTIONS', '/asian'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame(400, $response->getStatusCode());
+        self::assertSame('', (string) $response->getBody());
+    }
+
+    /** @covers Respect\Rest\Router::handleOptionsRequest */
+    public function testOptionsHandlerShouldMaterializeRoutelessResponseWhenNoExplicitRouteSurvives(): void
+    {
+        $router = new Router(new Psr17Factory());
+        $router->request = new Request(new ServerRequest('OPTIONS', '/asian'));
+        $router->request->responseFactory = new Psr17Factory();
+
+        $handleOptionsRequest = new ReflectionMethod($router, 'handleOptionsRequest');
+        $handleOptionsRequest->invoke($router, ['OPTIONS'], new SplObjectStorage());
+
+        $response = $router->request->response();
+
+        self::assertNotNull($response);
+        self::assertSame(405, $response->getStatusCode());
+        self::assertSame('OPTIONS', $response->getHeaderLine('Allow'));
     }
 
     // =========================================================================
@@ -777,7 +825,9 @@ final class RouterTest extends TestCase
     {
         $this->router->instanceRoute('ANY', '/users/*', new MyController());
         $result = $this->router->dispatch(new ServerRequest('__construct', '/users/alganet'))->response();
-        self::assertEquals(null, $result);
+        self::assertNotNull($result);
+        self::assertSame(405, $result->getStatusCode());
+        self::assertSame('ANY', $result->getHeaderLine('Allow'));
     }
 
     public function testBindControllerMultiMethods(): void
@@ -1402,7 +1452,8 @@ final class RouterTest extends TestCase
             return false;
         });
         $response = $router->dispatch(new ServerRequest('get', '/'))->response();
-        self::assertNull($response);
+        self::assertNotNull($response);
+        self::assertSame(400, $response->getStatusCode());
     }
 
     public function test_method_not_allowed_header(): void
@@ -1417,7 +1468,12 @@ final class RouterTest extends TestCase
             return 'ok';
         });
         $response = $router->dispatch(new ServerRequest('delete', '/'))->response();
-        self::assertNull($response, 'Method not allowed — route should be null');
+        self::assertNotNull($response);
+        self::assertSame(405, $response->getStatusCode());
+        self::assertEqualsCanonicalizing(
+            ['GET', 'PUT'],
+            array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
+        );
     }
 
     public function test_method_not_allowed_header_with_conneg(): void
@@ -1434,7 +1490,9 @@ final class RouterTest extends TestCase
                 },
             ]);
         $response = $router->dispatch(new ServerRequest('delete', '/'))->response();
-        self::assertNull($response, 'Method not allowed — route should be null');
+        self::assertNotNull($response);
+        self::assertSame(405, $response->getStatusCode());
+        self::assertSame('GET', $response->getHeaderLine('Allow'));
     }
 
     public function test_transparent_options_allow_methods(): void
@@ -1449,7 +1507,12 @@ final class RouterTest extends TestCase
             return 'ok';
         });
         $response = $router->dispatch(new ServerRequest('options', '/'))->response();
-        self::assertNull($response);
+        self::assertNotNull($response);
+        self::assertSame(204, $response->getStatusCode());
+        self::assertEqualsCanonicalizing(
+            ['GET', 'POST'],
+            array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
+        );
     }
 
     public function test_transparent_global_options_allow_methods(): void
@@ -1464,7 +1527,12 @@ final class RouterTest extends TestCase
             return 'ok';
         });
         $response = $router->dispatch(new ServerRequest('options', '*'))->response();
-        self::assertNull($response);
+        self::assertNotNull($response);
+        self::assertSame(204, $response->getStatusCode());
+        self::assertEqualsCanonicalizing(
+            ['GET', 'POST'],
+            array_map('trim', explode(',', $response->getHeaderLine('Allow'))),
+        );
     }
 
     public function test_method_not_acceptable(): void
