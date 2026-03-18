@@ -1,0 +1,11 @@
+parameters:
+  fileExtensions:
+    - php
+  level: 8
+  paths:
+    - src/
+    - tests/
+  ignoreErrors:
+    # By-ref param type narrowing in match() — preg_match output type varies
+    - message: '/Parameter &\$params by-ref type of method .+::match\(\)/'
+      path: src/Routes/AbstractRoute.php
