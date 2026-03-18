@@ -7,8 +7,6 @@ namespace Respect\Rest\Routines;
 use DateTime;
 use Respect\Rest\DispatchContext;
 
-use function assert;
-
 final class LastModified extends AbstractRoutine implements ProxyableBy, Unique
 {
     /** @param array<int, mixed> $params */
@@ -24,8 +22,7 @@ final class LastModified extends AbstractRoutine implements ProxyableBy, Unique
         $lastModifiedOn = ($this->callback)($params);
 
         if ($lastModifiedOn <= $ifModifiedSince) {
-            assert($context->route?->responseFactory !== null);
-            $response = $context->route->responseFactory->createResponse(304);
+            $response = $context->responseFactory->createResponse(304);
             $response = $response->withHeader('Last-Modified', $lastModifiedOn->format(DateTime::RFC2822));
 
             return $response;

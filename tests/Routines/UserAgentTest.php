@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Test\Routines;
 
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\DispatchContext;
+use Respect\Rest\HttpFactories;
 use Respect\Rest\Routines\UserAgent;
 
 /** @covers Respect\Rest\Routines\UserAgent */
@@ -14,8 +16,12 @@ final class UserAgentTest extends TestCase
 {
     protected UserAgent $object;
 
+    private HttpFactories $httpFactories;
+
     protected function setUp(): void
     {
+        $factory = new Psr17Factory();
+        $this->httpFactories = new HttpFactories($factory, $factory);
         $this->object = new UserAgent([
             'FIREFOX' => static function (): void {
             },
@@ -29,11 +35,19 @@ final class UserAgentTest extends TestCase
         $params = [];
         $alias = &$this->object;
 
-        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
+        $context = new DispatchContext(
+            (new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'),
+            $this->httpFactories->responses,
+            $this->httpFactories->streams,
+        );
         self::assertTrue($alias->when($context, $params));
         self::assertInstanceOf('Closure', $alias->through($context, $params));
 
-        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'InhernetExplorer'));
+        $context = new DispatchContext(
+            (new ServerRequest('GET', '/'))->withHeader('User-Agent', 'InhernetExplorer'),
+            $this->httpFactories->responses,
+            $this->httpFactories->streams,
+        );
         self::assertTrue($alias->when($context, $params));
         self::assertInstanceOf('Closure', $alias->through($context, $params));
     }
@@ -42,7 +56,11 @@ final class UserAgentTest extends TestCase
     {
         $params = [];
         $alias = &$this->object;
-        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'CHROME'));
+        $context = new DispatchContext(
+            (new ServerRequest('GET', '/'))->withHeader('User-Agent', 'CHROME'),
+            $this->httpFactories->responses,
+            $this->httpFactories->streams,
+        );
         self::assertInstanceOf('Respect\\Rest\\Routines\\UserAgent', $alias);
         self::assertFalse($alias->when($context, $params));
         self::assertNull($alias->through($context, $params));
@@ -55,7 +73,11 @@ final class UserAgentTest extends TestCase
                 return false;
             },
         ]);
-        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
+        $context = new DispatchContext(
+            (new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'),
+            $this->httpFactories->responses,
+            $this->httpFactories->streams,
+        );
 
         self::assertTrue($routine->when($context, []));
         self::assertFalse($routine->by($context, []));
@@ -73,7 +95,11 @@ final class UserAgentTest extends TestCase
                 };
             },
         ]);
-        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
+        $context = new DispatchContext(
+            (new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'),
+            $this->httpFactories->responses,
+            $this->httpFactories->streams,
+        );
 
         self::assertTrue($routine->when($context, []));
         self::assertNull($routine->by($context, []));
@@ -91,7 +117,11 @@ final class UserAgentTest extends TestCase
                 return true;
             },
         ]);
-        $context = new DispatchContext((new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'));
+        $context = new DispatchContext(
+            (new ServerRequest('GET', '/'))->withHeader('User-Agent', 'FIREFOX'),
+            $this->httpFactories->responses,
+            $this->httpFactories->streams,
+        );
 
         self::assertTrue($routine->when($context, []));
         self::assertNull($routine->by($context, []));

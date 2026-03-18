@@ -6,10 +6,11 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Respect\Rest\HttpFactories;
 use Respect\Rest\Router;
 
 $factory = new Psr17Factory();
-$r3 = new Router($factory);
+$r3 = new Router(new HttpFactories($factory, $factory));
 
 $r3->get('/', function () {
     return 'Welcome to Respect/Rest!';

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Test\Stubs;
 
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use Respect\Rest\DispatchContext;
 use Respect\Rest\Routines\AbstractCallbackMediator;
@@ -31,7 +32,10 @@ class Negotiator extends AbstractCallbackMediator
      */
     public function pubIdentifyRequested(DispatchContext|null $context = null, array $params = []): array
     {
-        return $this->identifyRequested(new DispatchContext(new ServerRequest('GET', '/')), $params);
+        return $this->identifyRequested(
+            self::newContext(),
+            $params,
+        );
     }
 
     /** @return array<int, string> */
@@ -47,7 +51,12 @@ class Negotiator extends AbstractCallbackMediator
         DispatchContext|null $context = null,
         array $params = [],
     ): void {
-        $this->notifyApproved($requested, $provided, new DispatchContext(new ServerRequest('GET', '/')), $params);
+        $this->notifyApproved(
+            $requested,
+            $provided,
+            self::newContext(),
+            $params,
+        );
     }
 
     /** @param array<int, mixed> $params */
@@ -57,7 +66,12 @@ class Negotiator extends AbstractCallbackMediator
         DispatchContext|null $context = null,
         array $params = [],
     ): void {
-        $this->notifyDeclined($requested, $provided, new DispatchContext(new ServerRequest('GET', '/')), $params);
+        $this->notifyDeclined(
+            $requested,
+            $provided,
+            self::newContext(),
+            $params,
+        );
     }
 
     public function pubAuthorize(string $requested, string $provided): mixed
@@ -76,7 +90,10 @@ class Negotiator extends AbstractCallbackMediator
 
         $this->outcome = [];
 
-        return (bool) $this->when(new DispatchContext(new ServerRequest('GET', '/')), []);
+        return (bool) $this->when(
+            self::newContext(),
+            [],
+        );
     }
 
     /**
@@ -121,5 +138,12 @@ class Negotiator extends AbstractCallbackMediator
             'requested' => $requested,
             'provided' => $provided,
         ];
+    }
+
+    private static function newContext(): DispatchContext
+    {
+        $factory = new Psr17Factory();
+
+        return new DispatchContext(new ServerRequest('GET', '/'), $factory, $factory);
     }
 }

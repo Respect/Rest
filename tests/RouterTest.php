@@ -16,6 +16,7 @@ use Psr\Http\Message\ServerRequestInterface;
 use ReflectionMethod;
 use ReflectionObject;
 use Respect\Rest\DispatchContext;
+use Respect\Rest\HttpFactories;
 use Respect\Rest\Routable;
 use Respect\Rest\Router;
 use Respect\Rest\Routines;
@@ -60,7 +61,7 @@ final class RouterTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->router = new Router(new Psr17Factory());
+        $this->router = self::newRouter();
         $this->result = null;
         $result = &$this->result;
         $this->callback = static function () use (&$result): void {
@@ -76,7 +77,7 @@ final class RouterTest extends TestCase
     public function testMagicConstructorWarnsIfNoSufficientParametersWerePassed(): void
     {
         self::expectException('InvalidArgumentException');
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         /** @phpstan-ignore-next-line */
         $router->thisIsInsufficientForMagicConstruction();
     }
@@ -85,7 +86,7 @@ final class RouterTest extends TestCase
     public function testMagicConstructorWarnsIfNoSufficientParametersWerePassed2(): void
     {
         self::expectException('InvalidArgumentException');
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         /** @phpstan-ignore-next-line */
         $router->thisIsInsufficientForMagicConstruction('/magicians');
     }
@@ -96,7 +97,7 @@ final class RouterTest extends TestCase
      */
     public function testMagicConstructorCanCreateCallbackRoutes(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $callbackRoute = $router->get('/', $target = static function (): void {
         });
         $concreteCallbackRoute = $router->callbackRoute('GET', '/', $target);
@@ -126,7 +127,7 @@ final class RouterTest extends TestCase
      */
     public function testMagicConstructorCanCreateCallbackRoutesWithExtraParams(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         /** @phpstan-ignore-next-line */
         $callbackRoute = $router->get('/', $target = static function (): void {
         }, ['extra']);
@@ -157,7 +158,7 @@ final class RouterTest extends TestCase
      */
     public function testMagicConstructorCanRouteToPreBuiltInstances(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $myInstance = new class implements Routable {
             public function GET(): string
             {
@@ -187,7 +188,7 @@ final class RouterTest extends TestCase
     #[DataProvider('provideForStaticRoutableValues')]
     public function testMagicConstructorCanRouteToStaticValue(mixed $staticValue, string $reason): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $staticRoute = $router->get('/', $staticValue);
         $concreteStaticRoute = $router->staticRoute('GET', '/', $staticValue);
@@ -223,10 +224,10 @@ final class RouterTest extends TestCase
     public function testMagicConstructorCannotRouteSomeStaticValues(mixed $staticValue, string $reason): void
     {
         self::expectException(InvalidArgumentException::class);
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $nonStaticRoute = $router->get('/', $staticValue);
 
-        $router->run(new DispatchContext(new ServerRequest('GET', '/')));
+        $router->run(self::newContextForRouter($router, new ServerRequest('GET', '/')));
 
         self::assertNotInstanceOf(
             'Respect\\Rest\\Routes\\StaticValue',
@@ -250,7 +251,7 @@ final class RouterTest extends TestCase
      */
     public function testMagicConstructorCanRouteToClasses(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $className = StubRoutable::class;
         $classRoute = $router->get('/', $className);
         $concreteClassRoute = $router->classRoute('GET', '/', $className);
@@ -274,7 +275,7 @@ final class RouterTest extends TestCase
      */
     public function testMagicConstructorCanRouteToClassesUsingConstructorParams(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $className = StubRoutable::class;
         /** @phpstan-ignore-next-line */
         $classRoute = $router->get('/', $className, ['some', 'constructor', 'params']);
@@ -305,7 +306,7 @@ final class RouterTest extends TestCase
      */
     public function testMagicConstructorCanRouteToFactoriesThatReturnInstancesOfAClass(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         eval('class MockRoutable2 implements Respect\Rest\Routable{ public function GET() {} }');
         eval('class FactoryClass2 { public static function factoryMethod() { return new MockRoutable2(); } }');
         /** @phpstan-ignore-next-line */
@@ -336,7 +337,7 @@ final class RouterTest extends TestCase
      */
     public function testCanRespondToGlobalOptionsMethodAutomatically(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->get('/asian', 'Asian Food!');
         $router->post('/eastern', 'Eastern Food!');
         /** @phpstan-ignore-next-line */
@@ -359,7 +360,7 @@ final class RouterTest extends TestCase
      */
     public function testGlobalOptionsMethodWithoutRoutesReturns404(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
 
         $response = $router->dispatch(new ServerRequest('OPTIONS', '*'))->response();
 
@@ -375,7 +376,7 @@ final class RouterTest extends TestCase
      */
     public function testDeveloperCanOverridePostMethodWithQueryStringParameter(): Router
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->methodOverriding = true;
         $router->put('/bulbs', 'Some Bulbs Put Response');
         $router->post('/bulbs', 'Some Bulbs Post Response');
@@ -434,7 +435,7 @@ final class RouterTest extends TestCase
      */
     public function testDeveloperCanSetUpAVirtualHostPathOnConstructor(): void
     {
-        $router = new Router(new Psr17Factory(), '/store');
+        $router = self::newRouter('/store');
         $router->get('/products', 'Some Products!');
         $r = $router->dispatch(new ServerRequest('GET', '/store/products'))->response();
         self::assertNotNull($r);
@@ -450,7 +451,7 @@ final class RouterTest extends TestCase
     /** @covers Respect\Rest\Router::__destruct */
     public function testRouterDoesNotAutoDispatchAfterManualDispatch(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->get('/', 'Hello Respect');
         $router->dispatch(new ServerRequest('GET', '/'));
         unset($router);
@@ -465,7 +466,7 @@ final class RouterTest extends TestCase
      */
     public function testReturns404WhenNoRoutesExist(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $response = $router->dispatch(new ServerRequest('GET', '/'))->response();
 
         self::assertNotNull($response);
@@ -479,7 +480,7 @@ final class RouterTest extends TestCase
      */
     public function testReturns404WhenNoRouteMatches(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->get('/foo', 'This exists.');
         $response = $router->dispatch(new ServerRequest('GET', '/'))->response();
 
@@ -490,7 +491,7 @@ final class RouterTest extends TestCase
     /** @covers Respect\Rest\Router::appendRoute */
     public function testNamesRoutesUsingAttributes(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->allMembers = $router->any('/members', 'John, Carl');
         $r = $router->dispatch(new ServerRequest('GET', '/members'))->response();
         self::assertNotNull($r);
@@ -512,7 +513,7 @@ final class RouterTest extends TestCase
      */
     public function testCreateUriShouldBeAwareOfVirtualHost(): void
     {
-        $router = new Router(new Psr17Factory(), '/my/virtual/host');
+        $router = self::newRouter('/my/virtual/host');
         $catsRoute = $router->any('/cats/*', 'Meow');
         $virtualHostUri = $catsRoute->createUri('mittens');
         self::assertEquals(
@@ -528,7 +529,7 @@ final class RouterTest extends TestCase
      */
     public function testOptionsRequestShouldNotCallOtherHandlers(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->get('/asian', 'GET: Asian Food!');
         $router->post('/asian', 'POST: Asian Food!');
 
@@ -546,7 +547,7 @@ final class RouterTest extends TestCase
     /** @covers Respect\Rest\DispatchEngine::handleOptionsRequest */
     public function testOptionsRequestShouldBeDispatchedToCorrectOptionsHandler(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->get('/asian', 'GET: Asian Food!');
         $router->options('/asian', 'OPTIONS: Asian Food!');
         $router->post('/asian', 'POST: Asian Food!');
@@ -568,7 +569,7 @@ final class RouterTest extends TestCase
     /** @covers Respect\Rest\DispatchEngine::handleOptionsRequest */
     public function testOptionsRequestShouldReturnBadRequestWhenExplicitOptionsRouteFailsRoutines(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->get('/asian', 'GET: Asian Food!');
         $router->options('/asian', static function (): string {
             return 'OPTIONS: Asian Food!';
@@ -587,9 +588,8 @@ final class RouterTest extends TestCase
     /** @covers Respect\Rest\DispatchEngine::handleOptionsRequest */
     public function testOptionsHandlerShouldMaterializeRoutelessResponseWhenNoExplicitRouteSurvives(): void
     {
-        $router = new Router(new Psr17Factory());
-        $router->context = new DispatchContext(new ServerRequest('OPTIONS', '/asian'));
-        $router->context->responseFactory = new Psr17Factory();
+        $router = self::newRouter();
+        $router->context = self::newContextForRouter($router, new ServerRequest('OPTIONS', '/asian'));
 
         $handleOptionsRequest = new ReflectionMethod($router->dispatchEngine(), 'handleOptionsRequest');
         $handleOptionsRequest->invoke($router->dispatchEngine(), $router->context, ['OPTIONS'], new SplObjectStorage());
@@ -1105,7 +1105,7 @@ final class RouterTest extends TestCase
 
     public function testExperimentalShell(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         /** @phpstan-ignore-next-line */
         $router->install('/**', static function () {
                 return 'Installed ' . implode(', ', func_get_arg(0));
@@ -1122,7 +1122,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept', 'application/json');
-        $request = new DispatchContext($serverRequest);
+        $request = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function () {
                 return range(0, 10);
         })->accept(['application/json' => 'json_encode']);
@@ -1134,7 +1134,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Charset', 'utf-8');
-        $request = new DispatchContext($serverRequest);
+        $request = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function () {
                 return 'açaí';
         })->acceptCharset(['utf-8' => static fn($data) => mb_convert_encoding($data, 'ISO-8859-1', 'UTF-8')]);
@@ -1146,7 +1146,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Encoding', 'myenc');
-        $request = new DispatchContext($serverRequest);
+        $request = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function () {
                 return 'foobar';
         })->acceptEncoding(['myenc' => 'strrev']);
@@ -1158,7 +1158,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet.json'))
             ->withHeader('Accept', '*/*');
-        $request = new DispatchContext($serverRequest);
+        $request = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function ($screenName) {
                 return range(0, 10);
         })->accept(['.json' => 'json_encode']);
@@ -1170,7 +1170,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users.json'))
             ->withHeader('Accept', '*/*');
-        $request = new DispatchContext($serverRequest);
+        $request = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users', static function () {
                 return range(0, 10);
         })->accept(['.json' => 'json_encode']);
@@ -1180,7 +1180,7 @@ final class RouterTest extends TestCase
 
     public function testFileExtension(): void
     {
-        $request = new DispatchContext(new ServerRequest('get', '/users.json/10.20'));
+        $request = self::newContextForRouter($this->router, new ServerRequest('get', '/users.json/10.20'));
         $this->router->get('/users.json/*', static function ($param) {
                 [$min, $max] = explode('.', $param);
 
@@ -1194,7 +1194,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept', '*/*');
-        $request = new DispatchContext($serverRequest);
+        $request = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function () {
                 return range(0, 10);
         })->accept(['application/json' => 'json_encode']);
@@ -1206,7 +1206,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'en');
-        $request = new DispatchContext($serverRequest);
+        $request = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
             'en-US' => static function () {
@@ -1224,7 +1224,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'pt');
-        $request = new DispatchContext($serverRequest);
+        $request = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
             'en-US' => static function () {
@@ -1242,7 +1242,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'pt,en');
-        $requestBoth = new DispatchContext($serverRequest);
+        $requestBoth = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
             'en' => static function () {
@@ -1260,7 +1260,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'pt,en');
-        $requestBoth = new DispatchContext($serverRequest);
+        $requestBoth = self::newContextForRouter($this->router, $serverRequest);
         $neverRun = false;
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
@@ -1287,7 +1287,7 @@ final class RouterTest extends TestCase
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'pt,en')
             ->withHeader('Accept', 'application/json');
-        $requestBoth = new DispatchContext($serverRequest);
+        $requestBoth = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function ($data) {
                 return '034930984';
         })->acceptLanguage([
@@ -1306,7 +1306,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'x-klingon,en');
-        $requestBoth = new DispatchContext($serverRequest);
+        $requestBoth = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
             'en' => static function () {
@@ -1324,7 +1324,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Accept-Language', 'pt;q=0.7,en');
-        $requestBoth = new DispatchContext($serverRequest);
+        $requestBoth = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function (): void {
         })->acceptLanguage([
             'en-US' => static function () {
@@ -1342,7 +1342,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('If-Modified-Since', '2011-11-11 11:11:11');
-        $requestBoth = new DispatchContext($serverRequest);
+        $requestBoth = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function () {
                 return 'hi!';
         })->lastModified(
@@ -1358,7 +1358,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('If-Modified-Since', '2011-11-11 11:11:11');
-        $requestBoth = new DispatchContext($serverRequest);
+        $requestBoth = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function () {
                 return 'hi!';
         })->lastModified(
@@ -1376,7 +1376,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('If-Modified-Since', '2011-11-11 11:11:11');
-        $requestBoth = new DispatchContext($serverRequest);
+        $requestBoth = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function () {
                 return 'hi!';
         })->lastModified(
@@ -1394,7 +1394,7 @@ final class RouterTest extends TestCase
     {
         $serverRequest = (new ServerRequest('get', '/users/alganet'))
             ->withHeader('Content-Type', 'text/xml');
-        $requestBoth = new DispatchContext($serverRequest);
+        $requestBoth = self::newContextForRouter($this->router, $serverRequest);
         $result = null;
         $this->router->get('/users/*', static function (): void {
         })->contentType([
@@ -1527,7 +1527,7 @@ final class RouterTest extends TestCase
 
     public function testVirtualHost(): void
     {
-        $router = new Router(new Psr17Factory(), '/myvh');
+        $router = self::newRouter('/myvh');
         $ok = false;
         $router->get('/alganet', static function () use (&$ok): void {
                 $ok = true;
@@ -1538,7 +1538,7 @@ final class RouterTest extends TestCase
 
     public function testVirtualHostEmpty(): void
     {
-        $router = new Router(new Psr17Factory(), '/myvh');
+        $router = self::newRouter('/myvh');
         $ok = false;
         $router->get('/', static function () use (&$ok): void {
                 $ok = true;
@@ -1549,7 +1549,7 @@ final class RouterTest extends TestCase
 
     public function testVirtualHostIndex(): void
     {
-        $router = new Router(new Psr17Factory(), '/myvh/index.php');
+        $router = self::newRouter('/myvh/index.php');
         $ok = false;
         $router->get('/', static function () use (&$ok): void {
                 $ok = true;
@@ -1560,7 +1560,7 @@ final class RouterTest extends TestCase
 
     public function testCreateUri(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $ro = $r->any('/users/*/test/*', static function (): void {
         });
         self::assertEquals(
@@ -1572,7 +1572,7 @@ final class RouterTest extends TestCase
 
     public function testForward(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $ro1 = $r->any('/users/*', static function ($user) {
             return $user;
         });
@@ -1589,7 +1589,7 @@ final class RouterTest extends TestCase
      **/
     public function test_optional_parameter_in_class_routes(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $r->any('/optional/*', MyOptionalParamRoute::class);
         $response = self::responseBody($r->dispatch(new ServerRequest('get', '/optional')));
         self::assertEquals('John Doe', $response);
@@ -1602,7 +1602,7 @@ final class RouterTest extends TestCase
     /** @covers \Respect\Rest\Router */
     public function test_bad_request_header(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function () {
@@ -1617,7 +1617,7 @@ final class RouterTest extends TestCase
 
     public function test_method_not_allowed_header(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function () {
@@ -1637,7 +1637,7 @@ final class RouterTest extends TestCase
 
     public function test_method_not_allowed_header_with_conneg(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function () {
@@ -1659,7 +1659,7 @@ final class RouterTest extends TestCase
 
     public function test_transparent_options_allow_methods(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function () {
@@ -1679,7 +1679,7 @@ final class RouterTest extends TestCase
 
     public function test_transparent_global_options_allow_methods(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function () {
@@ -1699,7 +1699,7 @@ final class RouterTest extends TestCase
 
     public function test_method_not_acceptable(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function () {
@@ -1719,7 +1719,7 @@ final class RouterTest extends TestCase
 
     public function test_missing_accept_header_is_permissive(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->get('/', static function () {
             return range(0, 2);
         })->accept(['application/json' => 'json_encode']);
@@ -1734,7 +1734,7 @@ final class RouterTest extends TestCase
 
     public function test_accept_matches_media_type_with_parameters(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->get('/', static function () {
             return range(0, 2);
         })->accept(['application/json' => 'json_encode']);
@@ -1751,7 +1751,7 @@ final class RouterTest extends TestCase
 
     public function test_append_routine_honours_routine_chaining(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/one-time', static function () {
@@ -1773,7 +1773,7 @@ final class RouterTest extends TestCase
 
     public function test_callback_gets_param_array(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         /** @phpstan-ignore-next-line */
@@ -1786,7 +1786,7 @@ final class RouterTest extends TestCase
 
     public function test_http_method_head(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function (ResponseInterface $response) {
@@ -1804,7 +1804,7 @@ final class RouterTest extends TestCase
 
     public function test_http_method_head_run_returns_response_without_body(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function (ResponseInterface $response) {
@@ -1813,7 +1813,7 @@ final class RouterTest extends TestCase
             return $response->withHeader('X-Handled-By', 'GET');
         });
 
-        $response = $router->run(new DispatchContext(new ServerRequest('HEAD', '/')));
+        $response = $router->run(self::newContextForRouter($router, new ServerRequest('HEAD', '/')));
 
         self::assertNotNull($response);
         self::assertSame('GET', $response->getHeaderLine('X-Handled-By'));
@@ -1822,7 +1822,7 @@ final class RouterTest extends TestCase
 
     public function test_http_method_head_with_class_routes_and_routines(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         /** @phpstan-ignore-next-line */
@@ -1840,7 +1840,7 @@ final class RouterTest extends TestCase
 
     public function test_http_method_head_with_instance_routes_uses_get_fallback(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->instanceRoute('ANY', '/users/*', new MyController('ok'));
@@ -1855,7 +1855,7 @@ final class RouterTest extends TestCase
 
     public function test_http_method_head_with_factory_routes_uses_get_fallback(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->factoryRoute('ANY', '/', HeadFactoryController::class, static function () {
@@ -1871,7 +1871,7 @@ final class RouterTest extends TestCase
 
     public function test_explicit_head_route_overrides_get_fallback(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function (ResponseInterface $response) {
@@ -1909,7 +1909,7 @@ final class RouterTest extends TestCase
 
     public function test_user_agent_content_negotiation(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function () {
@@ -1929,7 +1929,7 @@ final class RouterTest extends TestCase
 
     public function test_user_agent_content_negotiation_fallback(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function () {
@@ -1946,7 +1946,7 @@ final class RouterTest extends TestCase
 
     public function test_user_agent_can_block_before_handler_runs(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $ran = false;
@@ -1969,7 +1969,7 @@ final class RouterTest extends TestCase
 
     public function test_user_agent_single_routine_can_run_before_and_after_route(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $calls = [];
@@ -1998,7 +1998,7 @@ final class RouterTest extends TestCase
 
     public function test_user_agent_with_response_transformer_signature_skips_pre_route_execution(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $calls = [];
@@ -2025,10 +2025,10 @@ final class RouterTest extends TestCase
     {
         $done                            = false;
         $self                            = $this;
+        $router = self::newRouter();
         $serverRequest                   = (new ServerRequest('GET', '/input'))
                                             ->withHeader('Accept-Encoding', 'deflate');
-        $request                         = new DispatchContext($serverRequest);
-        $router = new Router(new Psr17Factory());
+        $request                         = self::newContextForRouter($router, $serverRequest);
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/input', static function () {
@@ -2051,7 +2051,7 @@ final class RouterTest extends TestCase
 
     public function test_optional_parameter_in_function_routes(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $r->any('/optional/*', static function ($user = null) {
             return $user ?: 'John Doe';
         });
@@ -2060,7 +2060,7 @@ final class RouterTest extends TestCase
 
     public function test_optional_parameter_in_function_routes_multiple(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $r->any('/optional', static function () {
             return 'No User';
         });
@@ -2072,7 +2072,7 @@ final class RouterTest extends TestCase
 
     public function test_two_optional_parameters_in_function_routes(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $r->any('/optional/*/*', static function ($user = null, $list = null) {
             return $user . $list;
         });
@@ -2081,7 +2081,7 @@ final class RouterTest extends TestCase
 
     public function test_two_optional_parameters_one_passed_in_function_routes(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $r->any('/optional/*/*', static function ($user = null, $list = null) {
             return $user . $list;
         });
@@ -2090,7 +2090,7 @@ final class RouterTest extends TestCase
 
     public function test_single_last_param(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $args = [];
         $r->any('/documents/*', static function ($documentId) use (&$args): void {
             $args = func_get_args();
@@ -2101,7 +2101,7 @@ final class RouterTest extends TestCase
 
     public function test_single_last_param2(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $args = [];
         $r->any('/documents/**', static function ($documentsPath) use (&$args): void {
             $args = func_get_args();
@@ -2112,7 +2112,7 @@ final class RouterTest extends TestCase
 
     public function test_catchall_on_root_call_should_get_callback_parameter(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $args = [];
         $r->any('/**', static function ($documentsPath) use (&$args): void {
             $args = func_get_args();
@@ -2131,7 +2131,7 @@ final class RouterTest extends TestCase
             }
         };
         $e = 'Hello';
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $r->get('/', $e)
             ->accept([
                 'text/html' => [$callable, 'getBar'],
@@ -2155,7 +2155,7 @@ final class RouterTest extends TestCase
     #[DataProvider('provider_content_type')]
     public function test_automatic_content_type_header(string $ctype): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $r->get('/auto', '')->accept([$ctype => 'json_encode']);
         $serverRequest = (new ServerRequest('get', '/auto'))->withHeader('Accept', $ctype);
         $response = $r->dispatch($serverRequest)->response();
@@ -2167,7 +2167,7 @@ final class RouterTest extends TestCase
     #[DataProvider('provider_content_type')]
     public function test_wildcard_automatic_content_type_header(string $ctype): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $r->get('/auto', '')->accept([$ctype => 'json_encode']);
         $serverRequest = (new ServerRequest('get', '/auto'))->withHeader('Accept', '*/*');
         $response = $r->dispatch($serverRequest)->response();
@@ -2177,7 +2177,7 @@ final class RouterTest extends TestCase
 
     public function test_request_forward(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $r1 = $r->get('/route1', 'route1');
         $response = self::responseBody($r->dispatch(new ServerRequest('get', '/route1')));
         self::assertEquals('route1', $response);
@@ -2193,7 +2193,7 @@ final class RouterTest extends TestCase
 
     public function test_negotiate_acceptable_complete_headers(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/accept', static function () {
@@ -2225,7 +2225,7 @@ final class RouterTest extends TestCase
 
     public function test_negotiate_merges_vary_headers(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->get('/', static function () {
             return 'ok';
         })
@@ -2255,7 +2255,7 @@ final class RouterTest extends TestCase
 
     public function test_negotiate_respects_existing_response_headers(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->get('/', static function (ResponseInterface $response) {
             $response->getBody()->write('ok');
 
@@ -2286,7 +2286,7 @@ final class RouterTest extends TestCase
 
     public function test_accept_content_type_header(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function () {
@@ -2305,7 +2305,7 @@ final class RouterTest extends TestCase
 
     public function test_accept_content_language_header(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->methodOverriding = false;
         $router->get('/', static function () {
@@ -2335,7 +2335,7 @@ final class RouterTest extends TestCase
     #[DataProvider('provider_content_type_extension')]
     public function test_do_not_set_automatic_content_type_header_for_extensions(string $ctype, string $ext): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $r->get('/auto', '')->accept([$ext => 'json_encode']);
 
         $r = $r->dispatch(new ServerRequest('get', '/auto' . $ext))->response();
@@ -2346,7 +2346,7 @@ final class RouterTest extends TestCase
     /** @covers \Respect\Rest\Routes\AbstractRoute */
     public function test_optional_parameters_should_be_allowed_only_at_the_end_of_the_path(): void
     {
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
         $r->get('/users/*/photos/*', static function ($username, $photoId = null) {
             return 'match';
         });
@@ -2358,7 +2358,7 @@ final class RouterTest extends TestCase
     public function test_route_ordering_with_when(): void
     {
         $when = false;
-        $r = new Router(new Psr17Factory());
+        $r = self::newRouter();
 
         $r->get('/', 'HOME');
 
@@ -2385,7 +2385,7 @@ final class RouterTest extends TestCase
 
     public function test_when_should_be_called_only_on_existent_methods(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
 
         $r1 = $router->any('/meow/*', StubRoutable::class);
@@ -2394,7 +2394,7 @@ final class RouterTest extends TestCase
         $router->any('/moo/*', RouteKnowsNothing::class);
 
         $serverRequest = (new ServerRequest('get', '/meow/blub'))->withHeader('Accept', 'application/json');
-        $response = $router->run(new DispatchContext($serverRequest));
+        $response = $router->run(self::newContextForRouter($router, $serverRequest));
         self::assertNotNull($response);
         $out = (string) $response->getBody();
 
@@ -2403,8 +2403,8 @@ final class RouterTest extends TestCase
 
     public function test_request_should_be_available_from_router_after_dispatching(): void
     {
-        $request = new DispatchContext(new ServerRequest('get', '/foo'));
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
+        $request = self::newContextForRouter($router, new ServerRequest('get', '/foo'));
         $router->isAutoDispatched = false;
         $phpunit = $this;
         $router->get('/foo', static function () use ($router, $request, $phpunit) {
@@ -2421,7 +2421,7 @@ final class RouterTest extends TestCase
     /** @covers Respect\Rest\Router::__toString */
     public function testToStringReturnsCurrentDispatchResponseBody(): void
     {
-        $router = new Router(new Psr17Factory());
+        $router = self::newRouter();
         $router->isAutoDispatched = false;
         $router->get('/foo', 'bar');
 
@@ -2436,5 +2436,17 @@ final class RouterTest extends TestCase
         self::assertNotNull($response);
 
         return (string) $response->getBody();
+    }
+
+    private static function newRouter(string|null $virtualHost = null): Router
+    {
+        $factory = new Psr17Factory();
+
+        return new Router(new HttpFactories($factory, $factory), $virtualHost);
+    }
+
+    private static function newContextForRouter(Router $router, ServerRequestInterface $serverRequest): DispatchContext
+    {
+        return $router->createDispatchContext($serverRequest);
     }
 }

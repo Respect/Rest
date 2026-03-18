@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Test\Routes;
 
+use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\DispatchContext;
@@ -25,7 +26,11 @@ final class StaticValueTest extends TestCase
     {
         $route = new StaticValue('any', '/', ['foo']);
         $p = [''];
-        $context = new DispatchContext(new ServerRequest('GET', '/'));
+        $context = new DispatchContext(
+            new ServerRequest('GET', '/'),
+            new Psr17Factory(),
+            new Psr17Factory(),
+        );
         self::assertEquals(['foo'], $route->runTarget('get', $p, $context));
     }
 }

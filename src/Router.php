@@ -8,6 +8,7 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use ReflectionClass;
 use Respect\Rest\Routes\AbstractRoute;
 use Throwable;
@@ -60,10 +61,8 @@ final class Router
 
     private DispatchEngine|null $dispatchEngine = null;
 
-    public function __construct(
-        public ResponseFactoryInterface $responseFactory,
-        protected string|null $virtualHost = null,
-    ) {
+    public function __construct(private HttpFactories $httpFactories, protected string|null $virtualHost = null)
+    {
     }
 
     public function always(string $routineName, mixed ...$params): static
@@ -86,7 +85,6 @@ final class Router
         $this->routes[] = $route;
         $route->sideRoutes = &$this->sideRoutes;
         $route->virtualHost = $this->virtualHost;
-        $route->responseFactory = $this->responseFactory;
 
         foreach ($this->globalRoutines as $routine) {
             $route->appendRoutine($routine);
@@ -100,7 +98,6 @@ final class Router
     public function appendSideRoute(AbstractRoute $route): static
     {
         $this->sideRoutes[] = $route;
-        $route->responseFactory = $this->responseFactory;
 
         foreach ($this->globalRoutines as $routine) {
             $route->appendRoutine($routine);
@@ -134,6 +131,15 @@ final class Router
     public function dispatch(ServerRequestInterface $serverRequest): DispatchContext
     {
         return $this->dispatchEngine()->dispatch($serverRequest);
+    }
+
+    public function createDispatchContext(ServerRequestInterface $serverRequest): DispatchContext
+    {
+        return new DispatchContext(
+            $serverRequest,
+            $this->responseFactory(),
+            $this->streamFactory(),
+        );
     }
 
     public function dispatchContext(DispatchContext $context): DispatchContext
@@ -199,7 +205,11 @@ final class Router
 
     public function dispatchEngine(): DispatchEngine
     {
-        return $this->dispatchEngine ??= new DispatchEngine($this);
+        return $this->dispatchEngine ??= new DispatchEngine(
+            $this,
+            $this->responseFactory(),
+            $this->streamFactory(),
+        );
     }
 
     public static function compareOcurrences(string $patternA, string $patternB, string $sub): bool
@@ -238,6 +248,16 @@ final class Router
                 return $slashCount ? -1 : 1;
             },
         );
+    }
+
+    private function responseFactory(): ResponseFactoryInterface
+    {
+        return $this->httpFactories->responses;
+    }
+
+    private function streamFactory(): StreamFactoryInterface
+    {
+        return $this->httpFactories->streams;
     }
 
     public function __destruct()

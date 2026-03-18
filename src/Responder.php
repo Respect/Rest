@@ -7,6 +7,7 @@ namespace Respect\Rest;
 use JsonSerializable;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 
 use function array_values;
 use function explode;
@@ -19,13 +20,10 @@ use function trim;
 
 final class Responder
 {
-    public function __construct(private ResponseFactoryInterface $responseFactory)
-    {
-    }
-
-    public function createResponse(int $status = 200): ResponseInterface
-    {
-        return $this->responseFactory->createResponse($status);
+    public function __construct(
+        private ResponseFactoryInterface $responseFactory,
+        private StreamFactoryInterface $streamFactory,
+    ) {
     }
 
     public function normalize(mixed $result): ResponseInterface
@@ -34,21 +32,19 @@ final class Responder
             return $result;
         }
 
-        $response = $this->createResponse();
+        $response = $this->responseFactory->createResponse();
 
         if (is_resource($result)) {
-            return $response->withBody(new Stream($result));
+            return $response->withBody($this->streamFactory->createStreamFromResource($result));
         }
 
         if (is_array($result) || $result instanceof JsonSerializable) {
-            $response->getBody()->write((string) json_encode($result));
-
-            return $response->withHeader('Content-Type', 'application/json');
+            return $response
+                ->withHeader('Content-Type', 'application/json')
+                ->withBody($this->streamFactory->createStream((string) json_encode($result)));
         }
 
-        $response->getBody()->write((string) $result);
-
-        return $response;
+        return $response->withBody($this->streamFactory->createStream((string) $result));
     }
 
     /**
@@ -101,7 +97,7 @@ final class Responder
             return $response;
         }
 
-        return $response->withBody($this->createResponse()->getBody());
+        return $response->withBody($this->streamFactory->createStream());
     }
 
     private function mergeHeaderValues(string $existing, string $appended): string
