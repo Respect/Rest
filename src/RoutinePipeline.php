@@ -10,20 +10,17 @@ use Respect\Rest\Routines\ProxyableBy;
 use Respect\Rest\Routines\ProxyableThrough;
 use Respect\Rest\Routines\ProxyableWhen;
 
-use function assert;
 use function is_callable;
 
 final class RoutinePipeline
 {
     /** @param array<int, mixed> $params */
-    public function matches(DispatchContext $context, array $params = []): bool
+    public function matches(DispatchContext $context, AbstractRoute $route, array $params = []): bool
     {
-        assert($context->route !== null);
-
-        foreach ($context->route->routines as $routine) {
+        foreach ($route->routines as $routine) {
             if (
                 $routine instanceof ProxyableWhen
-                && !$context->routineCall('when', $context->method(), $routine, $params)
+                && !$context->routineCall('when', $context->method(), $routine, $params, $route)
             ) {
                 return false;
             }
@@ -32,11 +29,9 @@ final class RoutinePipeline
         return true;
     }
 
-    public function processBy(DispatchContext $context): mixed
+    public function processBy(DispatchContext $context, AbstractRoute $route): mixed
     {
-        assert($context->route !== null);
-
-        foreach ($context->route->routines as $routine) {
+        foreach ($route->routines as $routine) {
             if (!$routine instanceof ProxyableBy) {
                 continue;
             }
@@ -46,6 +41,7 @@ final class RoutinePipeline
                 $context->method(),
                 $routine,
                 $context->params,
+                $route,
             );
 
             if ($result instanceof AbstractRoute || $result instanceof ResponseInterface || $result === false) {
@@ -56,11 +52,9 @@ final class RoutinePipeline
         return null;
     }
 
-    public function processThrough(DispatchContext $context, mixed $response): mixed
+    public function processThrough(DispatchContext $context, AbstractRoute $route, mixed $response): mixed
     {
-        assert($context->route !== null);
-
-        foreach ($context->route->routines as $routine) {
+        foreach ($route->routines as $routine) {
             if (!($routine instanceof ProxyableThrough)) {
                 continue;
             }
@@ -70,6 +64,7 @@ final class RoutinePipeline
                 $context->method(),
                 $routine,
                 $context->params,
+                $route,
             );
 
             if (!is_callable($proxyCallback)) {

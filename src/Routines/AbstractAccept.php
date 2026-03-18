@@ -60,27 +60,6 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     }
 
     /**
-     * Convert a $_SERVER-style header constant to a PSR-7 header name.
-     *
-     * HTTP_ACCEPT          -> Accept
-     * HTTP_ACCEPT_CHARSET  -> Accept-Charset
-     * HTTP_ACCEPT_ENCODING -> Accept-Encoding
-     * HTTP_ACCEPT_LANGUAGE -> Accept-Language
-     * HTTP_USER_AGENT      -> User-Agent
-     */
-    protected function getAcceptHeaderName(): string
-    {
-        // phpcs:ignore SlevomatCodingStandard.Classes.DisallowLateStaticBindingForConstants
-        $header = static::ACCEPT_HEADER;
-
-        if (!str_starts_with($header, 'HTTP_')) {
-            return $header;
-        }
-
-        return str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($header, 5)))));
-    }
-
-    /**
      * @param array<int, mixed> $params
      *
      * @return array<int, string>
@@ -172,7 +151,28 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
         return $requested == $provided;
     }
 
-    protected function getNegotiatedHeaderType(): string
+    /**
+     * Convert a $_SERVER-style header constant to a PSR-7 header name.
+     *
+     * HTTP_ACCEPT          -> Accept
+     * HTTP_ACCEPT_CHARSET  -> Accept-Charset
+     * HTTP_ACCEPT_ENCODING -> Accept-Encoding
+     * HTTP_ACCEPT_LANGUAGE -> Accept-Language
+     * HTTP_USER_AGENT      -> User-Agent
+     */
+    private function getAcceptHeaderName(): string
+    {
+        // phpcs:ignore SlevomatCodingStandard.Classes.DisallowLateStaticBindingForConstants
+        $header = static::ACCEPT_HEADER;
+
+        if (!str_starts_with($header, 'HTTP_')) {
+            return $header;
+        }
+
+        return str_replace(' ', '-', ucwords(strtolower(str_replace('_', ' ', substr($header, 5)))));
+    }
+
+    private function getNegotiatedHeaderType(): string
     {
         return (string) preg_replace(
             [

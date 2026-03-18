@@ -41,7 +41,7 @@ use const E_USER_ERROR;
  * @method AbstractRoute patch(string $path, mixed $routeTarget)
  * @method AbstractRoute any(string $path, mixed $routeTarget)
  */
-final class Router implements MiddlewareInterface
+final class Router implements MiddlewareInterface, RouteProvider
 {
     public DispatchContext|null $context = null;
 
@@ -54,12 +54,9 @@ final class Router implements MiddlewareInterface
     /** @var array<int, AbstractRoute> */
     protected array $sideRoutes = [];
 
-    /** Used by tests for named route attributes */
-    public mixed $allMembers = null;
-
     private DispatchEngine|null $dispatchEngine = null;
 
-    public function __construct(private HttpFactories $httpFactories, protected string|null $virtualHost = null)
+    public function __construct(private HttpFactories $httpFactories, protected string|null $basePath = null)
     {
     }
 
@@ -82,7 +79,7 @@ final class Router implements MiddlewareInterface
     {
         $this->routes[] = $route;
         $route->sideRoutes = &$this->sideRoutes;
-        $route->virtualHost = $this->virtualHost;
+        $route->basePath = $this->basePath;
 
         foreach ($this->globalRoutines as $routine) {
             $route->appendRoutine($routine);
@@ -196,9 +193,9 @@ final class Router implements MiddlewareInterface
         return $this->routes;
     }
 
-    public function getVirtualHost(): string|null
+    public function getBasePath(): string|null
     {
-        return $this->virtualHost;
+        return $this->basePath;
     }
 
     public function dispatchEngine(): DispatchEngine
@@ -207,6 +204,9 @@ final class Router implements MiddlewareInterface
             $this,
             $this->responseFactory(),
             $this->streamFactory(),
+            function (DispatchContext $ctx): void {
+                $this->context = $ctx;
+            },
         );
     }
 
