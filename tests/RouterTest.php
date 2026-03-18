@@ -13,6 +13,8 @@ use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionMethod;
 use ReflectionObject;
 use Respect\Rest\DispatchContext;
@@ -1818,6 +1820,88 @@ final class RouterTest extends TestCase
         self::assertNotNull($response);
         self::assertSame('GET', $response->getHeaderLine('X-Handled-By'));
         self::assertSame('', (string) $response->getBody());
+    }
+
+    public function testDispatchEngineImplementsRequestHandlerInterface(): void
+    {
+        self::assertInstanceOf(RequestHandlerInterface::class, $this->router->dispatchEngine());
+    }
+
+    public function testDispatchEngineHandleReturnsSameResponseAsDispatch(): void
+    {
+        $router = self::newRouter();
+        $router->isAutoDispatched = false;
+        $router->get('/', static function () {
+            return 'handled';
+        });
+
+        $request = new ServerRequest('GET', '/');
+        $dispatched = $router->dispatch($request)->response();
+        $handled = $router->dispatchEngine()->handle($request);
+
+        self::assertNotNull($dispatched);
+        self::assertSame($dispatched->getStatusCode(), $handled->getStatusCode());
+        self::assertSame((string) $dispatched->getBody(), (string) $handled->getBody());
+    }
+
+    public function testDispatchEngineHandleReturns500ForUncaughtExceptions(): void
+    {
+        $router = self::newRouter();
+        $router->isAutoDispatched = false;
+        $router->get('/', static function (): void {
+            throw new InvalidArgumentException('boom');
+        });
+
+        $response = $router->dispatchEngine()->handle(new ServerRequest('GET', '/'));
+
+        self::assertSame(500, $response->getStatusCode());
+    }
+
+    public function testDispatchEngineHandlePreservesExceptionRoutes(): void
+    {
+        $router = self::newRouter();
+        $router->isAutoDispatched = false;
+        $router->get('/', static function (): void {
+            throw new InvalidArgumentException('boom');
+        });
+        $router->exceptionRoute(InvalidArgumentException::class, static function () {
+            return 'caught';
+        });
+
+        $response = $router->dispatchEngine()->handle(new ServerRequest('GET', '/'));
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('caught', (string) $response->getBody());
+    }
+
+    public function testRouterImplementsMiddlewareInterface(): void
+    {
+        self::assertInstanceOf(MiddlewareInterface::class, $this->router);
+    }
+
+    public function testRouterProcessHandlesRequestWithoutDelegating(): void
+    {
+        $router = self::newRouter();
+        $router->isAutoDispatched = false;
+        $router->get('/', static function () {
+            return 'processed';
+        });
+        $handler = new class implements RequestHandlerInterface {
+            public bool $wasCalled = false;
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->wasCalled = true;
+
+                return (new Psr17Factory())->createResponse(418);
+            }
+        };
+
+        $response = $router->process(new ServerRequest('GET', '/'), $handler);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('processed', (string) $response->getBody());
+        self::assertFalse($handler->wasCalled);
     }
 
     public function test_http_method_head_with_class_routes_and_routines(): void

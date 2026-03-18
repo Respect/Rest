@@ -8,8 +8,10 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use Respect\Rest\Routes\AbstractRoute;
 use SplObjectStorage;
+use Throwable;
 
 use function array_filter;
 use function array_keys;
@@ -22,7 +24,7 @@ use function preg_quote;
 use function preg_replace;
 use function stripos;
 
-final class DispatchEngine
+final class DispatchEngine implements RequestHandlerInterface
 {
     private RoutinePipeline $routinePipeline;
 
@@ -43,6 +45,17 @@ final class DispatchEngine
         );
 
         return $this->dispatchContext($context);
+    }
+
+    public function handle(ServerRequestInterface $request): ResponseInterface
+    {
+        try {
+            $response = $this->dispatch($request)->response();
+        } catch (Throwable) {
+            return $this->responseFactory->createResponse(500);
+        }
+
+        return $response ?? $this->responseFactory->createResponse(500);
     }
 
     public function dispatchContext(DispatchContext $context): DispatchContext
