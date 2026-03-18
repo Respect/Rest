@@ -59,7 +59,6 @@ final class DispatchEngine implements RequestHandlerInterface
 
     public function dispatchContext(DispatchContext $context): DispatchContext
     {
-        $this->router->isAutoDispatched = false;
         $this->router->context = $context;
         $context->setRoutinePipeline($this->routinePipeline);
 
@@ -68,11 +67,6 @@ final class DispatchEngine implements RequestHandlerInterface
         }
 
         return $context;
-    }
-
-    public function run(DispatchContext $context): ResponseInterface|null
-    {
-        return $this->dispatchContext($context)->response();
     }
 
     /**

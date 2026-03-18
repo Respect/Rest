@@ -43,8 +43,6 @@ use const E_USER_ERROR;
  */
 final class Router implements MiddlewareInterface
 {
-    public bool $isAutoDispatched = true;
-
     public DispatchContext|null $context = null;
 
     /** @var array<int, Routines\Routinable> */
@@ -184,11 +182,6 @@ final class Router implements MiddlewareInterface
         return $route;
     }
 
-    public function run(DispatchContext $context): ResponseInterface|null
-    {
-        return $this->dispatchEngine()->run($context);
-    }
-
     public function staticRoute(string $method, string $path, mixed $staticValue): Routes\StaticValue
     {
         $route = new Routes\StaticValue($method, $path, $staticValue);
@@ -263,20 +256,6 @@ final class Router implements MiddlewareInterface
     private function streamFactory(): StreamFactoryInterface
     {
         return $this->httpFactories->streams;
-    }
-
-    public function __destruct()
-    {
-        if (!$this->isAutoDispatched || !$this->context) {
-            return;
-        }
-
-        $response = $this->context->response();
-        if ($response === null) {
-            return;
-        }
-
-        echo (string) $response->getBody();
     }
 
     public function __toString(): string
