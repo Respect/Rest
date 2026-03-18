@@ -45,8 +45,6 @@ final class Router implements MiddlewareInterface
 {
     public bool $isAutoDispatched = true;
 
-    public bool $methodOverriding = false;
-
     public DispatchContext|null $context = null;
 
     /** @var array<int, Routines\Routinable> */

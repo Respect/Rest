@@ -69,11 +69,6 @@ final class DispatchContext
         return $this->effectivePath;
     }
 
-    public function overrideMethod(string $method): void
-    {
-        $this->effectiveMethod = strtoupper($method);
-    }
-
     public function setPath(string $path): void
     {
         $this->effectivePath = $path;

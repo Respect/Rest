@@ -31,7 +31,6 @@ final class AuthBasicTest extends TestCase
         $factory = new Psr17Factory();
         $this->router = new Router(new HttpFactories($factory, $factory));
         $this->router->isAutoDispatched = false;
-        $this->router->methodOverriding = false;
     }
 
     public function shunt_wantedParams(): void
