@@ -23,6 +23,7 @@ use function is_array;
 use function is_callable;
 use function is_string;
 use function preg_match;
+use function rtrim;
 use function substr_count;
 use function trigger_error;
 use function usort;
@@ -41,7 +42,7 @@ use const E_USER_ERROR;
  * @method AbstractRoute patch(string $path, mixed $routeTarget)
  * @method AbstractRoute any(string $path, mixed $routeTarget)
  */
-final class Router implements MiddlewareInterface, RouteProvider
+final class Router implements MiddlewareInterface, RequestHandlerInterface, RouteProvider
 {
     public DispatchContext|null $context = null;
 
@@ -56,8 +57,11 @@ final class Router implements MiddlewareInterface, RouteProvider
 
     private DispatchEngine|null $dispatchEngine = null;
 
-    public function __construct(private HttpFactories $httpFactories, protected string|null $basePath = null)
-    {
+    public function __construct(
+        protected string $basePath,
+        private ResponseFactoryInterface&StreamFactoryInterface $factory,
+    ) {
+        $this->basePath = rtrim($basePath, '/');
     }
 
     public function always(string $routineName, mixed ...$params): static
@@ -128,17 +132,36 @@ final class Router implements MiddlewareInterface, RouteProvider
         return $this->dispatchEngine()->dispatch($serverRequest);
     }
 
-    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    public function handle(ServerRequestInterface $request): ResponseInterface
     {
         return $this->dispatchEngine()->handle($request);
+    }
+
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        $context = $this->dispatch($request);
+
+        if ($context->route === null && !$context->hasPreparedResponse()) {
+            return $handler->handle($request);
+        }
+
+        if ($context->route === null) {
+            $response = $context->response();
+            if ($response !== null && $response->getStatusCode() === 404) {
+                return $handler->handle($request);
+            }
+
+            return $response ?? $handler->handle($request);
+        }
+
+        return $context->response() ?? $handler->handle($request);
     }
 
     public function createDispatchContext(ServerRequestInterface $serverRequest): DispatchContext
     {
         return new DispatchContext(
             $serverRequest,
-            $this->responseFactory(),
-            $this->streamFactory(),
+            $this->factory,
         );
     }
 
@@ -193,7 +216,7 @@ final class Router implements MiddlewareInterface, RouteProvider
         return $this->routes;
     }
 
-    public function getBasePath(): string|null
+    public function getBasePath(): string
     {
         return $this->basePath;
     }
@@ -202,8 +225,7 @@ final class Router implements MiddlewareInterface, RouteProvider
     {
         return $this->dispatchEngine ??= new DispatchEngine(
             $this,
-            $this->responseFactory(),
-            $this->streamFactory(),
+            $this->factory,
             function (DispatchContext $ctx): void {
                 $this->context = $ctx;
             },
@@ -246,16 +268,6 @@ final class Router implements MiddlewareInterface, RouteProvider
                 return $slashCount ? -1 : 1;
             },
         );
-    }
-
-    private function responseFactory(): ResponseFactoryInterface
-    {
-        return $this->httpFactories->responses;
-    }
-
-    private function streamFactory(): StreamFactoryInterface
-    {
-        return $this->httpFactories->streams;
     }
 
     public function __toString(): string

@@ -31,8 +31,7 @@ final class DispatchEngine implements RequestHandlerInterface
     /** @param (Closure(DispatchContext): void)|null $onContextReady */
     public function __construct(
         private RouteProvider $routeProvider,
-        private ResponseFactoryInterface $responseFactory,
-        private StreamFactoryInterface $streamFactory,
+        private ResponseFactoryInterface&StreamFactoryInterface $factory,
         private Closure|null $onContextReady = null,
     ) {
         $this->routinePipeline = new RoutinePipeline();
@@ -42,8 +41,7 @@ final class DispatchEngine implements RequestHandlerInterface
     {
         $context = new DispatchContext(
             $serverRequest,
-            $this->responseFactory,
-            $this->streamFactory,
+            $this->factory,
         );
 
         return $this->dispatchContext($context);
@@ -54,10 +52,10 @@ final class DispatchEngine implements RequestHandlerInterface
         try {
             $response = $this->dispatch($request)->response();
         } catch (Throwable) {
-            return $this->responseFactory->createResponse(500);
+            return $this->factory->createResponse(500);
         }
 
-        return $response ?? $this->responseFactory->createResponse(500);
+        return $response ?? $this->factory->createResponse(500);
     }
 
     public function dispatchContext(DispatchContext $context): DispatchContext
@@ -149,7 +147,7 @@ final class DispatchEngine implements RequestHandlerInterface
     private function applyBasePath(DispatchContext $context): void
     {
         $basePath = $this->routeProvider->getBasePath();
-        if ($basePath === null) {
+        if ($basePath === '') {
             return;
         }
 

@@ -8,7 +8,6 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Router;
 
 /** @covers Respect\Rest\Routines\Rel */
@@ -16,8 +15,7 @@ final class RelTest extends TestCase
 {
     public function testSimpleTextRelationPassesThroughData(): void
     {
-        $factory = new Psr17Factory();
-        $router = new Router(new HttpFactories($factory, $factory));
+        $router = new Router('', new Psr17Factory());
         $router->get('/', static function () {
             return [];
         })
@@ -38,8 +36,7 @@ final class RelTest extends TestCase
 
     public function testSimpleCallbackRelationPassesThroughData(): void
     {
-        $factory = new Psr17Factory();
-        $router = new Router(new HttpFactories($factory, $factory));
+        $router = new Router('', new Psr17Factory());
         $router->get('/', static function () {
             return ['foo'];
         })
@@ -64,8 +61,7 @@ final class RelTest extends TestCase
 
     public function testMultipleTextRelationPassesThroughData(): void
     {
-        $factory = new Psr17Factory();
-        $router = new Router(new HttpFactories($factory, $factory));
+        $router = new Router('', new Psr17Factory());
         $router->get('/', static function () {
             return [];
         })
@@ -88,8 +84,7 @@ final class RelTest extends TestCase
 
     public function testNonUniqueMultipleTextRelationPassesThroughData(): void
     {
-        $factory = new Psr17Factory();
-        $router = new Router(new HttpFactories($factory, $factory));
+        $router = new Router('', new Psr17Factory());
         $router->get('/', static function () {
             return [];
         })

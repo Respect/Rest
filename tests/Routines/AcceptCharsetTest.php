@@ -8,20 +8,18 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Routines\AcceptCharset;
 
 /** @covers Respect\Rest\Routines\AcceptCharset */
 final class AcceptCharsetTest extends TestCase
 {
-    private HttpFactories $httpFactories;
+    private Psr17Factory $factory;
 
     private AcceptCharset $routine;
 
     protected function setUp(): void
     {
-        $factory = new Psr17Factory();
-        $this->httpFactories = new HttpFactories($factory, $factory);
+        $this->factory = new Psr17Factory();
         $this->routine = new AcceptCharset([
             'utf-8' => static fn(): string => 'utf8-content',
             'iso-8859-1' => static fn(): string => 'latin1-content',
@@ -59,8 +57,7 @@ final class AcceptCharsetTest extends TestCase
         $params = [];
         $context = new DispatchContext(
             new ServerRequest('GET', '/'),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
 
         self::assertTrue($this->routine->when($context, $params));
@@ -82,8 +79,7 @@ final class AcceptCharsetTest extends TestCase
     {
         return new DispatchContext(
             (new ServerRequest('GET', '/'))->withHeader($header, $value),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
     }
 }

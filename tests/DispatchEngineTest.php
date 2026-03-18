@@ -8,7 +8,6 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\DispatchEngine;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\RouteProvider;
 use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routes\Callback;
@@ -18,14 +17,11 @@ use RuntimeException;
 /** @covers Respect\Rest\DispatchEngine */
 final class DispatchEngineTest extends TestCase
 {
-    private HttpFactories $httpFactories;
-
     private Psr17Factory $factory;
 
     protected function setUp(): void
     {
         $this->factory = new Psr17Factory();
-        $this->httpFactories = new HttpFactories($this->factory, $this->factory);
     }
 
     public function testMatchingRouteConfiguresContext(): void
@@ -118,8 +114,7 @@ final class DispatchEngineTest extends TestCase
 
         $engine = new DispatchEngine(
             $provider,
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
 
         $context = $engine->dispatch(new ServerRequest('GET', '/api/resource'));
@@ -161,12 +156,11 @@ final class DispatchEngineTest extends TestCase
         $provider->method('getRoutes')->willReturn([
             new StaticValue('GET', '/test', 'ok'),
         ]);
-        $provider->method('getBasePath')->willReturn(null);
+        $provider->method('getBasePath')->willReturn('');
 
         $engine = new DispatchEngine(
             $provider,
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
             static function ($context) use (&$captured): void {
                 $captured = $context;
             },
@@ -194,12 +188,11 @@ final class DispatchEngineTest extends TestCase
     {
         $provider = $this->createStub(RouteProvider::class);
         $provider->method('getRoutes')->willReturn($routes);
-        $provider->method('getBasePath')->willReturn(null);
+        $provider->method('getBasePath')->willReturn('');
 
         return new DispatchEngine(
             $provider,
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
     }
 }

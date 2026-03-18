@@ -29,7 +29,6 @@ final class StaticValueTest extends TestCase
         $context = new DispatchContext(
             new ServerRequest('GET', '/'),
             new Psr17Factory(),
-            new Psr17Factory(),
         );
         self::assertEquals(['foo'], $route->runTarget('get', $p, $context));
     }

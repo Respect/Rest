@@ -15,6 +15,11 @@
 
     <rule ref="Respect" />
 
+    <!-- The emit() function is intentionally a namespaced global function -->
+    <rule ref="Squiz.Functions.GlobalFunction.Found">
+        <exclude-pattern>src/emit.php</exclude-pattern>
+    </rule>
+
     <!-- Snake_case test method names are a legitimate convention -->
     <rule ref="Generic.NamingConventions.CamelCapsFunctionName.ScopeNotCamelCaps">
         <exclude-pattern>tests/</exclude-pattern>

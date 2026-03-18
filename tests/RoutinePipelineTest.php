@@ -9,7 +9,6 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Routes\Callback;
 use Respect\Rest\RoutinePipeline;
 use Respect\Rest\Routines\By;
@@ -19,14 +18,13 @@ use Respect\Rest\Routines\When;
 /** @covers Respect\Rest\RoutinePipeline */
 final class RoutinePipelineTest extends TestCase
 {
-    private HttpFactories $httpFactories;
+    private Psr17Factory $factory;
 
     private RoutinePipeline $pipeline;
 
     protected function setUp(): void
     {
-        $factory = new Psr17Factory();
-        $this->httpFactories = new HttpFactories($factory, $factory);
+        $this->factory = new Psr17Factory();
         $this->pipeline = new RoutinePipeline();
     }
 
@@ -74,7 +72,7 @@ final class RoutinePipelineTest extends TestCase
     public function testProcessByReturnsResponseWhenByReturnsResponse(): void
     {
         $route = new Callback('GET', '/test', static fn(): string => 'ok');
-        $response = $this->httpFactories->responses->createResponse(401);
+        $response = $this->factory->createResponse(401);
         $route->appendRoutine(new By(static fn() => $response));
         $context = $this->newContext();
         $context->route = $route;
@@ -124,8 +122,7 @@ final class RoutinePipelineTest extends TestCase
     {
         return new DispatchContext(
             new ServerRequest('GET', '/test'),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
     }
 }

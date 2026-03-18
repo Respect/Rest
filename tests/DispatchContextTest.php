@@ -15,7 +15,6 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionFunction;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Responder;
 use Respect\Rest\Routes;
 use Respect\Rest\Routines;
@@ -35,12 +34,11 @@ use function strtolower;
 #[AllowMockObjectsWithoutExpectations]
 final class DispatchContextTest extends TestCase
 {
-    private HttpFactories $httpFactories;
+    private Psr17Factory $factory;
 
     protected function setUp(): void
     {
-        $factory = new Psr17Factory();
-        $this->httpFactories = new HttpFactories($factory, $factory);
+        $this->factory = new Psr17Factory();
     }
 
     /** @covers  Respect\Rest\DispatchContext::__construct */
@@ -113,8 +111,7 @@ final class DispatchContextTest extends TestCase
 
         $context = new DispatchContext(
             new ServerRequest('GET', 'http://google.com/search?q=foo'),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
 
         self::assertNotEquals(
@@ -516,7 +513,7 @@ final class DispatchContextTest extends TestCase
     {
         $context = $this->newContext(new ServerRequest('GET', '/users/alganet/lists'));
         $factory = new Psr17Factory();
-        $context->setResponder(new Responder($factory, $factory));
+        $context->setResponder(new Responder($factory));
         $context->route = $this->getMockForRoute('GET', '/users/alganet/lists', 'Some list items');
 
         $response = $context->response();
@@ -651,6 +648,6 @@ final class DispatchContextTest extends TestCase
 
     private function newContext(ServerRequest $request): DispatchContext
     {
-        return new DispatchContext($request, $this->httpFactories->responses, $this->httpFactories->streams);
+        return new DispatchContext($request, $this->factory);
     }
 }

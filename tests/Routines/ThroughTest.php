@@ -8,7 +8,6 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Routines\Through;
 
 /** @covers Respect\Rest\Routines\Through */
@@ -16,12 +15,11 @@ final class ThroughTest extends TestCase
 {
     protected Through $object;
 
-    private HttpFactories $httpFactories;
+    private Psr17Factory $factory;
 
     protected function setUp(): void
     {
-        $factory = new Psr17Factory();
-        $this->httpFactories = new HttpFactories($factory, $factory);
+        $this->factory = new Psr17Factory();
         $this->object = new Through(static function () {
             return 'from through callback';
         });
@@ -32,8 +30,7 @@ final class ThroughTest extends TestCase
     {
         $context = new DispatchContext(
             new ServerRequest('GET', '/'),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
         $params = [];
         $alias = &$this->object;

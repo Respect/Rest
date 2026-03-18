@@ -35,6 +35,9 @@
         "squizlabs/php_codesniffer": "^4.0"
     },
     "autoload": {
+        "files": [
+            "src/emit.php"
+        ],
         "psr-4": {
             "Respect\\Rest\\": "src/"
         }

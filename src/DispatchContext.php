@@ -51,8 +51,7 @@ final class DispatchContext
 
     public function __construct(
         public ServerRequestInterface $request,
-        public ResponseFactoryInterface $responseFactory,
-        public StreamFactoryInterface $streamFactory,
+        public ResponseFactoryInterface&StreamFactoryInterface $factory,
     ) {
         $this->effectivePath = rtrim(rawurldecode($request->getUri()->getPath()), ' /');
         $this->effectiveMethod = strtoupper($request->getMethod());
@@ -321,7 +320,7 @@ final class DispatchContext
             return $this->responder;
         }
 
-        return $this->responder = new Responder($this->responseFactory, $this->streamFactory);
+        return $this->responder = new Responder($this->factory);
     }
 
     private function ensureResponseDraft(): ResponseInterface
@@ -330,7 +329,7 @@ final class DispatchContext
             return $this->responseDraft;
         }
 
-        return $this->responseDraft = $this->responseFactory->createResponse();
+        return $this->responseDraft = $this->factory->createResponse();
     }
 
     public function __toString(): string

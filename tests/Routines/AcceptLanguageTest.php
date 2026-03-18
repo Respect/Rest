@@ -8,20 +8,18 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Routines\AcceptLanguage;
 
 /** @covers Respect\Rest\Routines\AcceptLanguage */
 final class AcceptLanguageTest extends TestCase
 {
-    private HttpFactories $httpFactories;
+    private Psr17Factory $factory;
 
     private AcceptLanguage $routine;
 
     protected function setUp(): void
     {
-        $factory = new Psr17Factory();
-        $this->httpFactories = new HttpFactories($factory, $factory);
+        $this->factory = new Psr17Factory();
         $this->routine = new AcceptLanguage([
             'en' => static fn(): string => 'english',
             'en-US' => static fn(): string => 'american english',
@@ -74,8 +72,7 @@ final class AcceptLanguageTest extends TestCase
         $params = [];
         $context = new DispatchContext(
             new ServerRequest('GET', '/'),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
 
         self::assertTrue($this->routine->when($context, $params));
@@ -97,8 +94,7 @@ final class AcceptLanguageTest extends TestCase
     {
         return new DispatchContext(
             (new ServerRequest('GET', '/'))->withHeader($header, $value),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
     }
 }

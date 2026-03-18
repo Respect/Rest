@@ -10,7 +10,6 @@ use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Router;
 
 use function func_get_args;
@@ -27,8 +26,7 @@ final class Psr7InjectionTest extends TestCase
 
     protected function setUp(): void
     {
-        $factory = new Psr17Factory();
-        $this->router = new Router(new HttpFactories($factory, $factory));
+        $this->router = new Router('', new Psr17Factory());
     }
 
     #[Test]
