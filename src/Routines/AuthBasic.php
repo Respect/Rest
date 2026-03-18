@@ -7,7 +7,6 @@ namespace Respect\Rest\Routines;
 use Respect\Rest\DispatchContext;
 
 use function array_merge;
-use function assert;
 use function base64_decode;
 use function explode;
 use function substr;
@@ -33,8 +32,7 @@ final class AuthBasic extends AbstractRoutine implements ProxyableBy
         }
 
         if ($callbackResponse === false) {
-            assert($context->route?->responseFactory !== null);
-            $response = $context->route->responseFactory->createResponse(401);
+            $response = $context->responseFactory->createResponse(401);
             $response = $response->withHeader('WWW-Authenticate', 'Basic realm="' . $this->realm . '"');
             $response->getBody()->write((string) ($this->callback)(null, null));
 

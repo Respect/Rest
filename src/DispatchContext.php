@@ -7,6 +7,7 @@ namespace Respect\Rest;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use ReflectionFunctionAbstract;
 use ReflectionParameter;
 use Respect\Rest\Routes\AbstractRoute;
@@ -32,8 +33,6 @@ final class DispatchContext
     /** @var array<string, string> Headers to apply only when the response does not already have them */
     public array $defaultResponseHeaders = [];
 
-    public ResponseFactoryInterface|null $responseFactory = null;
-
     private RoutinePipeline|null $routinePipeline = null;
 
     private Responder|null $responder = null;
@@ -51,8 +50,11 @@ final class DispatchContext
 
     private string $effectivePath = '';
 
-    public function __construct(public ServerRequestInterface $request)
-    {
+    public function __construct(
+        public ServerRequestInterface $request,
+        public ResponseFactoryInterface $responseFactory,
+        public StreamFactoryInterface $streamFactory,
+    ) {
         $this->effectivePath = rtrim(rawurldecode($request->getUri()->getPath()), ' /');
         $this->effectiveMethod = strtoupper($request->getMethod());
     }
@@ -323,10 +325,7 @@ final class DispatchContext
             return $this->responder;
         }
 
-        $responseFactory = $this->responseFactory ?? $this->route?->responseFactory;
-        assert($responseFactory !== null);
-
-        return $this->responder = new Responder($responseFactory);
+        return $this->responder = new Responder($this->responseFactory, $this->streamFactory);
     }
 
     private function ensureResponseDraft(): ResponseInterface
@@ -335,7 +334,7 @@ final class DispatchContext
             return $this->responseDraft;
         }
 
-        return $this->responseDraft = $this->responder()->createResponse();
+        return $this->responseDraft = $this->responseFactory->createResponse();
     }
 
     public function __toString(): string

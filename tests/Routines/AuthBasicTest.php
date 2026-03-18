@@ -8,6 +8,7 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\DispatchContext;
+use Respect\Rest\HttpFactories;
 use Respect\Rest\Router;
 use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routines\AuthBasic;
@@ -27,7 +28,8 @@ final class AuthBasicTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->router = new Router(new Psr17Factory());
+        $factory = new Psr17Factory();
+        $this->router = new Router(new HttpFactories($factory, $factory));
         $this->router->isAutoDispatched = false;
         $this->router->methodOverriding = false;
     }
@@ -52,7 +54,8 @@ final class AuthBasicTest extends TestCase
 
         $serverRequest = (new ServerRequest('GET', '/' . $param1 . '/' . $param2))
             ->withHeader('Authorization', 'Basic ' . base64_encode($user . ':' . $pass));
-        $context = new DispatchContext($serverRequest);
+        $factory = new Psr17Factory();
+        $context = new DispatchContext($serverRequest, $factory, $factory);
         $context->route = $this->createRouteWithResponseFactory();
 
         $routine = new AuthBasic('auth realm', [$this, 'shunt_wantedParams']);
@@ -196,16 +199,14 @@ final class AuthBasicTest extends TestCase
         class_alias(DummyRoutine::class, 'Respect\Rest\Routines\DummyRoutine');
         DummyRoutine::$result = '';
         self::assertEmpty(DummyRoutine::$result);
-        $r3 = new Router(new Psr17Factory());
+        $factory = new Psr17Factory();
+        $r3 = new Router(new HttpFactories($factory, $factory));
         $r3->always('dummyRoutine', 'arg1', 'arg2', 'arg3');
         self::assertEquals('arg1, arg2, arg3', DummyRoutine::$result);
     }
 
     private function createRouteWithResponseFactory(): AbstractRoute
     {
-        $route = $this->createStub(AbstractRoute::class);
-        $route->responseFactory = new Psr17Factory();
-
-        return $route;
+        return $this->createStub(AbstractRoute::class);
     }
 }

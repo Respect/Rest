@@ -8,8 +8,9 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
+use Respect\Rest\HttpFactories;
+use Respect\Rest\Responder;
 use Respect\Rest\Router;
-use Respect\Rest\Routes\Callback;
 use Respect\Rest\Routes\Factory;
 
 /** @covers Respect\Rest\Routes\AbstractRoute */
@@ -35,7 +36,8 @@ final class AbstractRouteTest extends TestCase
     #[DataProvider('extensions_provider')]
     public function testIgnoreFileExtensions(string $with, string $without): void
     {
-        $r = new Router(new Psr17Factory());
+        $factory = new Psr17Factory();
+        $r = new Router(new HttpFactories($factory, $factory));
         $r->get('/route1/*', static function ($match) {
             return $match;
         });
@@ -66,10 +68,9 @@ final class AbstractRouteTest extends TestCase
 
     public function testWrapResponseNormalizesArrayResults(): void
     {
-        $route = new Callback('GET', '/', static fn() => null);
-        $route->responseFactory = new Psr17Factory();
-
-        $response = $route->wrapResponse(['status' => 'ok']);
+        $factory = new Psr17Factory();
+        $response = (new Responder($factory, $factory))
+            ->normalize(['status' => 'ok']);
 
         self::assertSame('application/json', $response->getHeaderLine('Content-Type'));
         self::assertSame('{"status":"ok"}', (string) $response->getBody());

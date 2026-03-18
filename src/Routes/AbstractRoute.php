@@ -4,21 +4,18 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
-use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
 use ReflectionFunctionAbstract;
 use ReflectionNamedType;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\Responder;
 use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\Unique;
 
 use function array_pop;
 use function array_shift;
-use function assert;
 use function end;
 use function explode;
 use function is_a;
@@ -80,8 +77,6 @@ abstract class AbstractRoute
     public array $sideRoutes = [];
 
     public string|null $virtualHost = null;
-
-    public ResponseFactoryInterface|null $responseFactory = null;
 
     public function __construct(string $method, public string $pattern = '')
     {
@@ -145,12 +140,6 @@ abstract class AbstractRoute
     public function dispatchTarget(string $method, array &$params, DispatchContext $context): mixed
     {
         return $this->runTarget($this->getTargetMethod($method), $params, $context);
-    }
-
-    /** Wraps a mixed value into a PSR-7 ResponseInterface */
-    public function wrapResponse(mixed $result): ResponseInterface
-    {
-        return $this->responder()->normalize($result);
     }
 
     /** @return static */
@@ -249,8 +238,8 @@ abstract class AbstractRoute
                     continue;
                 }
 
-                if (is_a($typeName, ResponseInterface::class, true) && $this->responseFactory !== null) {
-                    $args[] = $this->responseFactory->createResponse();
+                if (is_a($typeName, ResponseInterface::class, true)) {
+                    $args[] = $context->responseFactory->createResponse();
                     $hasPsrInjection = true;
                     continue;
                 }
@@ -267,13 +256,6 @@ abstract class AbstractRoute
         }
 
         return $args;
-    }
-
-    protected function responder(): Responder
-    {
-        assert($this->responseFactory !== null);
-
-        return new Responder($this->responseFactory);
     }
 
     /** @return array{string, string} */

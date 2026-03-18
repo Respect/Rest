@@ -9,6 +9,7 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use ReflectionObject;
 use Respect\Rest\DispatchContext;
+use Respect\Rest\HttpFactories;
 use Respect\Rest\Router;
 use Respect\Rest\Routines\By;
 use Respect\Rest\Test\Stubs\ByClassWithInvoke;
@@ -28,7 +29,12 @@ final class ByTest extends TestCase
     /** @covers Respect\Rest\Routines\By::by */
     public function test_by_with_an_anonymous_function(): void
     {
-        $context = new DispatchContext(new ServerRequest('GET', '/'));
+        $factory = new Psr17Factory();
+        $context = new DispatchContext(
+            new ServerRequest('GET', '/'),
+            $factory,
+            $factory,
+        );
         $params  = [];
         $routine = new By(static function () {
             return 'from by callback';
@@ -42,7 +48,8 @@ final class ByTest extends TestCase
      */
     public function test_by_on_a_route(): void
     {
-        $router = new Router(new Psr17Factory());
+        $factory = new Psr17Factory();
+        $router = new Router(new HttpFactories($factory, $factory));
         $router->get('/', static function () {
             return 'route';
         })
@@ -61,7 +68,8 @@ final class ByTest extends TestCase
      */
     public function test_by_on_a_route_with_classname(): void
     {
-        $router = new Router(new Psr17Factory());
+        $factory = new Psr17Factory();
+        $router = new Router(new HttpFactories($factory, $factory));
         $router->get('/', static function () {
             return 'route';
         })
@@ -78,7 +86,8 @@ final class ByTest extends TestCase
      */
     public function test_by_with_a_callable_class_on_a_route(): void
     {
-        $router  = new Router(new Psr17Factory());
+        $factory = new Psr17Factory();
+        $router  = new Router(new HttpFactories($factory, $factory));
         $routine = new ByClassWithInvoke();
         $router->get('/', static function () {
             return 'route';

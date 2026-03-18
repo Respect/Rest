@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Respect\Rest;
 
+use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\StreamFactoryInterface;
 use Respect\Rest\Routes\AbstractRoute;
 use SplObjectStorage;
 
@@ -24,15 +26,21 @@ final class DispatchEngine
 {
     private RoutinePipeline $routinePipeline;
 
-    public function __construct(private Router $router)
-    {
+    public function __construct(
+        private Router $router,
+        private ResponseFactoryInterface $responseFactory,
+        private StreamFactoryInterface $streamFactory,
+    ) {
         $this->routinePipeline = new RoutinePipeline();
     }
 
     public function dispatch(ServerRequestInterface $serverRequest): DispatchContext
     {
-        $context = new DispatchContext($serverRequest);
-        $context->responseFactory = $this->router->responseFactory;
+        $context = new DispatchContext(
+            $serverRequest,
+            $this->responseFactory,
+            $this->streamFactory,
+        );
 
         return $this->dispatchContext($context);
     }
@@ -41,7 +49,6 @@ final class DispatchEngine
     {
         $this->router->isAutoDispatched = false;
         $this->router->context = $context;
-        $context->responseFactory ??= $this->router->responseFactory;
         $context->setRoutinePipeline($this->routinePipeline);
 
         if (!$this->isRoutelessDispatch($context) && $context->route === null) {

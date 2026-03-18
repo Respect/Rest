@@ -15,6 +15,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use ReflectionFunction;
 use Respect\Rest\DispatchContext;
+use Respect\Rest\HttpFactories;
 use Respect\Rest\Responder;
 use Respect\Rest\Routes;
 use Respect\Rest\Routines;
@@ -33,13 +34,21 @@ use function strtolower;
 #[AllowMockObjectsWithoutExpectations]
 final class DispatchContextTest extends TestCase
 {
+    private HttpFactories $httpFactories;
+
+    protected function setUp(): void
+    {
+        $factory = new Psr17Factory();
+        $this->httpFactories = new HttpFactories($factory, $factory);
+    }
+
     /** @covers  Respect\Rest\DispatchContext::__construct */
     public function testIsPossibleToConstructUsingValuesFromSuperglobals(): DispatchContext
     {
         $_SERVER['REQUEST_URI'] = '/users';
         $_SERVER['REQUEST_METHOD'] = 'GET';
 
-        $context = new DispatchContext(new ServerRequest('GET', '/users'));
+        $context = $this->newContext(new ServerRequest('GET', '/users'));
 
         self::assertEquals(
             '/users',
@@ -61,7 +70,7 @@ final class DispatchContextTest extends TestCase
         $_SERVER['REQUEST_URI'] = '/documents';
         $_SERVER['REQUEST_METHOD'] = 'NOTPATCH';
 
-        $context = new DispatchContext(new ServerRequest('PATCH', '/documents'));
+        $context = $this->newContext(new ServerRequest('PATCH', '/documents'));
 
         self::assertNotEquals(
             'NOTPATCH',
@@ -81,7 +90,7 @@ final class DispatchContextTest extends TestCase
         $_SERVER['REQUEST_METHOD'] = 'POST';
         $_SERVER['REQUEST_URI'] = '/videos';
 
-        $context = new DispatchContext(new ServerRequest('POST', '/images'));
+        $context = $this->newContext(new ServerRequest('POST', '/images'));
 
         self::assertNotEquals(
             '/videos',
@@ -101,7 +110,11 @@ final class DispatchContextTest extends TestCase
     {
         $_SERVER['REQUEST_URI'] = 'http://google.com/search?q=foo';
 
-        $context = new DispatchContext(new ServerRequest('GET', 'http://google.com/search?q=foo'));
+        $context = new DispatchContext(
+            new ServerRequest('GET', 'http://google.com/search?q=foo'),
+            $this->httpFactories->responses,
+            $this->httpFactories->streams,
+        );
 
         self::assertNotEquals(
             'http://google.com/search?q=foo',
@@ -169,7 +182,7 @@ final class DispatchContextTest extends TestCase
     /** @covers  Respect\Rest\DispatchContext::forward */
     public function testForwardReplacesRouteAndReturnsResponse(): void
     {
-        $context = new DispatchContext(new ServerRequest('GET', '/users/alganet/lists'));
+        $context = $this->newContext(new ServerRequest('GET', '/users/alganet/lists'));
         $inactiveRoute  = $this->getMockForRoute('GET', '/users/alganet/lists');
         $forwardedRoute = $this->getMockForRoute('GET', '/lists/12345', 'Some list items');
         $context->route = $inactiveRoute;
@@ -229,7 +242,7 @@ final class DispatchContextTest extends TestCase
                 self::fail('Unknown provider scenario');
         }
 
-        $context = new DispatchContext(new ServerRequest('GET', '/cupcakes'));
+        $context = $this->newContext(new ServerRequest('GET', '/cupcakes'));
         $context->route = $userImplementedRoute;
         $response = $context->response();
 
@@ -249,7 +262,7 @@ final class DispatchContextTest extends TestCase
     /** @covers Respect\Rest\DispatchContext::response */
     public function testDeveloperCanAbortRequestReturningFalseOnByRoutine(): void
     {
-        $context = new DispatchContext(new ServerRequest('GET', '/protected-area'));
+        $context = $this->newContext(new ServerRequest('GET', '/protected-area'));
         $route = $this->getMockForRoute('GET', '/protected-area', 'Protected Content!!!');
         $routine = $this->getMockForRoutine('ProxyableBy');
         $routine->expects($this->once())
@@ -281,7 +294,7 @@ final class DispatchContextTest extends TestCase
     public function testDeveloperCanReturnResponseInterfacesOnByRoutine(): void
     {
         $factory = new Psr17Factory();
-        $context = new DispatchContext(new ServerRequest('GET', '/protected-area'));
+        $context = $this->newContext(new ServerRequest('GET', '/protected-area'));
         $route = $this->getMockForRoute('GET', '/protected-area', 'Protected Content!!!');
         $routine = $this->getMockForRoutine('ProxyableBy');
         $routine->expects($this->once())
@@ -306,7 +319,7 @@ final class DispatchContextTest extends TestCase
     /** @covers Respect\Rest\DispatchContext::response */
     public function testDeveloperCanReturnCallablesToProcessOutputAfterTargetRuns(): void
     {
-        $context = new DispatchContext(new ServerRequest('GET', '/logs'));
+        $context = $this->newContext(new ServerRequest('GET', '/logs'));
         $route = $this->getMockForRoute(
             'GET',
             '/logs',
@@ -342,7 +355,7 @@ final class DispatchContextTest extends TestCase
         string $scenario,
         array $params,
     ): void {
-        $context = new DispatchContext(new ServerRequest('GET', '/version'));
+        $context = $this->newContext(new ServerRequest('GET', '/version'));
         $context->params = $params;
 
         $route = $this->getMockForRoute(
@@ -475,7 +488,7 @@ final class DispatchContextTest extends TestCase
 
     public function testConvertingToStringCallsResponse(): void
     {
-        $context = new DispatchContext(new ServerRequest('GET', '/users/alganet/lists'));
+        $context = $this->newContext(new ServerRequest('GET', '/users/alganet/lists'));
         $context->route = $this->getMockForRoute('GET', '/users/alganet/lists', 'Some list items');
         $toString = (string) $context;
 
@@ -484,8 +497,7 @@ final class DispatchContextTest extends TestCase
 
     public function testContextUsesDraftHeadersAndDeferredDefaultsWithoutRoute(): void
     {
-        $context = new DispatchContext(new ServerRequest('GET', '/users'));
-        $context->responseFactory = new Psr17Factory();
+        $context = $this->newContext(new ServerRequest('GET', '/users'));
         $context->setResponseHeader('Content-Type', 'text/plain');
         $context->appendResponseHeader('Vary', 'accept');
         $context->appendResponseHeader('Vary', 'accept-language');
@@ -501,8 +513,9 @@ final class DispatchContextTest extends TestCase
 
     public function testContextAcceptsAnInjectedResponder(): void
     {
-        $context = new DispatchContext(new ServerRequest('GET', '/users/alganet/lists'));
-        $context->setResponder(new Responder(new Psr17Factory()));
+        $context = $this->newContext(new ServerRequest('GET', '/users/alganet/lists'));
+        $factory = new Psr17Factory();
+        $context->setResponder(new Responder($factory, $factory));
         $context->route = $this->getMockForRoute('GET', '/users/alganet/lists', 'Some list items');
 
         $response = $context->response();
@@ -513,7 +526,7 @@ final class DispatchContextTest extends TestCase
 
     public function test_unsynced_param_comes_as_null(): void
     {
-        $context = new DispatchContext(new ServerRequest('GET', '/'));
+        $context = $this->newContext(new ServerRequest('GET', '/'));
         $context->route = new Routes\Callback('GET', '/', static function ($bar) {
             return 'ok';
         });
@@ -574,8 +587,6 @@ final class DispatchContextTest extends TestCase
             ->onlyMethods(['getReflection', 'runTarget'])
             ->getMock();
 
-        $route->responseFactory = new Psr17Factory();
-
         if ($hasTarget) {
             if ($targetParams) {
                 $expectation = $route->expects($this->any())
@@ -619,5 +630,10 @@ final class DispatchContextTest extends TestCase
         $className = $interfaceName;
 
         return $this->createMock($className); // @phpstan-ignore return.type
+    }
+
+    private function newContext(ServerRequest $request): DispatchContext
+    {
+        return new DispatchContext($request, $this->httpFactories->responses, $this->httpFactories->streams);
     }
 }
