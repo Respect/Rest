@@ -403,8 +403,40 @@ $r3->any('/listeners/*', function ($user) { /***/ });
 Since there are three routes with the `$user` parameter, `when` will
 verify them all automatically by name.
 
+## File Extensions
+
+Use the `fileExtension` routine to map URL extensions to response transformations:
+```php
+$r3->get('/users/*', function($name) {
+    return ['name' => $name];
+})->fileExtension([
+    '.json' => 'json_encode',
+    '.html' => function($data) { return "<h1>{$data['name']}</h1>"; },
+]);
+```
+
+Requesting `/users/alganet.json` strips the `.json` extension, passes `alganet` as the
+parameter, and applies `json_encode` to the response.
+
+Only declared extensions are stripped. A URL like `/users/john.doe` with no `.doe` declared
+will match normally with `john.doe` as the full parameter.
+
+### Multiple Extensions
+
+Multiple `fileExtension` routines can cascade for compound extensions like `.json.en`.
+Declare the outermost extension (rightmost in the URL) first:
+```php
+$r3->get('/page/*', $handler)
+    ->fileExtension(['.en' => $translateEn, '.pt' => $translatePt])
+    ->fileExtension(['.json' => 'json_encode', '.html' => $render]);
+```
+
+Requesting `/page/about.json.en` strips `.en` (first routine), then `.json` (second routine),
+and applies both callbacks in order.
+
 ## Content Negotiation
 
+Content negotiation uses HTTP Accept headers to select the appropriate response format.
 Respect\Rest supports four distinct types of Accept header content-negotiation:
 Mimetype, Encoding, Language and Charset:
 ```php

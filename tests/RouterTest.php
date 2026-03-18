@@ -1110,26 +1110,24 @@ final class RouterTest extends TestCase
         self::assertEquals(strrev('foobar'), $r);
     }
 
-    public function testAcceptUrl(): void
+    public function testFileExtensionUrl(): void
     {
-        $serverRequest = (new ServerRequest('get', '/users/alganet.json'))
-            ->withHeader('Accept', '*/*');
+        $serverRequest = new ServerRequest('get', '/users/alganet.json');
         $request = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users/*', static function ($screenName) {
                 return range(0, 10);
-        })->accept(['.json' => 'json_encode']);
+        })->fileExtension(['.json' => 'json_encode']);
         $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals(json_encode(range(0, 10)), $r);
     }
 
-    public function testAcceptUrlNoParameters(): void
+    public function testFileExtensionUrlNoParameters(): void
     {
-        $serverRequest = (new ServerRequest('get', '/users.json'))
-            ->withHeader('Accept', '*/*');
+        $serverRequest = new ServerRequest('get', '/users.json');
         $request = self::newContextForRouter($this->router, $serverRequest);
         $this->router->get('/users', static function () {
                 return range(0, 10);
-        })->accept(['.json' => 'json_encode']);
+        })->fileExtension(['.json' => 'json_encode']);
         $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals(json_encode(range(0, 10)), $r);
     }
@@ -1144,6 +1142,51 @@ final class RouterTest extends TestCase
         });
         $r = self::responseBody($this->router->dispatchContext($request));
         self::assertEquals(json_encode(range(10, 20)), $r);
+    }
+
+    public function testFileExtensionCascading(): void
+    {
+        $translateEn = static function ($d) {
+            return $d . ':en';
+        };
+        $encodeJson = static function ($d) {
+            return '{' . $d . '}';
+        };
+
+        $router = self::newRouter();
+        $router->get('/page/*', static function (string $slug) {
+            return $slug;
+        })
+            ->fileExtension(['.en' => $translateEn, '.pt' => $translateEn])
+            ->fileExtension(['.json' => $encodeJson, '.html' => $encodeJson]);
+
+        $response = $router->dispatch(new ServerRequest('GET', '/page/about.json.en'))->response();
+        self::assertNotNull($response);
+        self::assertSame('{about:en}', (string) $response->getBody());
+    }
+
+    public function testFileExtensionLenientUnknownExtension(): void
+    {
+        $router = self::newRouter();
+        $router->get('/users/*', static function (string $name) {
+            return $name;
+        })->fileExtension(['.json' => 'json_encode']);
+
+        $response = $router->dispatch(new ServerRequest('GET', '/users/john.doe'))->response();
+        self::assertNotNull($response);
+        self::assertSame('john.doe', (string) $response->getBody());
+    }
+
+    public function testFileExtensionNoExtensionInUrl(): void
+    {
+        $router = self::newRouter();
+        $router->get('/users/*', static function (string $name) {
+            return $name;
+        })->fileExtension(['.json' => 'json_encode']);
+
+        $response = $router->dispatch(new ServerRequest('GET', '/users/alganet'))->response();
+        self::assertNotNull($response);
+        self::assertSame('alganet', (string) $response->getBody());
     }
 
     public function testAcceptGeneric2(): void
@@ -1828,6 +1871,46 @@ final class RouterTest extends TestCase
         self::assertSame('caught', (string) $response->getBody());
     }
 
+    public function testExceptionRouteRespectsGlobalAcceptRoutine(): void
+    {
+        $router = self::newRouter();
+        $router->always('Accept', [
+            'application/json' => static function ($data) {
+                return json_encode(['error' => $data]);
+            },
+        ]);
+        $router->get('/', static function (): never {
+            throw new InvalidArgumentException('boom');
+        });
+        $router->exceptionRoute(InvalidArgumentException::class, static function (InvalidArgumentException $e) {
+            return $e->getMessage();
+        });
+
+        $request = (new ServerRequest('GET', '/'))->withHeader('Accept', 'application/json');
+        $response = $router->dispatch($request)->response();
+
+        self::assertNotNull($response);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('{"error":"boom"}', (string) $response->getBody());
+    }
+
+    public function testExceptionRouteReturningEmptyStringDoesNotRethrow(): void
+    {
+        $router = self::newRouter();
+        $router->get('/', static function (): never {
+            throw new InvalidArgumentException('boom');
+        });
+        $router->exceptionRoute(InvalidArgumentException::class, static function () {
+            return '';
+        });
+
+        $response = $router->dispatch(new ServerRequest('GET', '/'))->response();
+
+        self::assertNotNull($response);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('', (string) $response->getBody());
+    }
+
     public function testRouterImplementsMiddlewareInterface(): void
     {
         self::assertInstanceOf(MiddlewareInterface::class, $this->router);
@@ -2415,14 +2498,14 @@ final class RouterTest extends TestCase
     }
 
     #[DataProvider('provider_content_type_extension')]
-    public function test_do_not_set_automatic_content_type_header_for_extensions(string $ctype, string $ext): void
+    public function test_file_extension_does_not_set_content_type_header(string $ctype, string $ext): void
     {
         $r = self::newRouter();
-        $r->get('/auto', '')->accept([$ext => 'json_encode']);
+        $r->get('/auto', '')->fileExtension([$ext => 'json_encode']);
 
-        $r = $r->dispatch(new ServerRequest('get', '/auto' . $ext))->response();
-        // Extension-based accept should not set Content-Type header
-        self::assertNotNull($r);
+        $response = $r->dispatch(new ServerRequest('get', '/auto' . $ext))->response();
+        self::assertNotNull($response);
+        self::assertFalse($response->hasHeader('Content-Type'));
     }
 
     /** @covers \Respect\Rest\Routes\AbstractRoute */

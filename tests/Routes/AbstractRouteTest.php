@@ -10,7 +10,6 @@ use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\Responder;
 use Respect\Rest\Router;
-use Respect\Rest\Routes\Factory;
 
 /** @covers Respect\Rest\Routes\AbstractRoute */
 final class AbstractRouteTest extends TestCase
@@ -19,49 +18,42 @@ final class AbstractRouteTest extends TestCase
     public static function extensions_provider(): array
     {
         return [
-            ['test.json',             'test'],
-            ['test.bz2',              'test'],
-            ['test.json~user',        'test'],
-            ['test.hal+json',         'test'],
-            ['test.en.html',          'test'],
-            ['test.vnd.amazon.ebook', 'test'],
-            ['test.vnd.hp-hps',       'test'],
-            ['test.json-patch',       'test'],
-            ['test.my_funny.ext',     'test'],
+            ['.json',             'test.json',             'test'],
+            ['.bz2',              'test.bz2',              'test'],
+            ['.html',             'test.en.html',          'test.en'],
+            ['.ext',              'test.my_funny.ext',     'test.my_funny'],
         ];
     }
 
     /** @covers Respect\Rest\Routes\AbstractRoute::match */
     #[DataProvider('extensions_provider')]
-    public function testIgnoreFileExtensions(string $with, string $without): void
+    public function testIgnoreFileExtensions(string $ext, string $with, string $without): void
     {
         $r = new Router('', new Psr17Factory());
+
+        // Route without FileExtension: dots preserved in params
         $r->get('/route1/*', static function ($match) {
             return $match;
         });
+
+        // Route with FileExtension: declared extension stripped
         $r->get('/route2/*', static function ($match) {
             return $match;
-        })
-            ->accept([
-                '.json-home' => static function ($data) {
-                    /** @phpstan-ignore-next-line */
-                    return Factory::respond('.json-home', $data);
-                },
-                '*' => static function ($data) {
-                    return $data . '.accepted';
-                },
-            ]);
+        })->fileExtension([
+            $ext => static function ($data) {
+                return $data . '.transformed';
+            },
+        ]);
 
-        $serverRequest1 = (new ServerRequest('get', '/route1/' . $with))->withHeader('Accept', '*');
-        $resp1 = $r->dispatch($serverRequest1)->response();
+        // route1: extension NOT stripped (no IgnorableFileExtension routine)
+        $resp1 = $r->dispatch(new ServerRequest('get', '/route1/' . $with))->response();
         self::assertNotNull($resp1);
-        $response = (string) $resp1->getBody();
-        self::assertEquals($with, $response);
-        $serverRequest2 = (new ServerRequest('get', '/route2/' . $with))->withHeader('Accept', '*');
-        $resp2 = $r->dispatch($serverRequest2)->response();
+        self::assertEquals($with, (string) $resp1->getBody());
+
+        // route2: declared extension stripped, callback applied
+        $resp2 = $r->dispatch(new ServerRequest('get', '/route2/' . $with))->response();
         self::assertNotNull($resp2);
-        $response = (string) $resp2->getBody();
-        self::assertEquals($without . '.accepted', $response);
+        self::assertEquals($without . '.transformed', (string) $resp2->getBody());
     }
 
     public function testWrapResponseNormalizesArrayResults(): void
