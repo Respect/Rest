@@ -19,6 +19,8 @@
  *   GET  /boom                      → Exception route
  *   GET  /status                    → Static value
  *   GET  /time                      → PSR-7 injection
+ *   GET  /data/users.json          → File extension (JSON)
+ *   GET  /data/users.html          → File extension (HTML)
  */
 
 require __DIR__ . '/../vendor/autoload.php';
@@ -137,6 +139,20 @@ $r3->get('/wrapped/*', function (string $name) {
         return json_encode($data);
     };
 });
+
+// --- File Extensions ---
+
+$r3->get('/data/*', function (string $resource) {
+    return ['resource' => $resource, 'items' => ['a', 'b', 'c']];
+})->fileExtension([
+    '.json' => 'json_encode',
+    '.html' => function (array $data) {
+        $name = htmlspecialchars($data['resource']);
+        $items = array_map('htmlspecialchars', $data['items']);
+
+        return "<h1>{$name}</h1><ul><li>" . implode('</li><li>', $items) . '</li></ul>';
+    },
+]);
 
 // --- Content Negotiation ---
 

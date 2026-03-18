@@ -7,14 +7,12 @@ namespace Respect\Rest\Routines;
 use Respect\Rest\DispatchContext;
 
 use function array_keys;
-use function array_pop;
 use function array_slice;
 use function arsort;
 use function explode;
 use function preg_replace;
 use function str_replace;
 use function str_starts_with;
-use function stripos;
 use function strpos;
 use function strtolower;
 use function substr;
@@ -26,30 +24,13 @@ use function ucwords;
 abstract class AbstractAccept extends AbstractCallbackMediator implements
     ProxyableBy,
     ProxyableThrough,
-    Unique,
-    IgnorableFileExtension
+    Unique
 {
     public const string ACCEPT_HEADER = '';
-
-    protected string $requestUri = '';
 
     /** @param array<int, mixed> $params */
     public function by(DispatchContext $context, array $params): mixed
     {
-        $unsyncedParams = $context->params;
-        $extensions = $this->filterKeysContain('.');
-
-        if (empty($extensions) || empty($unsyncedParams)) {
-            return null;
-        }
-
-        $unsyncedParams[] = str_replace(
-            $extensions,
-            '',
-            array_pop($unsyncedParams),
-        );
-        $context->params = $unsyncedParams;
-
         return null;
     }
 
@@ -66,8 +47,6 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
      */
     protected function identifyRequested(DispatchContext $context, array $params): array
     {
-        $this->requestUri = $context->path();
-
         $headerName = $this->getAcceptHeaderName();
         $acceptHeader = $context->request->getHeaderLine($headerName);
 
@@ -93,7 +72,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
     /** @return array<int, string> */
     protected function considerProvisions(string $requested): array
     {
-        return $this->getKeys(); // no need to split see authorize
+        return $this->getKeys();
     }
 
     /** @param array<int, mixed> $params */
@@ -104,10 +83,6 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
         array $params,
     ): void {
         $this->rememberNegotiatedCallback($context, $this->getCallback($provided));
-
-        if (strpos($provided, '.') !== false) {
-            return;
-        }
 
         $headerType = $this->getNegotiatedHeaderType();
 
@@ -138,16 +113,10 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
 
     protected function authorize(string $requested, string $provided): mixed
     {
-        // negotiate on file extension
-        if (strpos($provided, '.') !== false) {
-            return stripos($this->requestUri, $provided) !== false;
-        }
-
         if ($requested === '*') {
             return true;
         }
 
-        // normal matching requirements
         return $requested == $provided;
     }
 

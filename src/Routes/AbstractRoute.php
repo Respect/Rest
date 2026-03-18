@@ -14,10 +14,13 @@ use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\Unique;
 
+use function array_map;
+use function array_merge;
 use function array_pop;
 use function array_shift;
 use function end;
 use function explode;
+use function implode;
 use function is_a;
 use function is_string;
 use function ltrim;
@@ -34,6 +37,7 @@ use function strripos;
 use function strtoupper;
 use function substr;
 use function ucfirst;
+use function usort;
 
 /**
  * Base class for all Routes
@@ -45,6 +49,7 @@ use function ucfirst;
  * @method self authBasic(mixed ...$args)
  * @method self by(mixed ...$args)
  * @method self contentType(mixed ...$args)
+ * @method self fileExtension(mixed ...$args)
  * @method self lastModified(mixed ...$args)
  * @method self through(mixed ...$args)
  * @method self userAgent(mixed ...$args)
@@ -166,16 +171,38 @@ abstract class AbstractRoute
         $params = [];
         $matchUri = $context->path();
 
+        $allExtensions = [];
         foreach ($this->routines as $routine) {
-            if (!($routine instanceof IgnorableFileExtension)) {
+            if (!$routine instanceof IgnorableFileExtension) {
                 continue;
             }
 
-            $matchUri = preg_replace(
-                '#(\.[\w\d\-_.~\+]+)*$#',
-                '',
-                $context->path(),
-            ) ?? $context->path();
+            $allExtensions = array_merge($allExtensions, $routine->getExtensions());
+        }
+
+        if ($allExtensions !== []) {
+            usort($allExtensions, static fn(string $a, string $b): int => strlen($b) <=> strlen($a));
+            $escaped = array_map(static fn(string $e): string => preg_quote($e, '#'), $allExtensions);
+            $extPattern = '#(' . implode('|', $escaped) . ')$#';
+
+            $suffix = '';
+            $stripping = true;
+            while ($stripping) {
+                $stripped = preg_replace($extPattern, '', $matchUri, 1, $count);
+                if ($count > 0 && $stripped !== null && $stripped !== $matchUri) {
+                    $suffix = substr($matchUri, strlen($stripped)) . $suffix;
+                    $matchUri = $stripped;
+                } else {
+                    $stripping = false;
+                }
+            }
+
+            if ($suffix !== '') {
+                $context->request = $context->request->withAttribute(
+                    'respect.ext.remaining',
+                    $suffix,
+                );
+            }
         }
 
         if (!preg_match($this->regexForMatch, $matchUri, $params)) {
