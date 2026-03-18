@@ -9,6 +9,8 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Psr\Http\Server\MiddlewareInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
 use Respect\Rest\Routes\AbstractRoute;
 use Throwable;
@@ -39,7 +41,7 @@ use const E_USER_ERROR;
  * @method AbstractRoute patch(string $path, mixed $routeTarget)
  * @method AbstractRoute any(string $path, mixed $routeTarget)
  */
-final class Router
+final class Router implements MiddlewareInterface
 {
     public bool $isAutoDispatched = true;
 
@@ -131,6 +133,11 @@ final class Router
     public function dispatch(ServerRequestInterface $serverRequest): DispatchContext
     {
         return $this->dispatchEngine()->dispatch($serverRequest);
+    }
+
+    public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        return $this->dispatchEngine()->handle($request);
     }
 
     public function createDispatchContext(ServerRequestInterface $serverRequest): DispatchContext
