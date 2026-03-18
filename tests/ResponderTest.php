@@ -18,7 +18,7 @@ final class ResponderTest extends TestCase
     public function testNormalizeUsesStreamFactoryForResources(): void
     {
         $factory = new Psr17Factory();
-        $responder = new Responder($factory, $factory);
+        $responder = new Responder($factory);
         $resource = fopen('php://temp', 'r+');
 
         self::assertIsResource($resource);
@@ -33,7 +33,7 @@ final class ResponderTest extends TestCase
     public function testNormalizeBuildsJsonResponsesThroughFactories(): void
     {
         $factory = new Psr17Factory();
-        $responder = new Responder($factory, $factory);
+        $responder = new Responder($factory);
 
         $response = $responder->normalize(['user' => 'alice']);
 
@@ -44,7 +44,7 @@ final class ResponderTest extends TestCase
     public function testFinalizeStripsHeadBodiesWithFactoryCreatedEmptyStream(): void
     {
         $factory = new Psr17Factory();
-        $responder = new Responder($factory, $factory);
+        $responder = new Responder($factory);
 
         $response = $responder->finalize('payload', null, [], [], false, 'HEAD');
 

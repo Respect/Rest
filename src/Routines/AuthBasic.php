@@ -33,11 +33,9 @@ final class AuthBasic extends AbstractRoutine implements ProxyableBy
         }
 
         if ($callbackResponse === false) {
-            $response = $context->responseFactory->createResponse(401);
-            $response = $response->withHeader('WWW-Authenticate', 'Basic realm="' . $this->realm . '"');
-            $response->getBody()->write((string) ($this->callback)(null, null));
+            $response = $context->factory->createResponse(401);
 
-            return $response;
+            return $response->withHeader('WWW-Authenticate', 'Basic realm="' . $this->realm . '"');
         }
 
         return $callbackResponse;

@@ -10,7 +10,6 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Routines\LastModified;
 
 /** @covers Respect\Rest\Routines\LastModified */
@@ -18,12 +17,11 @@ final class LastModifiedTest extends TestCase
 {
     protected LastModified $object;
 
-    private HttpFactories $httpFactories;
+    private Psr17Factory $factory;
 
     protected function setUp(): void
     {
-        $factory = new Psr17Factory();
-        $this->httpFactories = new HttpFactories($factory, $factory);
+        $this->factory = new Psr17Factory();
         $this->object = new LastModified(static function () {
                 return new DateTime('2011-11-11 11:11:12');
         });
@@ -38,19 +36,18 @@ final class LastModifiedTest extends TestCase
         // No If-Modified-Since header -> returns true
         $context = new DispatchContext(
             new ServerRequest('GET', '/'),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
         self::assertTrue($alias->by($context, $params));
 
         // If-Modified-Since is BEFORE lastModified (11:11:11 < 11:11:12) -> returns true (content changed)
         $serverRequest = (new ServerRequest('GET', '/'))->withHeader('If-Modified-Since', '2011-11-11 11:11:11');
-        $context = new DispatchContext($serverRequest, $this->httpFactories->responses, $this->httpFactories->streams);
+        $context = new DispatchContext($serverRequest, $this->factory);
         self::assertTrue($alias->by($context, $params));
 
         // If-Modified-Since is AFTER lastModified (11:11:13 > 11:11:12) -> returns 304 response
         $serverRequest = (new ServerRequest('GET', '/'))->withHeader('If-Modified-Since', '2011-11-11 11:11:13');
-        $context = new DispatchContext($serverRequest, $this->httpFactories->responses, $this->httpFactories->streams);
+        $context = new DispatchContext($serverRequest, $this->factory);
         $response = $alias->by($context, $params);
         self::assertInstanceOf(ResponseInterface::class, $response);
         self::assertEquals(304, $response->getStatusCode());

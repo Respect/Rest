@@ -9,7 +9,6 @@ use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use ReflectionObject;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Router;
 use Respect\Rest\Routines\When;
 use Respect\Rest\Test\Stubs\WhenAlwaysTrue;
@@ -21,8 +20,7 @@ final class WhenTest extends TestCase
 {
     public function testRoutineWhenShouldBlockRouteFromMatchIfTheCallbackReturnIsFalse(): void
     {
-        $factory = new Psr17Factory();
-        $router = new Router(new HttpFactories($factory, $factory));
+        $router = new Router('', new Psr17Factory());
         $router->get('/', static function () {
             return 'Oh yeah!';
         });
@@ -51,8 +49,7 @@ final class WhenTest extends TestCase
     public function testRoutineWhenShouldConsiderSyncedCallbackParameters(): void
     {
         $phpUnit = $this;
-        $factory = new Psr17Factory();
-        $router = new Router(new HttpFactories($factory, $factory));
+        $router = new Router('', new Psr17Factory());
         $router->get('/speakers/*', static function ($speakerName) {
             return 'Hello ' . $speakerName;
         })->when(static function ($speakerName) use ($phpUnit) {
@@ -77,7 +74,6 @@ final class WhenTest extends TestCase
         $context = new DispatchContext(
             new ServerRequest('GET', '/'),
             new Psr17Factory(),
-            new Psr17Factory(),
         );
         $params = [];
 
@@ -94,8 +90,7 @@ final class WhenTest extends TestCase
 
     public function test_when_with_a_callable_class_within_a_route(): void
     {
-        $factory = new Psr17Factory();
-        $router  = new Router(new HttpFactories($factory, $factory));
+        $router  = new Router('', new Psr17Factory());
         $routine = new WhenAlwaysTrue();
         $router->get('/', static function () {
             return 'route';

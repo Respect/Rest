@@ -21,8 +21,7 @@ use function trim;
 final class Responder
 {
     public function __construct(
-        private ResponseFactoryInterface $responseFactory,
-        private StreamFactoryInterface $streamFactory,
+        private ResponseFactoryInterface&StreamFactoryInterface $factory,
     ) {
     }
 
@@ -32,19 +31,19 @@ final class Responder
             return $result;
         }
 
-        $response = $this->responseFactory->createResponse();
+        $response = $this->factory->createResponse();
 
         if (is_resource($result)) {
-            return $response->withBody($this->streamFactory->createStreamFromResource($result));
+            return $response->withBody($this->factory->createStreamFromResource($result));
         }
 
         if (is_array($result) || $result instanceof JsonSerializable) {
             return $response
                 ->withHeader('Content-Type', 'application/json')
-                ->withBody($this->streamFactory->createStream((string) json_encode($result)));
+                ->withBody($this->factory->createStream((string) json_encode($result)));
         }
 
-        return $response->withBody($this->streamFactory->createStream((string) $result));
+        return $response->withBody($this->factory->createStream((string) $result));
     }
 
     /**
@@ -97,7 +96,7 @@ final class Responder
             return $response;
         }
 
-        return $response->withBody($this->streamFactory->createStream());
+        return $response->withBody($this->factory->createStream());
     }
 
     private function mergeHeaderValues(string $existing, string $appended): string

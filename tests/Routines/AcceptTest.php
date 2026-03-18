@@ -8,7 +8,6 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Routines\AbstractAccept;
 use Respect\Rest\Routines\Accept;
 
@@ -16,14 +15,13 @@ use Respect\Rest\Routines\Accept;
 /** @covers Respect\Rest\Routines\AbstractAccept */
 final class AcceptTest extends TestCase
 {
-    private HttpFactories $httpFactories;
+    private Psr17Factory $factory;
 
     private Accept $accept;
 
     protected function setUp(): void
     {
-        $factory = new Psr17Factory();
-        $this->httpFactories = new HttpFactories($factory, $factory);
+        $this->factory = new Psr17Factory();
         $this->accept = new Accept([
             'text/html' => static fn(): string => 'html',
             'application/json' => static fn(): string => 'json',
@@ -83,8 +81,7 @@ final class AcceptTest extends TestCase
         $params = [];
         $context = new DispatchContext(
             new ServerRequest('GET', '/'),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
 
         self::assertTrue($this->accept->when($context, $params));
@@ -133,8 +130,7 @@ final class AcceptTest extends TestCase
         $params = [];
         $context = new DispatchContext(
             (new ServerRequest('GET', '/'))->withHeader('X-Custom-Accept', 'gzip'),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
 
         self::assertTrue($routine->when($context, $params));
@@ -144,8 +140,7 @@ final class AcceptTest extends TestCase
     {
         return new DispatchContext(
             (new ServerRequest('GET', '/'))->withHeader($header, $value),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
     }
 }

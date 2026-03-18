@@ -99,7 +99,7 @@ abstract class AbstractSyncedRoutine extends AbstractRoutine implements ParamSyn
                 }
 
                 if (is_a($typeName, ResponseInterface::class, true)) {
-                    $args[] = $context->responseFactory->createResponse();
+                    $args[] = $context->factory->createResponse();
                     $hasPsrInjection = true;
                     continue;
                 }

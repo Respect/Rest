@@ -8,7 +8,6 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Routines\ContentType;
 
 use function json_decode;
@@ -19,12 +18,11 @@ final class ContentTypeTest extends TestCase
 {
     protected ContentType $object;
 
-    private HttpFactories $httpFactories;
+    private Psr17Factory $factory;
 
     protected function setUp(): void
     {
-        $factory = new Psr17Factory();
-        $this->httpFactories = new HttpFactories($factory, $factory);
+        $this->factory = new Psr17Factory();
         $this->object = new ContentType([
             'text/html' => static function (string $input) {
                 return strtoupper($input);
@@ -46,8 +44,7 @@ final class ContentTypeTest extends TestCase
             (new ServerRequest('GET', '/'))
                 ->withHeader('Content-Type', 'text/html')
                 ->withBody($factory->createStream('from html callback')),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
         self::assertTrue($alias->when($context, $params));
         self::assertNull($alias->by($context, $params));
@@ -57,8 +54,7 @@ final class ContentTypeTest extends TestCase
             (new ServerRequest('GET', '/'))
                 ->withHeader('Content-Type', 'application/json')
                 ->withBody($factory->createStream('{"source":"json"}')),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
         self::assertTrue($alias->when($context, $params));
         self::assertNull($alias->by($context, $params));
@@ -67,8 +63,7 @@ final class ContentTypeTest extends TestCase
 
         $context = new DispatchContext(
             (new ServerRequest('GET', '/'))->withHeader('Content-Type', 'text/xml'),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
         self::assertFalse($alias->when($context, $params));
         self::assertNull($alias->by($context, $params));
@@ -81,8 +76,7 @@ final class ContentTypeTest extends TestCase
         $params = [];
         $context = new DispatchContext(
             new ServerRequest('GET', '/'),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
 
         self::assertTrue($this->object->when($context, $params));

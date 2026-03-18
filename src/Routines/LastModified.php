@@ -22,7 +22,7 @@ final class LastModified extends AbstractRoutine implements ProxyableBy, Unique
         $lastModifiedOn = ($this->callback)($params);
 
         if ($lastModifiedOn <= $ifModifiedSince) {
-            $response = $context->responseFactory->createResponse(304);
+            $response = $context->factory->createResponse(304);
             $response = $response->withHeader('Last-Modified', $lastModifiedOn->format(DateTime::RFC2822));
 
             return $response;

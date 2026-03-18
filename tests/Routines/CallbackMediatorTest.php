@@ -8,7 +8,6 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Test\Stubs\Negotiator;
 use TypeError;
 
@@ -17,12 +16,11 @@ final class CallbackMediatorTest extends TestCase
 {
     protected Negotiator $neg;
 
-    private HttpFactories $httpFactories;
+    private Psr17Factory $factory;
 
     protected function setUp(): void
     {
-        $factory = new Psr17Factory();
-        $this->httpFactories = new HttpFactories($factory, $factory);
+        $this->factory = new Psr17Factory();
         $this->neg = new Negotiator();
 
         $a = ['a' => ['a']];
@@ -174,8 +172,7 @@ final class CallbackMediatorTest extends TestCase
     {
         return new DispatchContext(
             new ServerRequest('GET', '/'),
-            $this->httpFactories->responses,
-            $this->httpFactories->streams,
+            $this->factory,
         );
     }
 }

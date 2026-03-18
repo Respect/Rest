@@ -16,7 +16,6 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionMethod;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Routable;
 use Respect\Rest\Router;
 use Respect\Rest\Routes\AbstractRoute;
@@ -1515,6 +1514,28 @@ final class RouterTest extends TestCase
         self::assertTrue($ok);
     }
 
+    public function testBasePathSlashMeansRoot(): void
+    {
+        $router = self::newRouter('/');
+        $ok = false;
+        $router->get('/hello', static function () use (&$ok): void {
+                $ok = true;
+        });
+        $router->dispatch(new ServerRequest('get', '/hello'))->response();
+        self::assertTrue($ok);
+    }
+
+    public function testBasePathTrailingSlashNormalized(): void
+    {
+        $router = self::newRouter('/myapp/');
+        $ok = false;
+        $router->get('/test', static function () use (&$ok): void {
+                $ok = true;
+        });
+        $router->dispatch(new ServerRequest('get', '/myapp/test'))->response();
+        self::assertTrue($ok);
+    }
+
     public function testCreateUri(): void
     {
         $r = self::newRouter();
@@ -1833,6 +1854,77 @@ final class RouterTest extends TestCase
 
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('processed', (string) $response->getBody());
+        self::assertFalse($handler->wasCalled);
+    }
+
+    public function testRouterProcessDelegatesToHandlerOn404(): void
+    {
+        $router = self::newRouter();
+        $router->get('/exists', static function () {
+            return 'found';
+        });
+        $handler = new class implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $factory = new Psr17Factory();
+
+                return $factory->createResponse(200)->withBody(
+                    $factory->createStream('from handler'),
+                );
+            }
+        };
+
+        $response = $router->process(new ServerRequest('GET', '/not-found'), $handler);
+
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('from handler', (string) $response->getBody());
+    }
+
+    public function testRouterProcessDoesNotDelegateOn405(): void
+    {
+        $router = self::newRouter();
+        $router->get('/resource', static function () {
+            return 'get only';
+        });
+        $handler = new class implements RequestHandlerInterface {
+            public bool $wasCalled = false;
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->wasCalled = true;
+
+                return (new Psr17Factory())->createResponse(200);
+            }
+        };
+
+        $response = $router->process(new ServerRequest('DELETE', '/resource'), $handler);
+
+        self::assertSame(405, $response->getStatusCode());
+        self::assertFalse($handler->wasCalled);
+    }
+
+    public function testRouterProcessDoesNotDelegateWhenRouteReturns404(): void
+    {
+        $router = self::newRouter();
+        $router->get('/check', static function () {
+            return (new Psr17Factory())->createResponse(404)
+                ->withBody((new Psr17Factory())->createStream('not here'));
+        });
+        $handler = new class implements RequestHandlerInterface {
+            public bool $wasCalled = false;
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->wasCalled = true;
+
+                return (new Psr17Factory())->createResponse(200);
+            }
+        };
+
+        $response = $router->process(new ServerRequest('GET', '/check'), $handler);
+
+        self::assertSame(404, $response->getStatusCode());
+        self::assertSame('not here', (string) $response->getBody());
         self::assertFalse($handler->wasCalled);
     }
 
@@ -2425,11 +2517,9 @@ final class RouterTest extends TestCase
         return (string) $response->getBody();
     }
 
-    private static function newRouter(string|null $basePath = null): Router
+    private static function newRouter(string $basePath = ''): Router
     {
-        $factory = new Psr17Factory();
-
-        return new Router(new HttpFactories($factory, $factory), $basePath);
+        return new Router($basePath, new Psr17Factory());
     }
 
     private static function newContextForRouter(Router $router, ServerRequestInterface $serverRequest): DispatchContext

@@ -8,7 +8,6 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Router;
 
 use function trigger_error;
@@ -26,8 +25,7 @@ final class ErrorTest extends TestCase
     #[RunInSeparateProcess]
     public function testMagicConstuctorCanCreateRoutesToErrors(): void
     {
-        $factory = new Psr17Factory();
-        $router = new Router(new HttpFactories($factory, $factory));
+        $router = new Router('', new Psr17Factory());
         $called = false;
         $phpUnit = $this;
         $router->errorRoute(static function ($err) use (&$called, $phpUnit) {

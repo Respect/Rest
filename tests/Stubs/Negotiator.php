@@ -144,6 +144,6 @@ class Negotiator extends AbstractCallbackMediator
     {
         $factory = new Psr17Factory();
 
-        return new DispatchContext(new ServerRequest('GET', '/'), $factory, $factory);
+        return new DispatchContext(new ServerRequest('GET', '/'), $factory);
     }
 }

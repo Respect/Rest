@@ -1,16 +1,16 @@
 <?php
 
-require '../vendor/autoload.php';
+require __DIR__ . '/../vendor/autoload.php';
 
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use Respect\Rest\HttpFactories;
 use Respect\Rest\Router;
 
-$factory = new Psr17Factory();
-$r3 = new Router(new HttpFactories($factory, $factory));
+use function Respect\Rest\emit;
+
+$r3 = new Router('/', new Psr17Factory());
 
 $r3->get('/', function () {
     return 'Welcome to Respect/Rest!';
@@ -32,14 +32,5 @@ $request = new ServerRequest(
     $_SERVER['REQUEST_METHOD'] ?? 'GET',
     $_SERVER['REQUEST_URI'] ?? '/',
 );
-$response = $r3->dispatch($request)->response();
 
-if ($response !== null) {
-    http_response_code($response->getStatusCode());
-    foreach ($response->getHeaders() as $name => $values) {
-        foreach ($values as $value) {
-            header("$name: $value", false);
-        }
-    }
-    echo (string) $response->getBody();
-}
+emit($r3->handle($request));
