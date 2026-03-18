@@ -9,7 +9,6 @@ use InvalidArgumentException;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\DataProvider;
-use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -374,12 +373,10 @@ final class RouterTest extends TestCase
      * @covers Respect\Rest\Router::dispatchContext
      * @covers Respect\Rest\DispatchEngine::dispatchContext
      * @covers Respect\Rest\DispatchEngine::isRoutelessDispatch
-     * @covers Respect\Rest\DispatchEngine::hasDispatchedOverriddenMethod
      */
-    public function testDeveloperCanOverridePostMethodWithQueryStringParameter(): Router
+    public function testPostRequestDoesNotOverrideMethodFromRequestBody(): void
     {
         $router = self::newRouter();
-        $router->methodOverriding = true;
         $router->put('/bulbs', 'Some Bulbs Put Response');
         $router->post('/bulbs', 'Some Bulbs Post Response');
 
@@ -389,44 +386,15 @@ final class RouterTest extends TestCase
         $result = (string) $response->getBody();
 
         self::assertSame(
-            'Some Bulbs Put Response',
-            $result,
-            'Router should dispatch to PUT (overriden) instead of POST',
-        );
-
-        self::assertNotSame(
             'Some Bulbs Post Response',
             $result,
-            'Router NOT dispatch to POST when method is overriden',
-        );
-
-        return $router;
-    }
-
-    /**
-     * @covers  Respect\Rest\Router::dispatchContext
-     * @covers  Respect\Rest\Router::isRoutelessDispatch
-     * @covers  Respect\Rest\Router::hasDispatchedOverridenMethod
-     */
-    #[Depends('testDeveloperCanOverridePostMethodWithQueryStringParameter')]
-    public function testDeveloperCanTurnOffMethodOverriding(Router $router): void
-    {
-        $router->methodOverriding = false;
-        $serverRequest = (new ServerRequest('POST', '/bulbs'))->withParsedBody(['_method' => 'PUT']);
-        $response = $router->dispatch($serverRequest)->response();
-        self::assertNotNull($response);
-        $result = (string) $response->getBody();
-
-        self::assertSame(
-            'Some Bulbs Post Response',
-            $result,
-            'Router should dispatch to POST (not overriden) instead of PUT',
+            'Router should dispatch to POST instead of overriding the method from request data',
         );
 
         self::assertNotSame(
             'Some Bulbs Put Response',
             $result,
-            'Router NOT dispatch to PUT when method is overriden',
+            'Router should not dispatch to PUT based on request body method overrides',
         );
     }
 
@@ -1606,7 +1574,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function () {
             return 'ok';
         })->when(static function () {
@@ -1621,7 +1588,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function () {
             return 'ok';
         });
@@ -1641,7 +1607,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function () {
             return 'ok';
         })
@@ -1663,7 +1628,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function () {
             return 'ok';
         });
@@ -1683,7 +1647,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function () {
             return 'ok';
         });
@@ -1703,7 +1666,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function () {
             return 'ok';
         })
@@ -1755,7 +1717,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/one-time', static function () {
             return 'one-time';
         })
@@ -1777,7 +1738,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         /** @phpstan-ignore-next-line */
         $router->get('/one-time/*', static function ($frag, $param1, $param2) {
             return 'one-time-' . $frag . '-' . $param1 . '-' . $param2;
@@ -1790,7 +1750,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function (ResponseInterface $response) {
             $response->getBody()->write('ok');
 
@@ -1808,7 +1767,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function (ResponseInterface $response) {
             $response->getBody()->write('ok');
 
@@ -1908,7 +1866,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         /** @phpstan-ignore-next-line */
         $router->get('/', HeadTestStub::class, ['X-Burger: With Cheese!'])
             ->when(static function () {
@@ -1926,7 +1883,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->instanceRoute('ANY', '/users/*', new MyController('ok'));
 
         $response = $router->dispatch(new ServerRequest('HEAD', '/users/alganet'))->response();
@@ -1941,7 +1897,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->factoryRoute('ANY', '/', HeadFactoryController::class, static function () {
             return new HeadFactoryController();
         });
@@ -1957,7 +1912,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function (ResponseInterface $response) {
             $response->getBody()->write('get');
 
@@ -1995,7 +1949,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function () {
             return 'unknown';
         })->userAgent([
@@ -2015,7 +1968,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function () {
             return 'unknown';
         })->userAgent([
@@ -2032,7 +1984,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $ran = false;
         $router->get('/', static function () use (&$ran) {
             $ran = true;
@@ -2055,7 +2006,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $calls = [];
         $router->get('/', static function () use (&$calls) {
             $calls[] = 'route';
@@ -2084,7 +2034,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $calls = [];
         $router->get('/', static function () use (&$calls) {
             $calls[] = 'route';
@@ -2114,7 +2063,6 @@ final class RouterTest extends TestCase
                                             ->withHeader('Accept-Encoding', 'deflate');
         $request                         = self::newContextForRouter($router, $serverRequest);
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/input', static function () {
             return fopen('php://input', 'r+');
         })
@@ -2279,7 +2227,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/accept', static function () {
             return 'ok';
         })
@@ -2372,7 +2319,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function () {
             return 'ok';
         })
@@ -2391,7 +2337,6 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $router->isAutoDispatched = false;
-        $router->methodOverriding = false;
         $router->get('/', static function () {
             return 'ok';
         })

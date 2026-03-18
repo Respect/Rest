@@ -18,7 +18,6 @@ use function array_keys;
 use function array_values;
 use function count;
 use function implode;
-use function is_array;
 use function iterator_to_array;
 use function preg_quote;
 use function preg_replace;
@@ -100,18 +99,6 @@ final class DispatchEngine implements RequestHandlerInterface
         return array_keys($allowedMethods);
     }
 
-    private function hasDispatchedOverriddenMethod(DispatchContext $context): bool
-    {
-        if (!$this->router->methodOverriding || $context->method() !== 'POST') {
-            return false;
-        }
-
-        $parsedBody = $context->request->getParsedBody();
-        $queryParams = $context->request->getQueryParams();
-
-        return (is_array($parsedBody) && isset($parsedBody['_method'])) || isset($queryParams['_method']);
-    }
-
     private function isDispatchedToGlobalOptionsMethod(DispatchContext $context): bool
     {
         return $context->method() === 'OPTIONS' && $context->path() === '*';
@@ -119,16 +106,6 @@ final class DispatchEngine implements RequestHandlerInterface
 
     private function isRoutelessDispatch(DispatchContext $context): bool
     {
-        if ($this->hasDispatchedOverriddenMethod($context)) {
-            $parsedBody = $context->request->getParsedBody();
-            $queryParams = $context->request->getQueryParams();
-            $bodyMethod = is_array($parsedBody) ? ($parsedBody['_method'] ?? null) : null;
-            $overrideMethod = $bodyMethod ?? $queryParams['_method'] ?? null;
-            if ($overrideMethod !== null) {
-                $context->overrideMethod((string) $overrideMethod);
-            }
-        }
-
         if (!$this->isDispatchedToGlobalOptionsMethod($context)) {
             return false;
         }
