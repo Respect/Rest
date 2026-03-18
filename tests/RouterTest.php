@@ -190,7 +190,6 @@ final class RouterTest extends TestCase
     public function testMagicConstructorCanRouteToStaticValue(mixed $staticValue, string $reason): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $staticRoute = $router->get('/', $staticValue);
         $concreteStaticRoute = $router->staticRoute('GET', '/', $staticValue);
 
@@ -228,7 +227,7 @@ final class RouterTest extends TestCase
         $router = self::newRouter();
         $nonStaticRoute = $router->get('/', $staticValue);
 
-        $router->run(self::newContextForRouter($router, new ServerRequest('GET', '/')));
+        $router->dispatchContext(self::newContextForRouter($router, new ServerRequest('GET', '/')))->response();
 
         self::assertNotInstanceOf(
             'Respect\\Rest\\Routes\\StaticValue',
@@ -416,17 +415,6 @@ final class RouterTest extends TestCase
             $response,
             'Router should match using the virtual host combined URI',
         );
-    }
-
-    /** @covers Respect\Rest\Router::__destruct */
-    public function testRouterDoesNotAutoDispatchAfterManualDispatch(): void
-    {
-        $router = self::newRouter();
-        $router->get('/', 'Hello Respect');
-        $router->dispatch(new ServerRequest('GET', '/'));
-        unset($router);
-
-        self::expectOutputString('');
     }
 
     /**
@@ -1537,7 +1525,6 @@ final class RouterTest extends TestCase
             '/users/alganet/test/php',
             $ro->createUri('alganet', 'php'),
         );
-        $r->isAutoDispatched = false;
     }
 
     public function testForward(): void
@@ -1573,7 +1560,6 @@ final class RouterTest extends TestCase
     public function test_bad_request_header(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'ok';
         })->when(static function () {
@@ -1587,7 +1573,6 @@ final class RouterTest extends TestCase
     public function test_method_not_allowed_header(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'ok';
         });
@@ -1606,7 +1591,6 @@ final class RouterTest extends TestCase
     public function test_method_not_allowed_header_with_conneg(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'ok';
         })
@@ -1627,7 +1611,6 @@ final class RouterTest extends TestCase
     public function test_transparent_options_allow_methods(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'ok';
         });
@@ -1646,7 +1629,6 @@ final class RouterTest extends TestCase
     public function test_transparent_global_options_allow_methods(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'ok';
         });
@@ -1665,7 +1647,6 @@ final class RouterTest extends TestCase
     public function test_method_not_acceptable(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'ok';
         })
@@ -1716,7 +1697,6 @@ final class RouterTest extends TestCase
     public function test_append_routine_honours_routine_chaining(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/one-time', static function () {
             return 'one-time';
         })
@@ -1737,7 +1717,6 @@ final class RouterTest extends TestCase
     public function test_callback_gets_param_array(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         /** @phpstan-ignore-next-line */
         $router->get('/one-time/*', static function ($frag, $param1, $param2) {
             return 'one-time-' . $frag . '-' . $param1 . '-' . $param2;
@@ -1749,7 +1728,6 @@ final class RouterTest extends TestCase
     public function test_http_method_head(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function (ResponseInterface $response) {
             $response->getBody()->write('ok');
 
@@ -1766,14 +1744,15 @@ final class RouterTest extends TestCase
     public function test_http_method_head_run_returns_response_without_body(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function (ResponseInterface $response) {
             $response->getBody()->write('ok');
 
             return $response->withHeader('X-Handled-By', 'GET');
         });
 
-        $response = $router->run(self::newContextForRouter($router, new ServerRequest('HEAD', '/')));
+        $response = $router->dispatchContext(
+            self::newContextForRouter($router, new ServerRequest('HEAD', '/')),
+        )->response();
 
         self::assertNotNull($response);
         self::assertSame('GET', $response->getHeaderLine('X-Handled-By'));
@@ -1788,7 +1767,6 @@ final class RouterTest extends TestCase
     public function testDispatchEngineHandleReturnsSameResponseAsDispatch(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'handled';
         });
@@ -1805,7 +1783,6 @@ final class RouterTest extends TestCase
     public function testDispatchEngineHandleReturns500ForUncaughtExceptions(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function (): void {
             throw new InvalidArgumentException('boom');
         });
@@ -1818,7 +1795,6 @@ final class RouterTest extends TestCase
     public function testDispatchEngineHandlePreservesExceptionRoutes(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function (): void {
             throw new InvalidArgumentException('boom');
         });
@@ -1840,7 +1816,6 @@ final class RouterTest extends TestCase
     public function testRouterProcessHandlesRequestWithoutDelegating(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'processed';
         });
@@ -1865,7 +1840,6 @@ final class RouterTest extends TestCase
     public function test_http_method_head_with_class_routes_and_routines(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         /** @phpstan-ignore-next-line */
         $router->get('/', HeadTestStub::class, ['X-Burger: With Cheese!'])
             ->when(static function () {
@@ -1882,7 +1856,6 @@ final class RouterTest extends TestCase
     public function test_http_method_head_with_instance_routes_uses_get_fallback(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->instanceRoute('ANY', '/users/*', new MyController('ok'));
 
         $response = $router->dispatch(new ServerRequest('HEAD', '/users/alganet'))->response();
@@ -1896,7 +1869,6 @@ final class RouterTest extends TestCase
     public function test_http_method_head_with_factory_routes_uses_get_fallback(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->factoryRoute('ANY', '/', HeadFactoryController::class, static function () {
             return new HeadFactoryController();
         });
@@ -1911,7 +1883,6 @@ final class RouterTest extends TestCase
     public function test_explicit_head_route_overrides_get_fallback(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function (ResponseInterface $response) {
             $response->getBody()->write('get');
 
@@ -1948,7 +1919,6 @@ final class RouterTest extends TestCase
     public function test_user_agent_content_negotiation(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'unknown';
         })->userAgent([
@@ -1967,7 +1937,6 @@ final class RouterTest extends TestCase
     public function test_user_agent_content_negotiation_fallback(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'unknown';
         })->userAgent([
@@ -1983,7 +1952,6 @@ final class RouterTest extends TestCase
     public function test_user_agent_can_block_before_handler_runs(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $ran = false;
         $router->get('/', static function () use (&$ran) {
             $ran = true;
@@ -2005,7 +1973,6 @@ final class RouterTest extends TestCase
     public function test_user_agent_single_routine_can_run_before_and_after_route(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $calls = [];
         $router->get('/', static function () use (&$calls) {
             $calls[] = 'route';
@@ -2033,7 +2000,6 @@ final class RouterTest extends TestCase
     public function test_user_agent_with_response_transformer_signature_skips_pre_route_execution(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $calls = [];
         $router->get('/', static function () use (&$calls) {
             $calls[] = 'route';
@@ -2062,7 +2028,6 @@ final class RouterTest extends TestCase
         $serverRequest                   = (new ServerRequest('GET', '/input'))
                                             ->withHeader('Accept-Encoding', 'deflate');
         $request                         = self::newContextForRouter($router, $serverRequest);
-        $router->isAutoDispatched = false;
         $router->get('/input', static function () {
             return fopen('php://input', 'r+');
         })
@@ -2076,7 +2041,7 @@ final class RouterTest extends TestCase
                 },
             ]);
 
-        $response = $router->run($request);
+        $response = $router->dispatchContext($request)->response();
         self::assertTrue($done);
         self::assertInstanceOf(ResponseInterface::class, $response);
     }
@@ -2226,7 +2191,6 @@ final class RouterTest extends TestCase
     public function test_negotiate_acceptable_complete_headers(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/accept', static function () {
             return 'ok';
         })
@@ -2318,7 +2282,6 @@ final class RouterTest extends TestCase
     public function test_accept_content_type_header(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'ok';
         })
@@ -2336,7 +2299,6 @@ final class RouterTest extends TestCase
     public function test_accept_content_language_header(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/', static function () {
             return 'ok';
         })
@@ -2415,7 +2377,6 @@ final class RouterTest extends TestCase
     public function test_when_should_be_called_only_on_existent_methods(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
 
         $r1 = $router->any('/meow/*', StubRoutable::class);
         $r1->accept(['application/json' => 'json_encode']);
@@ -2423,7 +2384,7 @@ final class RouterTest extends TestCase
         $router->any('/moo/*', RouteKnowsNothing::class);
 
         $serverRequest = (new ServerRequest('get', '/meow/blub'))->withHeader('Accept', 'application/json');
-        $response = $router->run(self::newContextForRouter($router, $serverRequest));
+        $response = $router->dispatchContext(self::newContextForRouter($router, $serverRequest))->response();
         self::assertNotNull($response);
         $out = (string) $response->getBody();
 
@@ -2434,14 +2395,13 @@ final class RouterTest extends TestCase
     {
         $router = self::newRouter();
         $request = self::newContextForRouter($router, new ServerRequest('get', '/foo'));
-        $router->isAutoDispatched = false;
         $phpunit = $this;
         $router->get('/foo', static function () use ($router, $request, $phpunit) {
             $phpunit->assertSame($request, $router->context);
 
             return spl_object_hash($router->context);
         });
-        $response = $router->run($request);
+        $response = $router->dispatchContext($request)->response();
         self::assertNotNull($response);
         $out = (string) $response->getBody();
         self::assertEquals($out, spl_object_hash($request));
@@ -2451,7 +2411,6 @@ final class RouterTest extends TestCase
     public function testToStringReturnsCurrentDispatchResponseBody(): void
     {
         $router = self::newRouter();
-        $router->isAutoDispatched = false;
         $router->get('/foo', 'bar');
 
         $router->dispatch(new ServerRequest('GET', '/foo'));
