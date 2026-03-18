@@ -15,11 +15,11 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionMethod;
-use ReflectionObject;
 use Respect\Rest\DispatchContext;
 use Respect\Rest\HttpFactories;
 use Respect\Rest\Routable;
 use Respect\Rest\Router;
+use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routines;
 use Respect\Rest\Test\Stubs\HeadFactoryController;
 use Respect\Rest\Test\Stubs\HeadTest as HeadTestStub;
@@ -400,9 +400,9 @@ final class RouterTest extends TestCase
     /**
      * @covers  Respect\Rest\Router::dispatchContext
      * @covers  Respect\Rest\Router::routeDispatch
-     * @covers  Respect\Rest\Router::applyVirtualHost
+     * @covers  Respect\Rest\Router::applyBasePath
      */
-    public function testDeveloperCanSetUpAVirtualHostPathOnConstructor(): void
+    public function testDeveloperCanSetUpABasePathOnConstructor(): void
     {
         $router = self::newRouter('/store');
         $router->get('/products', 'Some Products!');
@@ -413,7 +413,7 @@ final class RouterTest extends TestCase
         self::assertSame(
             'Some Products!',
             $response,
-            'Router should match using the virtual host combined URI',
+            'Router should match using the base path combined URI',
         );
     }
 
@@ -450,13 +450,12 @@ final class RouterTest extends TestCase
     public function testNamesRoutesUsingAttributes(): void
     {
         $router = self::newRouter();
-        $router->allMembers = $router->any('/members', 'John, Carl');
+        $allMembers = $router->any('/members', 'John, Carl');
+        self::assertInstanceOf(AbstractRoute::class, $allMembers);
+
         $r = $router->dispatch(new ServerRequest('GET', '/members'))->response();
         self::assertNotNull($r);
         $response = (string) $r->getBody();
-
-        $ref = new ReflectionObject($router);
-        self::assertTrue($ref->hasProperty('allMembers'), 'There must be an attribute set for that key');
 
         self::assertEquals(
             'John, Carl',
@@ -466,18 +465,18 @@ final class RouterTest extends TestCase
     }
 
     /**
-     * @covers Respect\Rest\DispatchEngine::applyVirtualHost
+     * @covers Respect\Rest\DispatchEngine::applyBasePath
      * @covers Respect\Rest\Router::appendRoute
      */
-    public function testCreateUriShouldBeAwareOfVirtualHost(): void
+    public function testCreateUriShouldBeAwareOfBasePath(): void
     {
         $router = self::newRouter('/my/virtual/host');
         $catsRoute = $router->any('/cats/*', 'Meow');
-        $virtualHostUri = $catsRoute->createUri('mittens');
+        $basePathUri = $catsRoute->createUri('mittens');
         self::assertEquals(
             '/my/virtual/host/cats/mittens',
-            $virtualHostUri,
-            'Virtual host should be prepended to the path on createUri()',
+            $basePathUri,
+            'Base path should be prepended to the path on createUri()',
         );
     }
 
@@ -1483,7 +1482,7 @@ final class RouterTest extends TestCase
         self::assertSame('<user>alice</user>', (string) $response->getBody());
     }
 
-    public function testVirtualHost(): void
+    public function testBasePath(): void
     {
         $router = self::newRouter('/myvh');
         $ok = false;
@@ -1494,7 +1493,7 @@ final class RouterTest extends TestCase
         self::assertTrue($ok);
     }
 
-    public function testVirtualHostEmpty(): void
+    public function testBasePathEmpty(): void
     {
         $router = self::newRouter('/myvh');
         $ok = false;
@@ -1505,7 +1504,7 @@ final class RouterTest extends TestCase
         self::assertTrue($ok);
     }
 
-    public function testVirtualHostIndex(): void
+    public function testBasePathIndex(): void
     {
         $router = self::newRouter('/myvh/index.php');
         $ok = false;
@@ -2426,11 +2425,11 @@ final class RouterTest extends TestCase
         return (string) $response->getBody();
     }
 
-    private static function newRouter(string|null $virtualHost = null): Router
+    private static function newRouter(string|null $basePath = null): Router
     {
         $factory = new Psr17Factory();
 
-        return new Router(new HttpFactories($factory, $factory), $virtualHost);
+        return new Router(new HttpFactories($factory, $factory), $basePath);
     }
 
     private static function newContextForRouter(Router $router, ServerRequestInterface $serverRequest): DispatchContext

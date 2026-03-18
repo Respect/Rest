@@ -76,7 +76,7 @@ abstract class AbstractRoute
     /** @var array<int, AbstractRoute> */
     public array $sideRoutes = [];
 
-    public string|null $virtualHost = null;
+    public string|null $basePath = null;
 
     public function __construct(string $method, public string $pattern = '')
     {
@@ -157,7 +157,7 @@ abstract class AbstractRoute
         $params = preg_replace('#(?<!^)/? *$#', '', $params);
 
         // phpcs:ignore SlevomatCodingStandard.PHP.OptimizedFunctionsWithoutUnpacking.UnpackingUsed
-        return rtrim((string) $this->virtualHost, ' /') . sprintf($this->regexForReplace, ...$params);
+        return rtrim((string) $this->basePath, ' /') . sprintf($this->regexForReplace, ...$params);
     }
 
     /** @param array<int, mixed> $params */

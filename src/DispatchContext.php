@@ -15,7 +15,6 @@ use Respect\Rest\Routines\ParamSynced;
 use Respect\Rest\Routines\Routinable;
 use Throwable;
 
-use function assert;
 use function rawurldecode;
 use function rtrim;
 use function set_error_handler;
@@ -121,17 +120,19 @@ final class DispatchContext
     /** Generates the PSR-7 response from the current route */
     public function response(): ResponseInterface|null
     {
-        try {
-            if (!$this->route instanceof AbstractRoute) {
-                if ($this->responseDraft !== null) {
-                    return $this->finalizeResponse($this->responseDraft);
-                }
-
-                return null;
+        if (!$this->route instanceof AbstractRoute) {
+            if ($this->responseDraft !== null) {
+                return $this->finalizeResponse($this->responseDraft);
             }
 
-            $errorHandler = $this->prepareForErrorForwards();
-            $preRoutineResult = $this->routinePipeline()->processBy($this);
+            return null;
+        }
+
+        $route = $this->route;
+
+        try {
+            $errorHandler = $this->prepareForErrorForwards($route);
+            $preRoutineResult = $this->routinePipeline()->processBy($this, $route);
 
             if ($preRoutineResult !== null) {
                 if ($preRoutineResult instanceof AbstractRoute) {
@@ -147,14 +148,14 @@ final class DispatchContext
                 }
             }
 
-            $rawResult = $this->route->dispatchTarget($this->method(), $this->params, $this);
+            $rawResult = $route->dispatchTarget($this->method(), $this->params, $this);
 
             if ($rawResult instanceof AbstractRoute) {
                 return $this->forward($rawResult);
             }
 
-            $processedResult = $this->routinePipeline()->processThrough($this, $rawResult);
-            $errorResponse = $this->forwardErrors($errorHandler);
+            $processedResult = $this->routinePipeline()->processThrough($this, $route, $rawResult);
+            $errorResponse = $this->forwardErrors($errorHandler, $route);
 
             if ($errorResponse !== null) {
                 return $errorResponse;
@@ -162,7 +163,7 @@ final class DispatchContext
 
             return $this->finalizeResponse($processedResult);
         } catch (Throwable $e) {
-            $exceptionResponse = $this->catchExceptions($e);
+            $exceptionResponse = $this->catchExceptions($e, $route);
             if ($exceptionResponse === null) {
                 throw $e;
             }
@@ -172,10 +173,14 @@ final class DispatchContext
     }
 
     /** @param array<int, mixed> $params */
-    public function routineCall(string $type, string $method, Routinable $routine, array &$params): mixed
-    {
-        assert($this->route !== null);
-        $reflection = $this->route->getTargetReflection($method);
+    public function routineCall(
+        string $type,
+        string $method,
+        Routinable $routine,
+        array &$params,
+        AbstractRoute $route,
+    ): mixed {
+        $reflection = $route->getTargetReflection($method);
 
         $callbackParameters = [];
 
@@ -212,10 +217,9 @@ final class DispatchContext
     }
 
     /** @return callable|null The previous error handler, or null */
-    protected function prepareForErrorForwards(): callable|null
+    protected function prepareForErrorForwards(AbstractRoute $route): callable|null
     {
-        assert($this->route !== null);
-        foreach ($this->route->sideRoutes as $sideRoute) {
+        foreach ($route->sideRoutes as $sideRoute) {
             if ($sideRoute instanceof Routes\Error) {
                 return set_error_handler(
                     static function (
@@ -235,15 +239,13 @@ final class DispatchContext
         return null;
     }
 
-    protected function forwardErrors(callable|null $errorHandler): ResponseInterface|null
+    protected function forwardErrors(callable|null $errorHandler, AbstractRoute $route): ResponseInterface|null
     {
         if ($errorHandler !== null) {
             set_error_handler($errorHandler);
         }
 
-        assert($this->route !== null);
-
-        foreach ($this->route->sideRoutes as $sideRoute) {
+        foreach ($route->sideRoutes as $sideRoute) {
             if ($sideRoute instanceof Routes\Error && $sideRoute->errors) {
                 return $this->forward($sideRoute);
             }
@@ -252,10 +254,9 @@ final class DispatchContext
         return null;
     }
 
-    protected function catchExceptions(Throwable $e): ResponseInterface|null
+    protected function catchExceptions(Throwable $e, AbstractRoute $route): ResponseInterface|null
     {
-        assert($this->route !== null);
-        foreach ($this->route->sideRoutes as $sideRoute) {
+        foreach ($route->sideRoutes as $sideRoute) {
             if (!$sideRoute instanceof Routes\Exception) {
                 continue;
             }

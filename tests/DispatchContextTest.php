@@ -19,6 +19,7 @@ use Respect\Rest\HttpFactories;
 use Respect\Rest\Responder;
 use Respect\Rest\Routes;
 use Respect\Rest\Routines;
+use RuntimeException;
 
 use function array_unique;
 use function array_walk;
@@ -536,8 +537,24 @@ final class DispatchContextTest extends TestCase
         });
         $context->route->appendRoutine($routine);
         $dummy = ['bar'];
-        $context->routineCall('by', 'GET', $routine, $dummy);
+        $context->routineCall('by', 'GET', $routine, $dummy, $context->route);
         self::assertEquals([null, 'bar', null], $args);
+    }
+
+    public function test_exception_rethrown_when_no_exception_route_matches(): void
+    {
+        $context = $this->newContext(new ServerRequest('GET', '/'));
+        $context->route = $this->getMockForRoute(
+            'GET',
+            '/',
+            static function (): never {
+                throw new RuntimeException('boom');
+            },
+        );
+
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('boom');
+        $context->response();
     }
 
     /**

@@ -9,6 +9,7 @@ use Respect\Rest\DispatchContext;
 use function array_merge;
 use function base64_decode;
 use function explode;
+use function stripos;
 use function substr;
 
 final class AuthBasic extends AbstractRoutine implements ProxyableBy
@@ -25,7 +26,7 @@ final class AuthBasic extends AbstractRoutine implements ProxyableBy
 
         $authorization = $context->request->getHeaderLine('Authorization');
 
-        if ($authorization !== '') {
+        if ($authorization !== '' && stripos($authorization, 'Basic ') === 0) {
             $callbackResponse = ($this->callback)(
                 ...array_merge(explode(':', base64_decode(substr($authorization, 6))), $params),
             );

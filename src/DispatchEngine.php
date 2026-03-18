@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Respect\Rest;
 
+use Closure;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -27,10 +28,12 @@ final class DispatchEngine implements RequestHandlerInterface
 {
     private RoutinePipeline $routinePipeline;
 
+    /** @param (Closure(DispatchContext): void)|null $onContextReady */
     public function __construct(
-        private Router $router,
+        private RouteProvider $routeProvider,
         private ResponseFactoryInterface $responseFactory,
         private StreamFactoryInterface $streamFactory,
+        private Closure|null $onContextReady = null,
     ) {
         $this->routinePipeline = new RoutinePipeline();
     }
@@ -59,7 +62,10 @@ final class DispatchEngine implements RequestHandlerInterface
 
     public function dispatchContext(DispatchContext $context): DispatchContext
     {
-        $this->router->context = $context;
+        if ($this->onContextReady !== null) {
+            ($this->onContextReady)($context);
+        }
+
         $context->setRoutinePipeline($this->routinePipeline);
 
         if (!$this->isRoutelessDispatch($context) && $context->route === null) {
@@ -104,7 +110,7 @@ final class DispatchEngine implements RequestHandlerInterface
             return false;
         }
 
-        $allowedMethods = $this->getAllowedMethods($this->router->getRoutes());
+        $allowedMethods = $this->getAllowedMethods($this->routeProvider->getRoutes());
 
         if ($allowedMethods) {
             $context->prepareResponse(
@@ -120,7 +126,7 @@ final class DispatchEngine implements RequestHandlerInterface
 
     private function routeDispatch(DispatchContext $context): void
     {
-        $this->applyVirtualHost($context);
+        $this->applyBasePath($context);
 
         $matchedByPath = $this->getMatchedRoutesByPath($context);
         /** @var array<int, AbstractRoute> $matchedArray */
@@ -140,16 +146,16 @@ final class DispatchEngine implements RequestHandlerInterface
         }
     }
 
-    private function applyVirtualHost(DispatchContext $context): void
+    private function applyBasePath(DispatchContext $context): void
     {
-        $virtualHost = $this->router->getVirtualHost();
-        if ($virtualHost === null) {
+        $basePath = $this->routeProvider->getBasePath();
+        if ($basePath === null) {
             return;
         }
 
         $context->setPath(
             preg_replace(
-                '#^' . preg_quote($virtualHost) . '#',
+                '#^' . preg_quote($basePath) . '#',
                 '',
                 $context->path(),
             ) ?? $context->path(),
@@ -174,7 +180,7 @@ final class DispatchEngine implements RequestHandlerInterface
         /** @var SplObjectStorage<AbstractRoute, array<int, mixed>> $matched */
         $matched = new SplObjectStorage();
 
-        foreach ($this->router->getRoutes() as $route) {
+        foreach ($this->routeProvider->getRoutes() as $route) {
             $params = [];
             if (!$this->matchRoute($context, $route, $params)) {
                 continue;
@@ -297,7 +303,7 @@ final class DispatchEngine implements RequestHandlerInterface
                 $tempParams = $matchedByPath[$route];
                 $context->clearResponseMeta();
                 $context->route = $route;
-                if ($this->routinePipeline->matches($context, $tempParams)) {
+                if ($this->routinePipeline->matches($context, $route, $tempParams)) {
                     return $this->configureContext(
                         $context,
                         $route,
