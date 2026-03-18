@@ -243,7 +243,7 @@ Sometimes you need to route users to streams. The Router doesn't need to buffer
 large files in memory before serving them:
 ```php
 $r3->get('/images/*/hi-res', function($imageName) {
-    return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
+    return fopen("/path/to/hi/images/{$imageName}.jpg", 'rb');
 });
 ```
 
@@ -304,7 +304,7 @@ We highly recommend that you use a strong validation library. Consider
 [Respect\Validation](http://github.com/Respect/Validation):
 ```php
 $r3->get('/images/*/hi-res', function($imageName) {
-    return fopen("/path/to/hi/images/{$imageName}.jpg", 'r');
+    return fopen("/path/to/hi/images/{$imageName}.jpg", 'rb');
 })->when(function($imageName) {
     return V::alphanum(".")->length(5, 155)
             ->noWhitespace()->validate($imageName);
@@ -462,7 +462,7 @@ Please note that when returning streams, conneg routines are also called.
 You may take advantage of this when processing streams:
 ```php
 $r3->get('/text/*', function($filename) {
-    return fopen('data/' . $filename, 'r+');
+    return fopen('data/' . $filename, 'r+b');
 })->acceptEncoding([
     'deflate' => function($stream) {
         stream_filter_append($stream, 'zlib.deflate', STREAM_FILTER_READ);
