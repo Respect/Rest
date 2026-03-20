@@ -12,8 +12,10 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Respect\Rest\Router;
 
+use function base64_encode;
 use function func_get_args;
 use function implode;
+use function in_array;
 use function strtoupper;
 
 /**
@@ -140,6 +142,88 @@ final class Psr7InjectionTest extends TestCase
         $this->router->dispatch($serverRequest)->response();
 
         self::assertEquals('Bearer token123', $captured);
+    }
+
+    #[Test]
+    public function authBasicCallbackReceivesRequestWhenTypeHinted(): void
+    {
+        $capturedMethod = null;
+        $this->router->get('/protected', static function () {
+            return 'secret';
+        })->authBasic('Test Realm', static function (
+            string $user,
+            string $pass,
+            ServerRequestInterface $request,
+        ) use (&$capturedMethod) {
+            $capturedMethod = $request->getMethod();
+
+            return $user === 'admin' && $pass === 'secret';
+        });
+
+        $serverRequest = (new ServerRequest('GET', '/protected'))
+            ->withHeader('Authorization', 'Basic ' . base64_encode('admin:secret'));
+        $response = $this->router->dispatch($serverRequest)->response();
+
+        self::assertNotNull($response);
+        self::assertNotEquals(401, $response->getStatusCode());
+        self::assertEquals('GET', $capturedMethod);
+    }
+
+    #[Test]
+    public function authBasicSkipsAuthForGetWhenRequestInjected(): void
+    {
+        $callback = static function (
+            string $user,
+            string $pass,
+            ServerRequestInterface $request,
+        ) {
+            if (in_array($request->getMethod(), ['GET', 'HEAD'], true)) {
+                return true;
+            }
+
+            return $user === 'admin' && $pass === 'secret';
+        };
+
+        $this->router->any('/resource', static function () {
+            return 'data';
+        })->authBasic('Realm', $callback);
+
+        // GET without credentials should pass (auth skipped for reads)
+        $getResponse = $this->router->dispatch(new ServerRequest('GET', '/resource'))->response();
+        self::assertNotNull($getResponse);
+        self::assertNotEquals(401, $getResponse->getStatusCode());
+        self::assertEquals('data', (string) $getResponse->getBody());
+
+        // POST without credentials should fail
+        $postResponse = $this->router->dispatch(new ServerRequest('POST', '/resource'))->response();
+        self::assertNotNull($postResponse);
+        self::assertEquals(401, $postResponse->getStatusCode());
+
+        // POST with valid credentials should pass
+        $authedPost = (new ServerRequest('POST', '/resource'))
+            ->withHeader('Authorization', 'Basic ' . base64_encode('admin:secret'));
+        $postOk = $this->router->dispatch($authedPost)->response();
+        self::assertNotNull($postOk);
+        self::assertNotEquals(401, $postOk->getStatusCode());
+    }
+
+    #[Test]
+    public function authBasicWithoutTypeHintsStillPassesParams(): void
+    {
+        $captured = [];
+        $this->router->get('/items/*/*', static function () {
+            return 'ok';
+        })->authBasic('Realm', static function ($user, $pass, $p1 = null, $p2 = null) use (&$captured) {
+            $captured = [$user, $pass, $p1, $p2];
+
+            return true;
+        });
+
+        $serverRequest = (new ServerRequest('GET', '/items/a/b'))
+            ->withHeader('Authorization', 'Basic ' . base64_encode('john:doe'));
+        $this->router->dispatch($serverRequest)->response();
+
+        self::assertEquals(['john', 'doe', 'a', 'b'], $captured);
     }
 
     #[Test]

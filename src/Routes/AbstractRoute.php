@@ -4,12 +4,10 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
-use Psr\Http\Message\ResponseInterface;
-use Psr\Http\Message\ServerRequestInterface;
 use ReflectionClass;
 use ReflectionFunctionAbstract;
-use ReflectionNamedType;
 use Respect\Rest\DispatchContext;
+use Respect\Rest\ResolvesCallbackArguments;
 use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\Unique;
@@ -21,7 +19,6 @@ use function array_shift;
 use function end;
 use function explode;
 use function implode;
-use function is_a;
 use function is_string;
 use function ltrim;
 use function preg_match;
@@ -58,6 +55,8 @@ use function usort;
 // phpcs:ignore SlevomatCodingStandard.Classes.SuperfluousAbstractClassNaming.SuperfluousPrefix
 abstract class AbstractRoute
 {
+    use ResolvesCallbackArguments;
+
     public const string CATCHALL_IDENTIFIER = '/**';
 
     public const array CORE_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'];
@@ -225,64 +224,6 @@ abstract class AbstractRoute
         }
 
         return true;
-    }
-
-    /**
-     * Resolves callback arguments by inspecting parameter types via reflection.
-     *
-     * PSR-7 typed parameters (ServerRequestInterface, ResponseInterface) are
-     * injected automatically. All other parameters consume URL params positionally.
-     *
-     * @param array<int, mixed> $params URL-extracted parameters
-     *
-     * @return array<int, mixed> Resolved argument list
-     */
-    protected function resolveCallbackArguments(
-        ReflectionFunctionAbstract $reflection,
-        array $params,
-        DispatchContext $context,
-    ): array {
-        $refParams = $reflection->getParameters();
-
-        // No declared parameters — pass all URL params through (supports func_get_args())
-        if ($refParams === []) {
-            return $params;
-        }
-
-        $args = [];
-        $paramIndex = 0;
-        $hasPsrInjection = false;
-
-        foreach ($refParams as $refParam) {
-            $type = $refParam->getType();
-
-            if ($type instanceof ReflectionNamedType && !$type->isBuiltin()) {
-                $typeName = $type->getName();
-
-                if (is_a($typeName, ServerRequestInterface::class, true)) {
-                    $args[] = $context->request;
-                    $hasPsrInjection = true;
-                    continue;
-                }
-
-                if (is_a($typeName, ResponseInterface::class, true)) {
-                    $args[] = $context->factory->createResponse();
-                    $hasPsrInjection = true;
-                    continue;
-                }
-            }
-
-            $default = $refParam->isDefaultValueAvailable() ? $refParam->getDefaultValue() : null;
-            $args[] = $params[$paramIndex] ?? $default;
-            $paramIndex++;
-        }
-
-        // No PSR-7 injection happened — pass params directly (faster, preserves original behavior)
-        if (!$hasPsrInjection) {
-            return $params;
-        }
-
-        return $args;
     }
 
     /** @return array{string, string} */
