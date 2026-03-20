@@ -11,5 +11,8 @@ interface RouteProvider
     /** @return array<int, AbstractRoute> */
     public function getRoutes(): array;
 
+    /** @return array<int, AbstractRoute> */
+    public function getSideRoutes(): array;
+
     public function getBasePath(): string;
 }

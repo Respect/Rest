@@ -12,7 +12,6 @@ use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Respect\Rest\Routes\AbstractRoute;
 use SplObjectStorage;
-use Throwable;
 
 use function array_filter;
 use function array_keys;
@@ -49,11 +48,7 @@ final class DispatchEngine implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        try {
-            $response = $this->dispatch($request)->response();
-        } catch (Throwable) {
-            return $this->factory->createResponse(500);
-        }
+        $response = $this->dispatch($request)->response();
 
         return $response ?? $this->factory->createResponse(500);
     }
@@ -65,6 +60,7 @@ final class DispatchEngine implements RequestHandlerInterface
         }
 
         $context->setRoutinePipeline($this->routinePipeline);
+        $context->setSideRoutes($this->routeProvider->getSideRoutes());
 
         if (!$this->isRoutelessDispatch($context) && $context->route === null) {
             $this->routeDispatch($context);
@@ -289,9 +285,9 @@ final class DispatchEngine implements RequestHandlerInterface
         DispatchContext $context,
         SplObjectStorage $matchedByPath,
     ): DispatchContext|bool|null {
-        $badRequest = false;
-
         foreach ([0, 1, 2] as $rank) {
+            $rankMatched = false;
+
             foreach ($matchedByPath as $route) {
                 if ($this->getMethodMatchRank($context, $route) !== $rank) {
                     continue;
@@ -309,11 +305,17 @@ final class DispatchEngine implements RequestHandlerInterface
                     );
                 }
 
-                $badRequest = true;
+                $rankMatched = true;
+            }
+
+            // If a route at this rank matched the method but failed routines,
+            // don't fall through to lower-priority ranks
+            if ($rankMatched) {
+                return false;
             }
         }
 
-        return $badRequest ? false : null;
+        return null;
     }
 
     /**

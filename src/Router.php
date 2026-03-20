@@ -186,6 +186,20 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
         return $route;
     }
 
+    public function statusRoute(int|null $statusCode, callable $callback): Routes\Status
+    {
+        $route = new Routes\Status($statusCode, $callback);
+        $this->appendSideRoute($route);
+
+        return $route;
+    }
+
+    /** @return array<int, Routes\AbstractRoute> */
+    public function getSideRoutes(): array
+    {
+        return $this->sideRoutes;
+    }
+
     public function factoryRoute(string $method, string $path, string $className, callable $factory): Routes\Factory
     {
         $route = new Routes\Factory($method, $path, $className, $factory);
