@@ -1843,16 +1843,16 @@ final class RouterTest extends TestCase
         self::assertSame((string) $dispatched->getBody(), (string) $handled->getBody());
     }
 
-    public function testDispatchEngineHandleReturns500ForUncaughtExceptions(): void
+    public function testDispatchEngineHandlePropagatesUncaughtExceptions(): void
     {
         $router = self::newRouter();
         $router->get('/', static function (): void {
             throw new InvalidArgumentException('boom');
         });
 
-        $response = $router->dispatchEngine()->handle(new ServerRequest('GET', '/'));
-
-        self::assertSame(500, $response->getStatusCode());
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('boom');
+        $router->dispatchEngine()->handle(new ServerRequest('GET', '/'));
     }
 
     public function testDispatchEngineHandlePreservesExceptionRoutes(): void

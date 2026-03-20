@@ -136,7 +136,7 @@ final class DispatchEngineTest extends TestCase
         self::assertSame('world', (string) $response->getBody());
     }
 
-    public function testHandleReturns500OnException(): void
+    public function testHandlePropagatesUnhandledExceptions(): void
     {
         $engine = $this->engine([
             new Callback('GET', '/boom', static function (): never {
@@ -144,9 +144,9 @@ final class DispatchEngineTest extends TestCase
             }),
         ]);
 
-        $response = $engine->handle(new ServerRequest('GET', '/boom'));
-
-        self::assertSame(500, $response->getStatusCode());
+        $this->expectException(RuntimeException::class);
+        $this->expectExceptionMessage('fail');
+        $engine->handle(new ServerRequest('GET', '/boom'));
     }
 
     public function testOnContextReadyCallbackIsInvoked(): void

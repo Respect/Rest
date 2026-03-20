@@ -15,6 +15,7 @@ use Respect\Rest\Routines\ParamSynced;
 use Respect\Rest\Routines\Routinable;
 use Throwable;
 
+use function is_a;
 use function rawurldecode;
 use function rtrim;
 use function set_error_handler;
@@ -48,6 +49,9 @@ final class DispatchContext
     private string $effectiveMethod = '';
 
     private string $effectivePath = '';
+
+    /** @var array<int, AbstractRoute> */
+    private array $sideRoutes = [];
 
     public function __construct(
         public ServerRequestInterface $request,
@@ -121,6 +125,11 @@ final class DispatchContext
     {
         if (!$this->route instanceof AbstractRoute) {
             if ($this->responseDraft !== null) {
+                $statusResponse = $this->forwardToStatusRoute($this->responseDraft);
+                if ($statusResponse !== null) {
+                    return $statusResponse;
+                }
+
                 return $this->finalizeResponse($this->responseDraft);
             }
 
@@ -210,6 +219,12 @@ final class DispatchContext
         $this->routinePipeline = $routinePipeline;
     }
 
+    /** @param array<int, AbstractRoute> $sideRoutes */
+    public function setSideRoutes(array $sideRoutes): void
+    {
+        $this->sideRoutes = $sideRoutes;
+    }
+
     public function setResponder(Responder $responder): void
     {
         $this->responder = $responder;
@@ -260,15 +275,35 @@ final class DispatchContext
                 continue;
             }
 
-            $exceptionClass = $e::class;
-            if (
-                $exceptionClass === $sideRoute->class
-                || $sideRoute->class === 'Exception'
-                || $sideRoute->class === '\Exception'
-            ) {
+            if (is_a($e, $sideRoute->class)) {
                 $sideRoute->exception = $e;
 
                 return $this->forward($sideRoute);
+            }
+        }
+
+        return null;
+    }
+
+    protected function forwardToStatusRoute(ResponseInterface $preparedResponse): ResponseInterface|null
+    {
+        $statusCode = $preparedResponse->getStatusCode();
+
+        foreach ($this->sideRoutes as $sideRoute) {
+            if (
+                $sideRoute instanceof Routes\Status
+                && ($sideRoute->statusCode === $statusCode || $sideRoute->statusCode === null)
+            ) {
+                $this->hasStatusOverride = true;
+
+                // Run routine negotiation (e.g. Accept) before forwarding,
+                // since the normal route-selection phase was skipped
+                $this->routinePipeline()->matches($this, $sideRoute, $this->params);
+
+                $result = $this->forward($sideRoute);
+
+                // Preserve the original status code on the forwarded response
+                return $result?->withStatus($statusCode);
             }
         }
 
