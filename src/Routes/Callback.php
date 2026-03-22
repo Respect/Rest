@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
-use Closure;
-use ReflectionFunction;
 use ReflectionFunctionAbstract;
-use ReflectionMethod;
+use Respect\Parameter\Resolver;
 use Respect\Rest\DispatchContext;
 
 use function array_merge;
-use function is_array;
 
 class Callback extends AbstractRoute
 {
@@ -31,11 +28,7 @@ class Callback extends AbstractRoute
 
     public function getCallbackReflection(): ReflectionFunctionAbstract
     {
-        if (is_array($this->callback)) {
-            return new ReflectionMethod($this->callback[0], $this->callback[1]);
-        }
-
-        return new ReflectionFunction(Closure::fromCallable($this->callback));
+        return Resolver::reflectCallable($this->callback);
     }
 
     public function getReflection(string $method): ReflectionFunctionAbstract
@@ -51,7 +44,7 @@ class Callback extends AbstractRoute
     public function runTarget(string $method, array &$params, DispatchContext $context): mixed
     {
         $reflection = $this->getReflection($method);
-        $args = $this->resolveCallbackArguments($reflection, array_merge($params, $this->arguments), $context);
+        $args = $context->resolver()->resolve($reflection, array_merge($params, $this->arguments));
 
         return ($this->callback)(...$args);
     }

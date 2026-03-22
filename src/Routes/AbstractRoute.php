@@ -7,7 +7,6 @@ namespace Respect\Rest\Routes;
 use ReflectionClass;
 use ReflectionFunctionAbstract;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\ResolvesCallbackArguments;
 use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Routinable;
 use Respect\Rest\Routines\Unique;
@@ -55,8 +54,6 @@ use function usort;
 // phpcs:ignore SlevomatCodingStandard.Classes.SuperfluousAbstractClassNaming.SuperfluousPrefix
 abstract class AbstractRoute
 {
-    use ResolvesCallbackArguments;
-
     public const string CATCHALL_IDENTIFIER = '/**';
 
     public const array CORE_METHODS = ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'];
@@ -133,11 +130,6 @@ abstract class AbstractRoute
         }
 
         return $method;
-    }
-
-    public function getTargetReflection(string $method): ReflectionFunctionAbstract|null
-    {
-        return $this->getReflection($this->getTargetMethod($method));
     }
 
     /** @param array<int, mixed> $params */

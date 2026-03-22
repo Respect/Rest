@@ -220,7 +220,7 @@ $r3->get('/download/*', function(string $file, ResponseInterface $response) {
 ```
 
   1. Parameters are matched by type, not position. Mix them freely with route parameters.
-  2. This works with callback routes and class controller methods alike.
+  2. This works with callback routes, class controller methods, and routine callbacks alike.
 
 ## PSR-15 Integration
 
@@ -291,11 +291,9 @@ $r3->get('/documents/*', function($documentId) {
 ```
 
   1. This will match the route only if the callback on *when* is matched.
-  2. The `$documentId` param must have the same name in the action and the
-     condition (but does not need to appear in the same order).
+  2. Route parameters are passed positionally, matching the order of the `/*` segments.
   3. You can specify more than one parameter per condition callback.
   4. You can chain conditions: `when($cb1)->when($cb2)->when($etc)`
-  5. Conditions will also sync with parameters on bound classes and instance methods.
 
 This makes it possible to validate parameters using any custom routine and
 not just data types such as `int` or `string`.
@@ -324,7 +322,7 @@ $r3->get('/artists/*/albums/*', function($artistName, $albumName) {
 ```
 
   1. This will execute the callback defined with *by* before the route action.
-  2. Parameters are synced by name, not by order, like with `when`.
+  2. Route parameters are passed positionally, matching the order of the `/*` segments.
   3. You can specify more than one parameter per proxy callback.
   4. You can chain proxies: `by($cb1)->by($cb2)->by($etc)`
   5. A `return false` from a proxy will stop the execution of any following proxies
@@ -350,7 +348,6 @@ $r3->post('/artists/*/albums/*', function($artistName, $albumName) {
   1. `by` proxies will be executed before the route action, `through` proxies
      will be executed after.
   2. You are free to use them separately or in tandem.
-  3. `through` can also receive parameters by name.
 
 When processing something after the route has run, it's often desirable to process
 its output as well. This can be achieved with a nested closure:
@@ -385,23 +382,6 @@ A simple way of applying routines to every route on the router is:
 ```php
 $r3->always('By', $logRoutine);
 ```
-
-You can use the param sync to take advantage of this:
-```php
-$r3->always('When', function($user=null) {
-    if ($user) {
-        return strlen($user) > 3;
-    }
-});
-
-$r3->any('/products', function () { /***/ });
-$r3->any('/users/*', function ($user) { /***/ });
-$r3->any('/users/*/products', function ($user) { /***/ });
-$r3->any('/listeners/*', function ($user) { /***/ });
-```
-
-Since there are three routes with the `$user` parameter, `when` will
-verify them all automatically by name.
 
 ## File Extensions
 
@@ -556,7 +536,6 @@ appended to the route. Custom routines have the option of several different inte
 which can be implemented:
 
   * `IgnorableFileExtension` - Instructs the router to ignore the file extension in requests.
-  * `ParamSynced` - Syncs parameters with the route function/method.
   * `ProxyableBy` - Instructs the router to run method `by()` before the route.
   * `ProxyableThrough` - Instructs the router to run method `through()` after the route.
   * `ProxyableWhen` - Instructs the router to run method `when()` to validate the route match.

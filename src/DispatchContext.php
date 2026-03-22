@@ -4,15 +4,13 @@ declare(strict_types=1);
 
 namespace Respect\Rest;
 
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
-use ReflectionFunctionAbstract;
-use ReflectionParameter;
+use Respect\Parameter\Resolver;
 use Respect\Rest\Routes\AbstractRoute;
-use Respect\Rest\Routines\ParamSynced;
-use Respect\Rest\Routines\Routinable;
 use Throwable;
 
 use function is_a;
@@ -23,7 +21,7 @@ use function strtolower;
 use function strtoupper;
 
 /** Internal routing context wrapping a PSR-7 server request */
-final class DispatchContext
+final class DispatchContext implements ContainerInterface
 {
     /** @var array<int, mixed> */
     public array $params = [];
@@ -52,6 +50,8 @@ final class DispatchContext
 
     /** @var array<int, AbstractRoute> */
     private array $sideRoutes = [];
+
+    private Resolver|null $resolver = null;
 
     public function __construct(
         public ServerRequestInterface $request,
@@ -180,33 +180,6 @@ final class DispatchContext
         }
     }
 
-    /** @param array<int, mixed> $params */
-    public function routineCall(
-        string $type,
-        string $method,
-        Routinable $routine,
-        array &$params,
-        AbstractRoute $route,
-    ): mixed {
-        $reflection = $route->getTargetReflection($method);
-
-        $callbackParameters = [];
-
-        if (!$routine instanceof ParamSynced) {
-            $callbackParameters = $params;
-        } elseif ($reflection !== null) {
-            foreach ($routine->getParameters() as $parameter) {
-                $callbackParameters[] = $this->extractRouteParam(
-                    $reflection,
-                    $parameter,
-                    $params,
-                );
-            }
-        }
-
-        return $routine->{$type}($this, $callbackParameters);
-    }
-
     public function forward(AbstractRoute $route): ResponseInterface|null
     {
         $this->route = $route;
@@ -228,6 +201,30 @@ final class DispatchContext
     public function setResponder(Responder $responder): void
     {
         $this->responder = $responder;
+    }
+
+    public function resolver(): Resolver
+    {
+        return $this->resolver ??= new Resolver($this);
+    }
+
+    public function has(string $id): bool
+    {
+        return is_a($id, ServerRequestInterface::class, true)
+            || is_a($id, ResponseInterface::class, true);
+    }
+
+    public function get(string $id): mixed
+    {
+        if (is_a($id, ServerRequestInterface::class, true)) {
+            return $this->request;
+        }
+
+        if (is_a($id, ResponseInterface::class, true)) {
+            return $this->factory->createResponse();
+        }
+
+        return null;
     }
 
     /** @return callable|null The previous error handler, or null */
@@ -305,28 +302,6 @@ final class DispatchContext
                 // Preserve the original status code on the forwarded response
                 return $result?->withStatus($statusCode);
             }
-        }
-
-        return null;
-    }
-
-    /** @param array<int, mixed> $params */
-    protected function extractRouteParam(
-        ReflectionFunctionAbstract $callback,
-        ReflectionParameter $routeParam,
-        array &$params,
-    ): mixed {
-        foreach ($callback->getParameters() as $callbackParamReflection) {
-            if (
-                $callbackParamReflection->getName() === $routeParam->getName()
-                && isset($params[$callbackParamReflection->getPosition()])
-            ) {
-                return $params[$callbackParamReflection->getPosition()];
-            }
-        }
-
-        if ($routeParam->isDefaultValueAvailable()) {
-            return $routeParam->getDefaultValue();
         }
 
         return null;
