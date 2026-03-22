@@ -20,7 +20,7 @@ final class RoutinePipeline
         foreach ($route->routines as $routine) {
             if (
                 $routine instanceof ProxyableWhen
-                && !$context->routineCall('when', $context->method(), $routine, $params, $route)
+                && !$routine->when($context, $params)
             ) {
                 return false;
             }
@@ -36,13 +36,7 @@ final class RoutinePipeline
                 continue;
             }
 
-            $result = $context->routineCall(
-                'by',
-                $context->method(),
-                $routine,
-                $context->params,
-                $route,
-            );
+            $result = $routine->by($context, $context->params);
 
             if ($result instanceof AbstractRoute || $result instanceof ResponseInterface || $result === false) {
                 return $result;
@@ -59,13 +53,7 @@ final class RoutinePipeline
                 continue;
             }
 
-            $proxyCallback = $context->routineCall(
-                'through',
-                $context->method(),
-                $routine,
-                $context->params,
-                $route,
-            );
+            $proxyCallback = $routine->through($context, $context->params);
 
             if (!is_callable($proxyCallback)) {
                 continue;
