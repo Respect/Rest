@@ -97,7 +97,7 @@ abstract class ControllerRoute extends AbstractRoute
     {
         $reflection = $this->getReflection($method);
         if ($reflection !== null) {
-            $args = $this->resolveCallbackArguments($reflection, $params, $context);
+            $args = $context->resolver()->resolve($reflection, $params);
 
             return $target->$method(...$args);
         }

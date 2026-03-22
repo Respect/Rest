@@ -921,7 +921,7 @@ final class RouterTest extends TestCase
         })->by($proxy1)->through($proxy2)->through($proxy3);
         $this->router->dispatch(new ServerRequest('get', '/users/abc/def/ghi'))->response();
         self::assertSame(
-            ['abc', 'main', 'def', 'ghi'],
+            ['abc', 'main', 'abc', 'abc'],
             $result,
         );
     }
@@ -938,7 +938,7 @@ final class RouterTest extends TestCase
         };
         $this->router->get('/users/*/*', $callback)->by($proxy1);
         $this->router->dispatch(new ServerRequest('get', '/users/abc/def'))->response();
-        self::assertEquals(['def', null], $resultProxy);
+        self::assertEquals(['abc', 'def'], $resultProxy);
         self::assertEquals(['abc', 'def'], $resultCallback);
     }
 

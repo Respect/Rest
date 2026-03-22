@@ -208,6 +208,23 @@ final class Psr7InjectionTest extends TestCase
     }
 
     #[Test]
+    public function routineThroughCallbackReceivesResponseWhenTypeHinted(): void
+    {
+        $this->router->get('/wrapped', static function () {
+            return 'content';
+        })->through(static function (ResponseInterface $res) {
+            return static function ($data) {
+                return strtoupper($data);
+            };
+        });
+
+        $response = $this->router->dispatch(new ServerRequest('GET', '/wrapped'))->response();
+
+        self::assertNotNull($response);
+        self::assertEquals('CONTENT', (string) $response->getBody());
+    }
+
+    #[Test]
     public function authBasicWithoutTypeHintsStillPassesParams(): void
     {
         $captured = [];
@@ -224,22 +241,5 @@ final class Psr7InjectionTest extends TestCase
         $this->router->dispatch($serverRequest)->response();
 
         self::assertEquals(['john', 'doe', 'a', 'b'], $captured);
-    }
-
-    #[Test]
-    public function routineThroughCallbackReceivesResponseWhenTypeHinted(): void
-    {
-        $this->router->get('/wrapped', static function () {
-            return 'content';
-        })->through(static function (ResponseInterface $res) {
-            return static function ($data) {
-                return strtoupper($data);
-            };
-        });
-
-        $response = $this->router->dispatch(new ServerRequest('GET', '/wrapped'))->response();
-
-        self::assertNotNull($response);
-        self::assertEquals('CONTENT', (string) $response->getBody());
     }
 }

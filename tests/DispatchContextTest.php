@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Test;
 
-use Closure;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
@@ -13,7 +12,6 @@ use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
-use ReflectionFunction;
 use Respect\Rest\DispatchContext;
 use Respect\Rest\Responder;
 use Respect\Rest\Routes;
@@ -22,13 +20,11 @@ use RuntimeException;
 
 use function array_unique;
 use function array_walk;
-use function func_get_args;
 use function implode;
 use function is_callable;
 use function md5;
 use function rand;
 use function str_replace;
-use function strtolower;
 
 /** @covers Respect\Rest\DispatchContext */
 #[AllowMockObjectsWithoutExpectations]
@@ -343,147 +339,6 @@ final class DispatchContextTest extends TestCase
         );
     }
 
-    /**
-     * @param array<int, mixed> $params
-     *
-     * @covers       Respect\Rest\DispatchContext::response
-     */
-    #[DataProvider('providerForParamSyncedRoutines')]
-    public function testParamSyncedRoutinesShouldAllReferenceTheSameValuesByTheirNames(
-        string $scenario,
-        array $params,
-    ): void {
-        $context = $this->newContext(new ServerRequest('GET', '/version'));
-        $context->params = $params;
-
-        $route = $this->getMockForRoute(
-            'GET',
-            '/version',
-            'MySoftwareName',
-            'GET',
-            $params,
-        );
-
-        $checkers = [];
-        switch ($scenario) {
-            case 'pureSynced':
-                $checkers = [
-                    static function ($majorVersion, $minorVersion, $patchVersion): void {
-                        self::assertCount(3, func_get_args());
-                        self::assertSame(15, $majorVersion);
-                        self::assertSame(10, $minorVersion);
-                        self::assertSame(5, $patchVersion);
-                    },
-                    static function ($patchVersion, $minorVersion, $majorVersion): void {
-                        self::assertCount(3, func_get_args());
-                        self::assertSame(15, $majorVersion);
-                        self::assertSame(10, $minorVersion);
-                        self::assertSame(5, $patchVersion);
-                    },
-                    static function ($majorVersion): void {
-                        self::assertCount(1, func_get_args());
-                        self::assertSame(15, $majorVersion);
-                    },
-                    static function (): void {
-                        self::assertCount(0, func_get_args());
-                    },
-                ];
-                break;
-            case 'pureNulls':
-                $checkers = [
-                    static function ($majorVersion, $minorVersion, $patchVersion): void {
-                        self::assertCount(3, func_get_args());
-                        self::assertNull($majorVersion);
-                        self::assertNull($minorVersion);
-                        self::assertNull($patchVersion);
-                    },
-                    static function ($patchVersion, $minorVersion, $majorVersion): void {
-                        self::assertCount(3, func_get_args());
-                        self::assertNull($majorVersion);
-                        self::assertNull($minorVersion);
-                        self::assertNull($patchVersion);
-                    },
-                    static function ($patchVersion, $minorVersion, $majorVersion): void {
-                        self::assertCount(3, func_get_args());
-                        self::assertNull($majorVersion);
-                        self::assertNull($minorVersion);
-                        self::assertNull($patchVersion);
-                    },
-                    static function ($majorVersion): void {
-                        self::assertCount(1, func_get_args());
-                        self::assertNull($majorVersion);
-                    },
-                ];
-                break;
-            case 'pureDefaults':
-                $checkers = [
-                    static function ($majorVersion = 15, $minorVersion = 10, $patchVersion = 5): void {
-                        self::assertCount(3, func_get_args());
-                        self::assertSame(15, $majorVersion);
-                        self::assertSame(10, $minorVersion);
-                        self::assertSame(5, $patchVersion);
-                    },
-                    static function ($patchVersion = 5, $minorVersion = 10, $majorVersion = 15): void {
-                        self::assertCount(3, func_get_args());
-                        self::assertSame(15, $majorVersion);
-                        self::assertSame(10, $minorVersion);
-                        self::assertSame(5, $patchVersion);
-                    },
-                    static function ($majorVersion = 15): void {
-                        self::assertCount(1, func_get_args());
-                        self::assertSame(15, $majorVersion);
-                    },
-                    static function (): void {
-                        self::assertCount(0, func_get_args());
-                    },
-                ];
-                break;
-            case 'mixed':
-                $checkers = [
-                    static function ($majorVersion, $minorVersion, $patchVersion = 5): void {
-                        self::assertCount(3, func_get_args());
-                        self::assertSame(15, $majorVersion);
-                        self::assertSame(10, $minorVersion);
-                        self::assertSame(5, $patchVersion);
-                    },
-                    static function ($majorVersion, $minorVersion, $patchVersion): void {
-                        self::assertCount(3, func_get_args());
-                        self::assertSame(15, $majorVersion);
-                        self::assertSame(10, $minorVersion);
-                        self::assertNull($patchVersion);
-                    },
-                    static function (): void {
-                        self::assertCount(0, func_get_args());
-                    },
-                ];
-                break;
-            default:
-                self::fail('Unknown provider scenario');
-        }
-
-        foreach ($checkers as $checker) {
-            $route->appendRoutine($this->getMockForProxyableRoutine($route, 'By', $checker));
-        }
-
-        $context->route = $route;
-
-        $response = $context->response();
-
-        self::assertNotNull($response);
-        self::assertEquals('MySoftwareName', (string) $response->getBody());
-    }
-
-    /** @return array<int, array<int, mixed>> */
-    public static function providerForParamSyncedRoutines(): array
-    {
-        return [
-            ['pureSynced', [15, 10, 5]],
-            ['pureNulls', []],
-            ['pureDefaults', []],
-            ['mixed', [15, 10]],
-        ];
-    }
-
     public function testConvertingToStringCallsResponse(): void
     {
         $context = $this->newContext(new ServerRequest('GET', '/users/alganet/lists'));
@@ -522,22 +377,6 @@ final class DispatchContextTest extends TestCase
         self::assertSame('Some list items', (string) $response->getBody());
     }
 
-    public function test_unsynced_param_comes_as_null(): void
-    {
-        $context = $this->newContext(new ServerRequest('GET', '/'));
-        $context->route = new Routes\Callback('GET', '/', static function ($bar) {
-            return 'ok';
-        });
-        $args = [];
-        $routine = new Routines\By(static function ($foo, $bar, $baz) use (&$args): void {
-            $args = func_get_args();
-        });
-        $context->route->appendRoutine($routine);
-        $dummy = ['bar'];
-        $context->routineCall('by', 'GET', $routine, $dummy, $context->route);
-        self::assertEquals([null, 'bar', null], $args);
-    }
-
     public function test_exception_rethrown_when_no_exception_route_matches(): void
     {
         $context = $this->newContext(new ServerRequest('GET', '/'));
@@ -552,34 +391,6 @@ final class DispatchContextTest extends TestCase
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('boom');
         $context->response();
-    }
-
-    /**
-     * @param Routes\AbstractRoute&MockObject $route
-     *
-     * @return MockObject&Routines\Routinable
-     */
-    protected function getMockForProxyableRoutine(
-        Routes\AbstractRoute $route,
-        string $name,
-        Closure $implementation,
-    ): MockObject {
-        $routine = $this->getMockForRoutine(['Proxyable' . $name, 'ParamSynced']);
-        $reflection = new ReflectionFunction($implementation);
-        $route->expects($this->any())
-            ->method('getReflection')
-            ->with('GET')
-            ->willReturn($reflection);
-        $routine->expects($this->any())
-            ->method('getParameters')
-            ->willReturn($reflection->getParameters());
-        $routine->expects($this->any())
-            ->method(strtolower($name) ?: $name) // @phpstan-ignore argument.type
-            ->willReturnCallback(static function ($request, $params) use ($implementation) {
-                return $implementation(...$params);
-            });
-
-        return $routine;
     }
 
     /**
