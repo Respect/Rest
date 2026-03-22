@@ -42,7 +42,7 @@ final class ByTest extends TestCase
 
     /**
      * @covers Respect\Rest\Routines\By
-     * @covers Respect\Rest\Routines\AbstractSyncedRoutine
+     * @covers Respect\Rest\Routines\AbstractRoutine
      */
     public function test_by_on_a_route(): void
     {
@@ -61,15 +61,15 @@ final class ByTest extends TestCase
 
     /**
      * @covers Respect\Rest\Routines\By
-     * @covers Respect\Rest\Routines\AbstractSyncedRoutine
+     * @covers Respect\Rest\Routines\AbstractRoutine
      */
-    public function test_by_on_a_route_with_classname(): void
+    public function test_by_on_a_route_with_invocable_instance(): void
     {
         $router = new Router('', new Psr17Factory());
         $router->get('/', static function () {
             return 'route';
         })
-            ->by('Respect\Rest\Test\Stubs\ByClassWithInvoke');
+            ->by(new ByClassWithInvoke());
         self::assertEquals(
             $expected = 'route',
             (string) $router->dispatch(new ServerRequest('GET', '/')),
@@ -78,7 +78,7 @@ final class ByTest extends TestCase
 
     /**
      * @covers Respect\Rest\Routines\By
-     * @covers Respect\Rest\Routines\AbstractSyncedRoutine
+     * @covers Respect\Rest\Routines\AbstractRoutine
      */
     public function test_by_with_a_callable_class_on_a_route(): void
     {

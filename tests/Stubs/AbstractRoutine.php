@@ -11,7 +11,7 @@ use Respect\Rest\Routines\AbstractRoutine as RestAbstractRoutine;
  */
 class AbstractRoutine extends RestAbstractRoutine
 {
-    public function getCallback(): mixed
+    public function getCallback(): callable
     {
         return $this->callback;
     }

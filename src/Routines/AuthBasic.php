@@ -4,27 +4,21 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routines;
 
-use Closure;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
-use ReflectionFunction;
 use ReflectionFunctionAbstract;
-use ReflectionMethod;
-use ReflectionNamedType;
+use Respect\Parameter\Resolver;
 use Respect\Rest\DispatchContext;
-use Respect\Rest\ResolvesCallbackArguments;
 
 use function array_merge;
 use function base64_decode;
 use function explode;
-use function is_a;
-use function is_array;
 use function stripos;
 use function substr;
 
 final class AuthBasic extends AbstractRoutine implements ProxyableBy
 {
-    use ResolvesCallbackArguments;
+    private ReflectionFunctionAbstract|null $reflection = null;
 
     public function __construct(public string $realm, mixed $callback)
     {
@@ -46,10 +40,9 @@ final class AuthBasic extends AbstractRoutine implements ProxyableBy
         }
 
         $allParams = array_merge($credentials, $params);
-        $args = $this->resolveCallbackArguments(
+        $args = $context->resolver()->resolve(
             $this->getCallbackReflection(),
             $allParams,
-            $context,
         );
 
         $callbackResponse = ($this->callback)(...$args);
@@ -70,29 +63,14 @@ final class AuthBasic extends AbstractRoutine implements ProxyableBy
 
     private function callbackAcceptsPsr7(): bool
     {
-        foreach ($this->getCallbackReflection()->getParameters() as $param) {
-            $type = $param->getType();
-
-            if (!$type instanceof ReflectionNamedType || $type->isBuiltin()) {
-                continue;
-            }
-
-            if (is_a($type->getName(), ServerRequestInterface::class, true)) {
-                return true;
-            }
-        }
-
-        return false;
+        return Resolver::acceptsType(
+            $this->getCallbackReflection(),
+            ServerRequestInterface::class,
+        );
     }
 
     private function getCallbackReflection(): ReflectionFunctionAbstract
     {
-        $callback = $this->getCallback();
-
-        if (is_array($callback)) {
-            return new ReflectionMethod($callback[0], $callback[1]);
-        }
-
-        return new ReflectionFunction(Closure::fromCallable($callback));
+        return $this->reflection ??= Resolver::reflectCallable($this->getCallback());
     }
 }
