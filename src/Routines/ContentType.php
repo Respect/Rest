@@ -33,7 +33,7 @@ final class ContentType extends AbstractCallbackMediator implements ProxyableBy,
             $psrRequest = $psrRequest->withParsedBody($payload);
         }
 
-        $context->request = $psrRequest;
+        $context->withRequest($psrRequest);
 
         return null;
     }
@@ -83,7 +83,7 @@ final class ContentType extends AbstractCallbackMediator implements ProxyableBy,
         DispatchContext $context,
         array $params,
     ): void {
-        $this->forgetNegotiatedCallback();
+        $this->forgetNegotiatedCallback($context);
         $context->prepareResponse(415);
     }
 

@@ -193,10 +193,10 @@ abstract class AbstractRoute
             }
 
             if ($suffix !== '') {
-                $context->request = $context->request->withAttribute(
+                $context->withRequest($context->request->withAttribute(
                     'respect.ext.remaining',
                     $suffix,
-                );
+                ));
             }
         }
 

@@ -89,4 +89,22 @@ final class ExceptionTest extends TestCase
         self::assertSame(200, $response->getStatusCode());
         self::assertSame('handled: boom', (string) $response->getBody());
     }
+
+    public function testExceptionStateDoesNotLeakBetweenDispatches(): void
+    {
+        $router = new Router('', new Psr17Factory());
+        $router->onException('Throwable', static fn(Throwable $e) => 'error: ' . $e->getMessage());
+        $router->get('/fail', static function (): void {
+            throw new RuntimeException('first');
+        });
+        $router->get('/ok', static fn() => 'success');
+
+        // First dispatch throws
+        $resp1 = $router->handle(new ServerRequest('GET', '/fail'));
+        self::assertSame('error: first', (string) $resp1->getBody());
+
+        // Second dispatch should not see the first exception
+        $resp2 = $router->handle(new ServerRequest('GET', '/ok'));
+        self::assertSame('success', (string) $resp2->getBody());
+    }
 }

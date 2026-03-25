@@ -149,28 +149,6 @@ final class DispatchEngineTest extends TestCase
         $engine->handle(new ServerRequest('GET', '/boom'));
     }
 
-    public function testOnContextReadyCallbackIsInvoked(): void
-    {
-        $captured = null;
-        $provider = $this->createStub(RouteProvider::class);
-        $provider->method('getRoutes')->willReturn([
-            new StaticValue('GET', '/test', 'ok'),
-        ]);
-        $provider->method('getBasePath')->willReturn('');
-
-        $engine = new DispatchEngine(
-            $provider,
-            $this->factory,
-            static function ($context) use (&$captured): void {
-                $captured = $context;
-            },
-        );
-
-        $context = $engine->dispatch(new ServerRequest('GET', '/test'));
-
-        self::assertSame($context, $captured);
-    }
-
     public function testGlobalOptions404WhenNoRoutes(): void
     {
         $engine = $this->engine([]);

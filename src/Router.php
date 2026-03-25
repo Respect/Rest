@@ -15,7 +15,6 @@ use Respect\Fluent\Factories\NamespaceLookup;
 use Respect\Fluent\Resolvers\Ucfirst;
 use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routines\Routinable;
-use Throwable;
 
 use function array_pop;
 use function assert;
@@ -28,10 +27,7 @@ use function is_string;
 use function preg_match;
 use function rtrim;
 use function substr_count;
-use function trigger_error;
 use function usort;
-
-use const E_USER_ERROR;
 
 /**
  * A router that contains many instances of routes.
@@ -47,8 +43,6 @@ use const E_USER_ERROR;
  */
 final class Router implements MiddlewareInterface, RequestHandlerInterface, RouteProvider
 {
-    public DispatchContext|null $context = null;
-
     /** @var array<int, Routines\Routinable> */
     protected array $globalRoutines = [];
 
@@ -178,6 +172,9 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
         return new DispatchContext(
             $serverRequest,
             $this->factory,
+            $this->dispatchEngine()->routinePipeline(),
+            $this->handlers,
+            $this->basePath,
         );
     }
 
@@ -256,9 +253,6 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
         return $this->dispatchEngine ??= new DispatchEngine(
             $this,
             $this->factory,
-            function (DispatchContext $ctx): void {
-                $this->context = $ctx;
-            },
         );
     }
 
@@ -298,21 +292,6 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
                 return $slashCount ? -1 : 1;
             },
         );
-    }
-
-    public function __toString(): string
-    {
-        $string = '';
-        try {
-            $response = $this->context?->response();
-            if ($response !== null) {
-                $string = (string) $response->getBody();
-            }
-        } catch (Throwable $exception) {
-            trigger_error($exception->getMessage(), E_USER_ERROR);
-        }
-
-        return $string;
     }
 
     /** @param array<int, mixed> $args */

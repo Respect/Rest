@@ -38,10 +38,10 @@ final class UserAgent extends AbstractCallbackMediator implements ProxyableBy, P
             return $result;
         }
 
-        $context->request = $context->request->withAttribute(
+        $context->withRequest($context->request->withAttribute(
             self::THROUGH_ATTRIBUTE,
             $this->normalizeThroughResult($result),
-        );
+        ));
 
         return null;
     }
@@ -95,7 +95,7 @@ final class UserAgent extends AbstractCallbackMediator implements ProxyableBy, P
         DispatchContext $context,
         array $params,
     ): void {
-        $this->forgetNegotiatedCallback();
+        $this->forgetNegotiatedCallback($context);
     }
 
     protected function authorize(string $requested, string $provided): mixed

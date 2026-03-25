@@ -52,7 +52,7 @@ final class AuthBasicTest extends TestCase
             ->withHeader('Authorization', 'Basic ' . base64_encode($user . ':' . $pass));
         $factory = new Psr17Factory();
         $context = new DispatchContext($serverRequest, $factory);
-        $context->route = $this->createRouteWithResponseFactory();
+        $context->configureRoute($this->createRouteWithResponseFactory());
 
         $routine = new AuthBasic('auth realm', [$this, 'shunt_wantedParams']);
         $routine->by($context, [$param1, $param2]);

@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\DispatchContext;
-use SplObjectStorage;
 
+use function is_callable;
+use function spl_object_id;
 use function str_ends_with;
 use function strlen;
 use function substr;
@@ -18,9 +19,6 @@ final class FileExtension extends CallbackList implements
     IgnorableFileExtension
 {
     private const string REMAINING_ATTRIBUTE = 'respect.ext.remaining';
-
-    /** @var SplObjectStorage<DispatchContext, callable>|null */
-    private SplObjectStorage|null $negotiated = null;
 
     /** @return array<int, string> */
     public function getExtensions(): array
@@ -46,11 +44,14 @@ final class FileExtension extends CallbackList implements
             }
 
             $remaining = substr($remaining, 0, -strlen($ext));
-            $context->request = $context->request->withAttribute(
+            $context->withRequest($context->request->withAttribute(
                 self::REMAINING_ATTRIBUTE,
                 $remaining,
-            );
-            $this->remember($context, $this->getCallback($ext));
+            ));
+            $context->withRequest($context->request->withAttribute(
+                $this->negotiatedAttributeKey(),
+                $this->getCallback($ext),
+            ));
 
             return null;
         }
@@ -61,21 +62,13 @@ final class FileExtension extends CallbackList implements
     /** @param array<int, mixed> $params */
     public function through(DispatchContext $context, array $params): mixed
     {
-        if (!$this->negotiated instanceof SplObjectStorage || !$this->negotiated->offsetExists($context)) {
-            return null;
-        }
+        $value = $context->request->getAttribute($this->negotiatedAttributeKey());
 
-        return $this->negotiated[$context];
+        return is_callable($value) ? $value : null;
     }
 
-    private function remember(DispatchContext $context, callable $callback): void
+    private function negotiatedAttributeKey(): string
     {
-        if (!$this->negotiated instanceof SplObjectStorage) {
-            /** @var SplObjectStorage<DispatchContext, callable> $storage */
-            $storage = new SplObjectStorage();
-            $this->negotiated = $storage;
-        }
-
-        $this->negotiated[$context] = $callback;
+        return 'rest.fileext.' . spl_object_id($this);
     }
 }
