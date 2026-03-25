@@ -2,9 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Respect\Rest\Routes;
+namespace Respect\Rest\Handlers;
 
-final class Status extends Callback
+use Respect\Rest\Routes\Callback;
+
+final class StatusHandler extends Callback
 {
     /** @var callable */
     public $callback;

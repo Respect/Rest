@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Routes;
 
-use ReflectionClass;
 use ReflectionFunctionAbstract;
+use Respect\Fluent\Factories\NamespaceLookup;
 use Respect\Rest\DispatchContext;
 use Respect\Rest\Routines\IgnorableFileExtension;
 use Respect\Rest\Routines\Routinable;
@@ -15,6 +15,7 @@ use function array_map;
 use function array_merge;
 use function array_pop;
 use function array_shift;
+use function assert;
 use function end;
 use function explode;
 use function implode;
@@ -32,7 +33,6 @@ use function strlen;
 use function strripos;
 use function strtoupper;
 use function substr;
-use function ucfirst;
 use function usort;
 
 /**
@@ -74,10 +74,9 @@ abstract class AbstractRoute
     /** @var array<string, Routinable> */
     public array $routines = [];
 
-    /** @var array<int, AbstractRoute> */
-    public array $sideRoutes = [];
-
     public string|null $basePath = null;
+
+    private NamespaceLookup $routineLookup;
 
     public function __construct(string $method, public string $pattern = '')
     {
@@ -146,6 +145,11 @@ abstract class AbstractRoute
         $this->routines[$key] = $routine;
 
         return $this;
+    }
+
+    public function setRoutineLookup(NamespaceLookup $lookup): void
+    {
+        $this->routineLookup = $lookup;
     }
 
     public function createUri(mixed ...$params): string
@@ -293,13 +297,9 @@ abstract class AbstractRoute
      */
     public function __call(string $method, array $arguments): static
     {
-        /** @var class-string<Routinable> $className */
-        $className = 'Respect\\Rest\\Routines\\' . ucfirst($method);
-        $reflection = new ReflectionClass($className);
-        // phpcs:ignore SlevomatCodingStandard.PHP.RequireExplicitAssertion
-        /** @var Routinable $instance */
-        $instance = $reflection->newInstanceArgs($arguments);
+        $routine = $this->routineLookup->create($method, $arguments);
+        assert($routine instanceof Routinable);
 
-        return $this->appendRoutine($instance);
+        return $this->appendRoutine($routine);
     }
 }

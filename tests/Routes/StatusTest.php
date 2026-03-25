@@ -10,14 +10,14 @@ use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
 use Respect\Rest\Router;
 
-/** @covers Respect\Rest\Routes\Status */
+/** @covers Respect\Rest\Handlers\StatusHandler */
 final class StatusTest extends TestCase
 {
     public function testStatusRoute404(): void
     {
         $router = new Router('', new Psr17Factory());
         $router->get('/exists', static fn() => 'ok');
-        $router->statusRoute(404, static fn(ServerRequestInterface $r) => 'Not found: ' . $r->getUri()->getPath());
+        $router->onStatus(404, static fn(ServerRequestInterface $r) => 'Not found: ' . $r->getUri()->getPath());
 
         $response = $router->handle(new ServerRequest('GET', '/nope'));
 
@@ -29,7 +29,7 @@ final class StatusTest extends TestCase
     {
         $router = new Router('', new Psr17Factory());
         $router->get('/resource', static fn() => 'ok');
-        $router->statusRoute(405, static fn() => 'Method not allowed');
+        $router->onStatus(405, static fn() => 'Method not allowed');
 
         $response = $router->handle(new ServerRequest('DELETE', '/resource'));
 
@@ -42,7 +42,7 @@ final class StatusTest extends TestCase
     {
         $router = new Router('', new Psr17Factory());
         $router->get('/guarded', static fn() => 'ok')->when(static fn() => false);
-        $router->statusRoute(400, static fn() => 'Bad request');
+        $router->onStatus(400, static fn() => 'Bad request');
 
         $response = $router->handle(new ServerRequest('GET', '/guarded'));
 
@@ -54,7 +54,7 @@ final class StatusTest extends TestCase
     {
         $router = new Router('', new Psr17Factory());
         $router->get('/hello', static fn() => 'world');
-        $router->statusRoute(404, static fn() => 'not found');
+        $router->onStatus(404, static fn() => 'not found');
 
         $response = $router->handle(new ServerRequest('GET', '/hello'));
 
@@ -77,7 +77,7 @@ final class StatusTest extends TestCase
     {
         $router = new Router('', new Psr17Factory());
         $router->get('/exists', static fn() => 'ok');
-        $router->statusRoute(
+        $router->onStatus(
             404,
             static fn(ServerRequestInterface $r) => ['error' => 'Not found', 'path' => $r->getUri()->getPath()],
         );
@@ -93,7 +93,7 @@ final class StatusTest extends TestCase
     {
         $router = new Router('', new Psr17Factory());
         $router->get('/exists', static fn() => 'ok');
-        $router->statusRoute(404, static fn() => 'custom 404');
+        $router->onStatus(404, static fn() => 'custom 404');
 
         $response = $router->dispatch(new ServerRequest('GET', '/nope'))->response();
 

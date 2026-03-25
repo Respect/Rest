@@ -2,12 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Respect\Rest\Routes;
+namespace Respect\Rest\Handlers;
 
 use Respect\Rest\DispatchContext;
+use Respect\Rest\Routes\Callback;
 use Throwable;
 
-final class Exception extends Callback
+final class ExceptionHandler extends Callback
 {
     /** @var callable */
     public $callback;

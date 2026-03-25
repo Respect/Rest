@@ -11,11 +11,14 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
-use ReflectionClass;
+use Respect\Fluent\Factories\NamespaceLookup;
+use Respect\Fluent\Resolvers\Ucfirst;
 use Respect\Rest\Routes\AbstractRoute;
+use Respect\Rest\Routines\Routinable;
 use Throwable;
 
 use function array_pop;
+use function assert;
 use function class_exists;
 use function count;
 use function interface_exists;
@@ -53,23 +56,28 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
     protected array $routes = [];
 
     /** @var array<int, AbstractRoute> */
-    protected array $sideRoutes = [];
+    protected array $handlers = [];
 
     private DispatchEngine|null $dispatchEngine = null;
+
+    private NamespaceLookup $routineLookup;
 
     public function __construct(
         protected string $basePath,
         private ResponseFactoryInterface&StreamFactoryInterface $factory,
     ) {
         $this->basePath = rtrim($basePath, '/');
+        $this->routineLookup = new NamespaceLookup(
+            new Ucfirst(),
+            Routinable::class,
+            'Respect\\Rest\\Routines',
+        );
     }
 
     public function always(string $routineName, mixed ...$params): static
     {
-        /** @var class-string<Routines\Routinable> $routineClassName */
-        $routineClassName = 'Respect\\Rest\\Routines\\' . $routineName;
-        $routineClass = new ReflectionClass($routineClassName);
-        $routineInstance = $routineClass->newInstanceArgs($params);
+        $routineInstance = $this->routineLookup->create($routineName, $params);
+        assert($routineInstance instanceof Routinable);
         $this->globalRoutines[] = $routineInstance;
 
         foreach ($this->routes as $route) {
@@ -79,11 +87,18 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
         return $this;
     }
 
+    public function withRoutineNamespace(string $namespace): static
+    {
+        $this->routineLookup = $this->routineLookup->withNamespace($namespace);
+
+        return $this;
+    }
+
     public function appendRoute(AbstractRoute $route): static
     {
         $this->routes[] = $route;
-        $route->sideRoutes = &$this->sideRoutes;
         $route->basePath = $this->basePath;
+        $route->setRoutineLookup($this->routineLookup);
 
         foreach ($this->globalRoutines as $routine) {
             $route->appendRoutine($routine);
@@ -94,12 +109,13 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
         return $this;
     }
 
-    public function appendSideRoute(AbstractRoute $route): static
+    public function appendHandler(AbstractRoute $handler): static
     {
-        $this->sideRoutes[] = $route;
+        $this->handlers[] = $handler;
+        $handler->setRoutineLookup($this->routineLookup);
 
         foreach ($this->globalRoutines as $routine) {
-            $route->appendRoutine($routine);
+            $handler->appendRoutine($routine);
         }
 
         return $this;
@@ -170,34 +186,34 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
         return $this->dispatchEngine()->dispatchContext($context);
     }
 
-    public function exceptionRoute(string $className, callable $callback): Routes\Exception
+    public function onException(string $className, callable $callback): Handlers\ExceptionHandler
     {
-        $route = new Routes\Exception($className, $callback);
-        $this->appendSideRoute($route);
+        $handler = new Handlers\ExceptionHandler($className, $callback);
+        $this->appendHandler($handler);
 
-        return $route;
+        return $handler;
     }
 
-    public function errorRoute(callable $callback): Routes\Error
+    public function onError(callable $callback): Handlers\ErrorHandler
     {
-        $route = new Routes\Error($callback);
-        $this->appendSideRoute($route);
+        $handler = new Handlers\ErrorHandler($callback);
+        $this->appendHandler($handler);
 
-        return $route;
+        return $handler;
     }
 
-    public function statusRoute(int|null $statusCode, callable $callback): Routes\Status
+    public function onStatus(int|null $statusCode, callable $callback): Handlers\StatusHandler
     {
-        $route = new Routes\Status($statusCode, $callback);
-        $this->appendSideRoute($route);
+        $handler = new Handlers\StatusHandler($statusCode, $callback);
+        $this->appendHandler($handler);
 
-        return $route;
+        return $handler;
     }
 
     /** @return array<int, Routes\AbstractRoute> */
-    public function getSideRoutes(): array
+    public function getHandlers(): array
     {
-        return $this->sideRoutes;
+        return $this->handlers;
     }
 
     public function factoryRoute(string $method, string $path, string $className, callable $factory): Routes\Factory

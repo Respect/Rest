@@ -1861,7 +1861,7 @@ final class RouterTest extends TestCase
         $router->get('/', static function (): void {
             throw new InvalidArgumentException('boom');
         });
-        $router->exceptionRoute(InvalidArgumentException::class, static function () {
+        $router->onException(InvalidArgumentException::class, static function () {
             return 'caught';
         });
 
@@ -1882,7 +1882,7 @@ final class RouterTest extends TestCase
         $router->get('/', static function (): never {
             throw new InvalidArgumentException('boom');
         });
-        $router->exceptionRoute(InvalidArgumentException::class, static function (InvalidArgumentException $e) {
+        $router->onException(InvalidArgumentException::class, static function (InvalidArgumentException $e) {
             return $e->getMessage();
         });
 
@@ -1900,7 +1900,7 @@ final class RouterTest extends TestCase
         $router->get('/', static function (): never {
             throw new InvalidArgumentException('boom');
         });
-        $router->exceptionRoute(InvalidArgumentException::class, static function () {
+        $router->onException(InvalidArgumentException::class, static function () {
             return '';
         });
 

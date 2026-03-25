@@ -10,9 +10,13 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Respect\Parameter\Resolver;
+use Respect\Rest\Handlers\ErrorHandler;
+use Respect\Rest\Handlers\ExceptionHandler;
+use Respect\Rest\Handlers\StatusHandler;
 use Respect\Rest\Routes\AbstractRoute;
 use Throwable;
 
+use function in_array;
 use function is_a;
 use function rawurldecode;
 use function rtrim;
@@ -50,7 +54,7 @@ final class DispatchContext implements ContainerInterface
     private string $effectivePath = '';
 
     /** @var array<int, AbstractRoute> */
-    private array $sideRoutes = [];
+    private array $handlers = [];
 
     private Resolver|null $resolver = null;
 
@@ -138,23 +142,22 @@ final class DispatchContext implements ContainerInterface
         }
 
         $route = $this->route;
+        $isHandler = in_array($route, $this->handlers, true);
+        $previousErrorHandler = $isHandler ? null : $this->installErrorHandler();
 
         try {
-            $errorHandler = $this->prepareForErrorForwards($route);
             $preRoutineResult = $this->routinePipeline()->processBy($this, $route);
 
-            if ($preRoutineResult !== null) {
-                if ($preRoutineResult instanceof AbstractRoute) {
-                    return $this->forward($preRoutineResult);
-                }
+            if ($preRoutineResult instanceof AbstractRoute) {
+                return $this->forward($preRoutineResult);
+            }
 
-                if ($preRoutineResult instanceof ResponseInterface) {
-                    return $this->finalizeResponse($preRoutineResult);
-                }
+            if ($preRoutineResult instanceof ResponseInterface) {
+                return $this->finalizeResponse($preRoutineResult);
+            }
 
-                if ($preRoutineResult === false) {
-                    return $this->finalizeResponse('');
-                }
+            if ($preRoutineResult === false) {
+                return $this->finalizeResponse('');
             }
 
             $rawResult = $route->dispatchTarget($this->method(), $this->params, $this);
@@ -164,20 +167,28 @@ final class DispatchContext implements ContainerInterface
             }
 
             $processedResult = $this->routinePipeline()->processThrough($this, $route, $rawResult);
-            $errorResponse = $this->forwardErrors($errorHandler, $route);
 
-            if ($errorResponse !== null) {
-                return $errorResponse;
+            if (!$isHandler) {
+                $errorResponse = $this->forwardCollectedErrors();
+                if ($errorResponse !== null) {
+                    return $errorResponse;
+                }
             }
 
             return $this->finalizeResponse($processedResult);
         } catch (Throwable $e) {
-            $exceptionResponse = $this->catchExceptions($e, $route);
-            if ($exceptionResponse === null) {
-                throw $e;
+            if (!$isHandler) {
+                $exceptionResponse = $this->catchExceptions($e);
+                if ($exceptionResponse !== null) {
+                    return $exceptionResponse;
+                }
             }
 
-            return $exceptionResponse;
+            throw $e;
+        } finally {
+            if ($previousErrorHandler !== null) {
+                set_error_handler($previousErrorHandler);
+            }
         }
     }
 
@@ -193,10 +204,10 @@ final class DispatchContext implements ContainerInterface
         $this->routinePipeline = $routinePipeline;
     }
 
-    /** @param array<int, AbstractRoute> $sideRoutes */
-    public function setSideRoutes(array $sideRoutes): void
+    /** @param array<int, AbstractRoute> $handlers */
+    public function setHandlers(array $handlers): void
     {
-        $this->sideRoutes = $sideRoutes;
+        $this->handlers = $handlers;
     }
 
     public function setResponder(Responder $responder): void
@@ -228,19 +239,19 @@ final class DispatchContext implements ContainerInterface
         throw new NotFoundException(sprintf('No entry found for "%s"', $id));
     }
 
-    /** @return callable|null The previous error handler, or null */
-    protected function prepareForErrorForwards(AbstractRoute $route): callable|null
+    /** @return callable|null The previous error handler, or null if no ErrorHandler is registered */
+    private function installErrorHandler(): callable|null
     {
-        foreach ($route->sideRoutes as $sideRoute) {
-            if ($sideRoute instanceof Routes\Error) {
+        foreach ($this->handlers as $handler) {
+            if ($handler instanceof ErrorHandler) {
                 return set_error_handler(
                     static function (
                         int $errno,
                         string $errstr,
                         string $errfile = '',
                         int $errline = 0,
-                    ) use ($sideRoute): bool {
-                        $sideRoute->errors[] = [$errno, $errstr, $errfile, $errline];
+                    ) use ($handler): bool {
+                        $handler->errors[] = [$errno, $errstr, $errfile, $errline];
 
                         return true;
                     },
@@ -251,54 +262,50 @@ final class DispatchContext implements ContainerInterface
         return null;
     }
 
-    protected function forwardErrors(callable|null $errorHandler, AbstractRoute $route): ResponseInterface|null
+    private function forwardCollectedErrors(): ResponseInterface|null
     {
-        if ($errorHandler !== null) {
-            set_error_handler($errorHandler);
-        }
-
-        foreach ($route->sideRoutes as $sideRoute) {
-            if ($sideRoute instanceof Routes\Error && $sideRoute->errors) {
-                return $this->forward($sideRoute);
+        foreach ($this->handlers as $handler) {
+            if ($handler instanceof ErrorHandler && $handler->errors) {
+                return $this->forward($handler);
             }
         }
 
         return null;
     }
 
-    protected function catchExceptions(Throwable $e, AbstractRoute $route): ResponseInterface|null
+    private function catchExceptions(Throwable $e): ResponseInterface|null
     {
-        foreach ($route->sideRoutes as $sideRoute) {
-            if (!$sideRoute instanceof Routes\Exception) {
+        foreach ($this->handlers as $handler) {
+            if (!$handler instanceof ExceptionHandler) {
                 continue;
             }
 
-            if (is_a($e, $sideRoute->class)) {
-                $sideRoute->exception = $e;
+            if (is_a($e, $handler->class)) {
+                $handler->exception = $e;
 
-                return $this->forward($sideRoute);
+                return $this->forward($handler);
             }
         }
 
         return null;
     }
 
-    protected function forwardToStatusRoute(ResponseInterface $preparedResponse): ResponseInterface|null
+    private function forwardToStatusRoute(ResponseInterface $preparedResponse): ResponseInterface|null
     {
         $statusCode = $preparedResponse->getStatusCode();
 
-        foreach ($this->sideRoutes as $sideRoute) {
+        foreach ($this->handlers as $handler) {
             if (
-                $sideRoute instanceof Routes\Status
-                && ($sideRoute->statusCode === $statusCode || $sideRoute->statusCode === null)
+                $handler instanceof StatusHandler
+                && ($handler->statusCode === $statusCode || $handler->statusCode === null)
             ) {
                 $this->hasStatusOverride = true;
 
                 // Run routine negotiation (e.g. Accept) before forwarding,
                 // since the normal route-selection phase was skipped
-                $this->routinePipeline()->matches($this, $sideRoute, $this->params);
+                $this->routinePipeline()->matches($this, $handler, $this->params);
 
-                $result = $this->forward($sideRoute);
+                $result = $this->forward($handler);
 
                 // Preserve the original status code on the forwarded response
                 return $result?->withStatus($statusCode);
@@ -308,7 +315,7 @@ final class DispatchContext implements ContainerInterface
         return null;
     }
 
-    protected function finalizeResponse(mixed $response): ResponseInterface
+    private function finalizeResponse(mixed $response): ResponseInterface
     {
         return $this->responder()->finalize(
             $response,

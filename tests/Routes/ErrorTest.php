@@ -14,13 +14,13 @@ use function trigger_error;
 
 use const E_USER_WARNING;
 
-/** @covers Respect\Rest\Routes\Error */
+/** @covers Respect\Rest\Handlers\ErrorHandler */
 final class ErrorTest extends TestCase
 {
     /**
-     * @covers Respect\Rest\Routes\Error::getReflection
-     * @covers Respect\Rest\Routes\Error::runTarget
-     * @covers Respect\Rest\Router::errorRoute
+     * @covers Respect\Rest\Handlers\ErrorHandler::getReflection
+     * @covers Respect\Rest\Handlers\ErrorHandler::runTarget
+     * @covers Respect\Rest\Router::onError
      */
     #[RunInSeparateProcess]
     public function testMagicConstuctorCanCreateRoutesToErrors(): void
@@ -28,7 +28,7 @@ final class ErrorTest extends TestCase
         $router = new Router('', new Psr17Factory());
         $called = false;
         $phpUnit = $this;
-        $router->errorRoute(static function ($err) use (&$called, $phpUnit) {
+        $router->onError(static function ($err) use (&$called, $phpUnit) {
             $called = true;
             $phpUnit->assertContains(
                 'Oops',
