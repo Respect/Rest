@@ -12,20 +12,20 @@ use Respect\Rest\Router;
 use RuntimeException;
 use Throwable;
 
-/** @covers Respect\Rest\Routes\Exception */
+/** @covers Respect\Rest\Handlers\ExceptionHandler */
 final class ExceptionTest extends TestCase
 {
     /**
-     * @covers Respect\Rest\Routes\Exception::getReflection
-     * @covers Respect\Rest\Routes\Exception::runTarget
-     * @covers Respect\Rest\Router::exceptionRoute
+     * @covers Respect\Rest\Handlers\ExceptionHandler::getReflection
+     * @covers Respect\Rest\Handlers\ExceptionHandler::runTarget
+     * @covers Respect\Rest\Router::onException
      */
     public function testMagicConstuctorCanCreateRoutesToExceptions(): void
     {
         $router = new Router('', new Psr17Factory());
         $called = false;
         $phpUnit = $this;
-        $router->exceptionRoute('RuntimeException', static function ($e) use (&$called, $phpUnit) {
+        $router->onException('RuntimeException', static function ($e) use (&$called, $phpUnit) {
             $called = true;
             $phpUnit->assertEquals(
                 'Oops',
@@ -54,7 +54,7 @@ final class ExceptionTest extends TestCase
     public function testExceptionRouteCatchesSubclassViaInheritance(): void
     {
         $router = new Router('', new Psr17Factory());
-        $router->exceptionRoute('RuntimeException', static fn($e) => 'caught: ' . $e->getMessage());
+        $router->onException('RuntimeException', static fn($e) => 'caught: ' . $e->getMessage());
         $router->get('/', static function (): void {
             throw new PDOException('db error');
         });
@@ -67,7 +67,7 @@ final class ExceptionTest extends TestCase
     public function testThrowableExceptionRouteCatchesAll(): void
     {
         $router = new Router('', new Psr17Factory());
-        $router->exceptionRoute('Throwable', static fn(Throwable $e) => 'caught: ' . $e::class);
+        $router->onException('Throwable', static fn(Throwable $e) => 'caught: ' . $e::class);
         $router->get('/', static function (): void {
             throw new RuntimeException('test');
         });
@@ -80,7 +80,7 @@ final class ExceptionTest extends TestCase
     public function testExceptionRouteWorksViaHandle(): void
     {
         $router = new Router('', new Psr17Factory());
-        $router->exceptionRoute('Throwable', static fn(Throwable $e) => 'handled: ' . $e->getMessage());
+        $router->onException('Throwable', static fn(Throwable $e) => 'handled: ' . $e->getMessage());
         $router->get('/', static function (): void {
             throw new RuntimeException('boom');
         });

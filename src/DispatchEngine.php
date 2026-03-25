@@ -60,7 +60,7 @@ final class DispatchEngine implements RequestHandlerInterface
         }
 
         $context->setRoutinePipeline($this->routinePipeline);
-        $context->setSideRoutes($this->routeProvider->getSideRoutes());
+        $context->setHandlers($this->routeProvider->getHandlers());
 
         if (!$this->isRoutelessDispatch($context) && $context->route === null) {
             $this->routeDispatch($context);

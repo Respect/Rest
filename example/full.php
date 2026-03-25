@@ -184,11 +184,11 @@ $r3->get('/boom', function () {
     throw new RuntimeException('Something went wrong!');
 });
 
-$r3->exceptionRoute('RuntimeException', function (RuntimeException $e) {
+$r3->onException('RuntimeException', function (RuntimeException $e) {
     return 'Caught exception: ' . $e->getMessage();
 });
 
-$r3->errorRoute(function (array $err) {
+$r3->onError(function (array $err) {
     return 'Error occurred: ' . ($err[0]['message'] ?? 'unknown');
 });
 

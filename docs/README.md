@@ -546,21 +546,29 @@ You can use any combination of the above but also need to implement the `Routina
 
 ## Error Handling
 
-Respect\Rest provides two special ways to handle errors. The first one is using exception
-routes:
+Respect\Rest provides handlers for exceptions and errors. Register an exception
+handler with `onException`:
 
 ```php
-$r3->exceptionRoute('InvalidArgumentException', function (InvalidArgumentException $e) {
+$r3->onException('InvalidArgumentException', function (InvalidArgumentException $e) {
     return 'Sorry, this error happened: ' . $e->getMessage();
 });
 ```
 
 Whenever an uncaught exception appears on any route, it will be caught and forwarded to
-this side route. Similarly, there is a route for PHP errors:
+this handler. Similarly, there is a handler for PHP errors:
 
 ```php
-$r3->errorRoute(function (array $err) {
+$r3->onError(function (array $err) {
     return 'Sorry, these errors happened: ' . var_export($err, true);
+});
+```
+
+You can also handle specific HTTP status codes:
+
+```php
+$r3->onStatus(404, function () {
+    return 'Page not found';
 });
 ```
 
