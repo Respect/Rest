@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Respect\Rest;
 
-use Closure;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -19,21 +18,22 @@ use function array_values;
 use function count;
 use function implode;
 use function iterator_to_array;
-use function preg_quote;
-use function preg_replace;
 use function stripos;
 
 final class DispatchEngine implements RequestHandlerInterface
 {
     private RoutinePipeline $routinePipeline;
 
-    /** @param (Closure(DispatchContext): void)|null $onContextReady */
     public function __construct(
         private RouteProvider $routeProvider,
         private ResponseFactoryInterface&StreamFactoryInterface $factory,
-        private Closure|null $onContextReady = null,
     ) {
         $this->routinePipeline = new RoutinePipeline();
+    }
+
+    public function routinePipeline(): RoutinePipeline
+    {
+        return $this->routinePipeline;
     }
 
     public function dispatch(ServerRequestInterface $serverRequest): DispatchContext
@@ -41,6 +41,9 @@ final class DispatchEngine implements RequestHandlerInterface
         $context = new DispatchContext(
             $serverRequest,
             $this->factory,
+            $this->routinePipeline,
+            $this->routeProvider->getHandlers(),
+            $this->routeProvider->getBasePath(),
         );
 
         return $this->dispatchContext($context);
@@ -55,13 +58,6 @@ final class DispatchEngine implements RequestHandlerInterface
 
     public function dispatchContext(DispatchContext $context): DispatchContext
     {
-        if ($this->onContextReady !== null) {
-            ($this->onContextReady)($context);
-        }
-
-        $context->setRoutinePipeline($this->routinePipeline);
-        $context->setHandlers($this->routeProvider->getHandlers());
-
         if (!$this->isRoutelessDispatch($context) && $context->route === null) {
             $this->routeDispatch($context);
         }
@@ -120,8 +116,6 @@ final class DispatchEngine implements RequestHandlerInterface
 
     private function routeDispatch(DispatchContext $context): void
     {
-        $this->applyBasePath($context);
-
         $matchedByPath = $this->getMatchedRoutesByPath($context);
         /** @var array<int, AbstractRoute> $matchedArray */
         $matchedArray = iterator_to_array($matchedByPath);
@@ -140,30 +134,13 @@ final class DispatchEngine implements RequestHandlerInterface
         }
     }
 
-    private function applyBasePath(DispatchContext $context): void
-    {
-        $basePath = $this->routeProvider->getBasePath();
-        if ($basePath === '') {
-            return;
-        }
-
-        $context->setPath(
-            preg_replace(
-                '#^' . preg_quote($basePath) . '#',
-                '',
-                $context->path(),
-            ) ?? $context->path(),
-        );
-    }
-
     /** @param array<int, mixed> $params */
     private function configureContext(
         DispatchContext $context,
         AbstractRoute $route,
         array $params = [],
     ): DispatchContext {
-        $context->route = $route;
-        $context->params = $params;
+        $context->configureRoute($route, $params);
 
         return $context;
     }
@@ -176,7 +153,7 @@ final class DispatchEngine implements RequestHandlerInterface
 
         foreach ($this->routeProvider->getRoutes() as $route) {
             $params = [];
-            if (!$this->matchRoute($context, $route, $params)) {
+            if (!$route->match($context, $params)) {
                 continue;
             }
 
@@ -265,21 +242,6 @@ final class DispatchEngine implements RequestHandlerInterface
         return false;
     }
 
-    /** @param array<int, mixed> $params */
-    private function matchRoute(
-        DispatchContext $context,
-        AbstractRoute $route,
-        array &$params = [],
-    ): bool {
-        if (!$route->match($context, $params)) {
-            return false;
-        }
-
-        $context->route = $route;
-
-        return true;
-    }
-
     /** @param SplObjectStorage<AbstractRoute, array<int, mixed>> $matchedByPath */
     private function routineMatch(
         DispatchContext $context,
@@ -296,7 +258,6 @@ final class DispatchEngine implements RequestHandlerInterface
                 /** @var array<int, mixed> $tempParams */
                 $tempParams = $matchedByPath[$route];
                 $context->clearResponseMeta();
-                $context->route = $route;
                 if ($this->routinePipeline->matches($context, $route, $tempParams)) {
                     return $this->configureContext(
                         $context,

@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Respect\Rest\Routines;
 
 use Respect\Rest\DispatchContext;
-use SplObjectStorage;
+
+use function is_callable;
+use function spl_object_id;
 
 /**
  * Mediates the callback selection process when choosing the appropriate
@@ -15,9 +17,6 @@ use SplObjectStorage;
 // phpcs:ignore SlevomatCodingStandard.Classes.SuperfluousAbstractClassNaming.SuperfluousPrefix
 abstract class AbstractCallbackMediator extends CallbackList implements ProxyableWhen
 {
-    /** @var SplObjectStorage<DispatchContext, callable>|false|null */
-    protected SplObjectStorage|false|null $negotiated = null;
-
     /** @param array<int, mixed> $params */
     public function when(DispatchContext $context, array $params): mixed
     {
@@ -76,32 +75,35 @@ abstract class AbstractCallbackMediator extends CallbackList implements Proxyabl
 
     protected function getNegotiatedCallback(DispatchContext $context): callable|null
     {
-        if (!$this->negotiated instanceof SplObjectStorage || !$this->negotiated->offsetExists($context)) {
-            return null;
-        }
+        $value = $context->request->getAttribute($this->negotiatedAttributeKey());
 
-        return $this->negotiated[$context];
+        return is_callable($value) ? $value : null;
     }
 
     protected function rememberNegotiatedCallback(DispatchContext $context, callable $callback): void
     {
-        if (!$this->negotiated instanceof SplObjectStorage) {
-            /** @var SplObjectStorage<DispatchContext, callable> $storage */
-            $storage = new SplObjectStorage();
-            $this->negotiated = $storage;
-        }
-
-        $this->negotiated[$context] = $callback;
+        $context->withRequest($context->request->withAttribute(
+            $this->negotiatedAttributeKey(),
+            $callback,
+        ));
     }
 
-    protected function forgetNegotiatedCallback(): void
+    protected function forgetNegotiatedCallback(DispatchContext $context): void
     {
-        $this->negotiated = false;
+        $context->withRequest($context->request->withAttribute(
+            $this->negotiatedAttributeKey(),
+            false,
+        ));
     }
 
     protected function authorize(string $requested, string $provided): mixed
     {
         return $requested == $provided;
+    }
+
+    private function negotiatedAttributeKey(): string
+    {
+        return 'rest.negotiated.' . spl_object_id($this);
     }
 
     /** @param array<int, mixed> $params */

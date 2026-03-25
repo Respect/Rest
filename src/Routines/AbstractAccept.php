@@ -107,7 +107,7 @@ abstract class AbstractAccept extends AbstractCallbackMediator implements
         DispatchContext $context,
         array $params,
     ): void {
-        $this->forgetNegotiatedCallback();
+        $this->forgetNegotiatedCallback($context);
         $context->prepareResponse(406);
     }
 

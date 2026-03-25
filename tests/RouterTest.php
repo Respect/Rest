@@ -41,7 +41,6 @@ use function json_decode;
 use function json_encode;
 use function mb_convert_encoding;
 use function range;
-use function spl_object_hash;
 use function str_repeat;
 use function str_split;
 use function stream_filter_append;
@@ -545,12 +544,12 @@ final class RouterTest extends TestCase
     public function testOptionsHandlerShouldMaterializeRoutelessResponseWhenNoExplicitRouteSurvives(): void
     {
         $router = self::newRouter();
-        $router->context = self::newContextForRouter($router, new ServerRequest('OPTIONS', '/asian'));
+        $context = self::newContextForRouter($router, new ServerRequest('OPTIONS', '/asian'));
 
         $handleOptionsRequest = new ReflectionMethod($router->dispatchEngine(), 'handleOptionsRequest');
-        $handleOptionsRequest->invoke($router->dispatchEngine(), $router->context, ['OPTIONS'], new SplObjectStorage());
+        $handleOptionsRequest->invoke($router->dispatchEngine(), $context, ['OPTIONS'], new SplObjectStorage());
 
-        $response = $router->context->response();
+        $response = $context->response();
 
         self::assertNotNull($response);
         self::assertSame(204, $response->getStatusCode());
@@ -561,19 +560,24 @@ final class RouterTest extends TestCase
     // OldRouterTest unique methods
     // =========================================================================
 
-    /** @covers \Respect\Rest\Router */
-    public function testNotRoutableController(): void
+    /**
+     * A controller (stdClass) with no HTTP method handlers produces 500
+     * because the route path matches but no method can be dispatched.
+     *
+     * @covers \Respect\Rest\Router
+     */
+    public function testNotRoutableControllerReturns500(): void
     {
-        self::expectException('InvalidArgumentException');
         $this->router->instanceRoute('ANY', '/', new stdClass());
-        self::responseBody($this->router->dispatch(new ServerRequest('get', '/')));
+        $response = $this->router->handle(new ServerRequest('GET', '/'));
+        self::assertSame(500, $response->getStatusCode());
     }
 
-    public function testNotRoutableControllerByName(): void
+    public function testNotRoutableControllerByNameReturns500(): void
     {
-        self::expectException('InvalidArgumentException');
         $this->router->classRoute('ANY', '/', '\\stdClass');
-        self::responseBody($this->router->dispatch(new ServerRequest('get', '/')));
+        $response = $this->router->handle(new ServerRequest('GET', '/'));
+        self::assertSame(500, $response->getStatusCode());
     }
 
     #[DataProvider('providerForSingleRoutes')]
@@ -2565,31 +2569,14 @@ final class RouterTest extends TestCase
         self::assertEquals('"blub"', $out);
     }
 
-    public function test_request_should_be_available_from_router_after_dispatching(): void
+    public function test_dispatch_context_is_passed_through_to_route_callback(): void
     {
         $router = self::newRouter();
-        $request = self::newContextForRouter($router, new ServerRequest('get', '/foo'));
-        $phpunit = $this;
-        $router->get('/foo', static function () use ($router, $request, $phpunit) {
-            $phpunit->assertSame($request, $router->context);
-
-            return spl_object_hash($router->context);
-        });
-        $response = $router->dispatchContext($request)->response();
+        $context = self::newContextForRouter($router, new ServerRequest('get', '/foo'));
+        $router->get('/foo', static fn() => 'dispatched');
+        $response = $router->dispatchContext($context)->response();
         self::assertNotNull($response);
-        $out = (string) $response->getBody();
-        self::assertEquals($out, spl_object_hash($request));
-    }
-
-    /** @covers Respect\Rest\Router::__toString */
-    public function testToStringReturnsCurrentDispatchResponseBody(): void
-    {
-        $router = self::newRouter();
-        $router->get('/foo', 'bar');
-
-        $router->dispatch(new ServerRequest('GET', '/foo'));
-
-        self::assertSame('bar', (string) $router);
+        self::assertSame('dispatched', (string) $response->getBody());
     }
 
     private static function responseBody(DispatchContext $request): string

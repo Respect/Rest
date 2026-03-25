@@ -18,6 +18,8 @@ use Throwable;
 
 use function in_array;
 use function is_a;
+use function preg_quote;
+use function preg_replace;
 use function rawurldecode;
 use function rtrim;
 use function set_error_handler;
@@ -29,14 +31,12 @@ use function strtoupper;
 final class DispatchContext implements ContainerInterface
 {
     /** @var array<int, mixed> */
-    public array $params = [];
+    public private(set) array $params = [];
 
-    public AbstractRoute|null $route = null;
+    public private(set) AbstractRoute|null $route = null;
 
     /** @var array<string, string> Headers to apply only when the response does not already have them */
-    public array $defaultResponseHeaders = [];
-
-    private RoutinePipeline|null $routinePipeline = null;
+    public private(set) array $defaultResponseHeaders = [];
 
     private Responder|null $responder = null;
 
@@ -49,21 +49,32 @@ final class DispatchContext implements ContainerInterface
 
     private bool $hasStatusOverride = false;
 
-    private string $effectiveMethod = '';
+    private string $effectiveMethod;
 
-    private string $effectivePath = '';
-
-    /** @var array<int, AbstractRoute> */
-    private array $handlers = [];
+    private string $effectivePath;
 
     private Resolver|null $resolver = null;
 
+    /** @param array<int, AbstractRoute> $handlers */
     public function __construct(
-        public ServerRequestInterface $request,
-        public ResponseFactoryInterface&StreamFactoryInterface $factory,
+        public private(set) ServerRequestInterface $request,
+        public private(set) ResponseFactoryInterface&StreamFactoryInterface $factory,
+        private RoutinePipeline $routinePipeline = new RoutinePipeline(),
+        private array $handlers = [],
+        string $basePath = '',
     ) {
-        $this->effectivePath = rtrim(rawurldecode($request->getUri()->getPath()), ' /');
+        $path = rtrim(rawurldecode($request->getUri()->getPath()), ' /');
+        if ($basePath !== '') {
+            $path = preg_replace(
+                '#^' . preg_quote($basePath, '#') . '#',
+                '',
+                $path,
+            ) ?? $path;
+        }
+
+        $this->effectivePath = $path;
         $this->effectiveMethod = strtoupper($request->getMethod());
+        $this->resetHandlerState();
     }
 
     public function method(): string
@@ -74,11 +85,6 @@ final class DispatchContext implements ContainerInterface
     public function path(): string
     {
         return $this->effectivePath;
-    }
-
-    public function setPath(string $path): void
-    {
-        $this->effectivePath = $path;
     }
 
     public function hasPreparedResponse(): bool
@@ -125,6 +131,13 @@ final class DispatchContext implements ContainerInterface
         }
     }
 
+    /** @param array<int, mixed> $params */
+    public function configureRoute(AbstractRoute $route, array $params = []): void
+    {
+        $this->route = $route;
+        $this->params = $params;
+    }
+
     /** Generates the PSR-7 response from the current route */
     public function response(): ResponseInterface|null
     {
@@ -146,7 +159,7 @@ final class DispatchContext implements ContainerInterface
         $previousErrorHandler = $isHandler ? null : $this->installErrorHandler();
 
         try {
-            $preRoutineResult = $this->routinePipeline()->processBy($this, $route);
+            $preRoutineResult = $this->routinePipeline->processBy($this, $route);
 
             if ($preRoutineResult instanceof AbstractRoute) {
                 return $this->forward($preRoutineResult);
@@ -166,7 +179,7 @@ final class DispatchContext implements ContainerInterface
                 return $this->forward($rawResult);
             }
 
-            $processedResult = $this->routinePipeline()->processThrough($this, $route, $rawResult);
+            $processedResult = $this->routinePipeline->processThrough($this, $route, $rawResult);
 
             if (!$isHandler) {
                 $errorResponse = $this->forwardCollectedErrors();
@@ -192,27 +205,21 @@ final class DispatchContext implements ContainerInterface
         }
     }
 
-    public function forward(AbstractRoute $route): ResponseInterface|null
+    public function withRequest(ServerRequestInterface $request): void
     {
-        $this->route = $route;
-
-        return $this->response();
-    }
-
-    public function setRoutinePipeline(RoutinePipeline $routinePipeline): void
-    {
-        $this->routinePipeline = $routinePipeline;
-    }
-
-    /** @param array<int, AbstractRoute> $handlers */
-    public function setHandlers(array $handlers): void
-    {
-        $this->handlers = $handlers;
+        $this->request = $request;
     }
 
     public function setResponder(Responder $responder): void
     {
         $this->responder = $responder;
+    }
+
+    public function forward(AbstractRoute $route): ResponseInterface|null
+    {
+        $this->route = $route;
+
+        return $this->response();
     }
 
     public function resolver(): Resolver
@@ -239,7 +246,26 @@ final class DispatchContext implements ContainerInterface
         throw new NotFoundException(sprintf('No entry found for "%s"', $id));
     }
 
-    /** @return callable|null The previous error handler, or null if no ErrorHandler is registered */
+    private function resetHandlerState(): void
+    {
+        foreach ($this->handlers as $handler) {
+            if ($handler instanceof ErrorHandler) {
+                $handler->errors = [];
+            } elseif ($handler instanceof ExceptionHandler) {
+                $handler->exception = null;
+            }
+        }
+    }
+
+    /**
+     * Safe only when requests are guaranteed not to overlap within the same PHP process
+     * (for example: PHP-FPM, Swoole workers, FrankenPHP workers, or ReactPHP when
+     * request handling/dispatch is strictly serialized). Not safe for coroutine- or
+     * event-loop-concurrent request handling within a single PHP process, since
+     * set_error_handler is global state.
+     *
+     * @return callable|null The previous error handler, or null if no ErrorHandler is registered
+     */
     private function installErrorHandler(): callable|null
     {
         foreach ($this->handlers as $handler) {
@@ -303,7 +329,7 @@ final class DispatchContext implements ContainerInterface
 
                 // Run routine negotiation (e.g. Accept) before forwarding,
                 // since the normal route-selection phase was skipped
-                $this->routinePipeline()->matches($this, $handler, $this->params);
+                $this->routinePipeline->matches($this, $handler, $this->params);
 
                 $result = $this->forward($handler);
 
@@ -327,27 +353,14 @@ final class DispatchContext implements ContainerInterface
         );
     }
 
-    private function routinePipeline(): RoutinePipeline
-    {
-        return $this->routinePipeline ??= new RoutinePipeline();
-    }
-
     private function responder(): Responder
     {
-        if ($this->responder !== null) {
-            return $this->responder;
-        }
-
-        return $this->responder = new Responder($this->factory);
+        return $this->responder ??= new Responder($this->factory);
     }
 
     private function ensureResponseDraft(): ResponseInterface
     {
-        if ($this->responseDraft !== null) {
-            return $this->responseDraft;
-        }
-
-        return $this->responseDraft = $this->factory->createResponse();
+        return $this->responseDraft ??= $this->factory->createResponse();
     }
 
     public function __toString(): string

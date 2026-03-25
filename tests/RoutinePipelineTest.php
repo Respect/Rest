@@ -32,7 +32,7 @@ final class RoutinePipelineTest extends TestCase
     {
         $route = new Callback('GET', '/test', static fn(): string => 'ok');
         $context = $this->newContext();
-        $context->route = $route;
+        $context->configureRoute($route);
         $params = [];
 
         self::assertTrue($this->pipeline->matches($context, $route, $params));
@@ -43,7 +43,7 @@ final class RoutinePipelineTest extends TestCase
         $route = new Callback('GET', '/test', static fn(): string => 'ok');
         $route->appendRoutine(new When(static fn(): bool => false));
         $context = $this->newContext();
-        $context->route = $route;
+        $context->configureRoute($route);
         $params = [];
 
         self::assertFalse($this->pipeline->matches($context, $route, $params));
@@ -54,7 +54,7 @@ final class RoutinePipelineTest extends TestCase
         $route = new Callback('GET', '/test', static fn(): string => 'ok');
         $route->appendRoutine(new When(static fn(): bool => true));
         $context = $this->newContext();
-        $context->route = $route;
+        $context->configureRoute($route);
         $params = [];
 
         self::assertTrue($this->pipeline->matches($context, $route, $params));
@@ -64,7 +64,7 @@ final class RoutinePipelineTest extends TestCase
     {
         $route = new Callback('GET', '/test', static fn(): string => 'ok');
         $context = $this->newContext();
-        $context->route = $route;
+        $context->configureRoute($route);
 
         self::assertNull($this->pipeline->processBy($context, $route));
     }
@@ -75,7 +75,7 @@ final class RoutinePipelineTest extends TestCase
         $response = $this->factory->createResponse(401);
         $route->appendRoutine(new By(static fn() => $response));
         $context = $this->newContext();
-        $context->route = $route;
+        $context->configureRoute($route);
 
         $result = $this->pipeline->processBy($context, $route);
 
@@ -88,7 +88,7 @@ final class RoutinePipelineTest extends TestCase
         $route = new Callback('GET', '/test', static fn(): string => 'ok');
         $route->appendRoutine(new By(static fn(): bool => false));
         $context = $this->newContext();
-        $context->route = $route;
+        $context->configureRoute($route);
 
         self::assertFalse($this->pipeline->processBy($context, $route));
     }
@@ -99,7 +99,7 @@ final class RoutinePipelineTest extends TestCase
         $route->appendRoutine(new Through(static fn() => static fn(string $v): string => $v . '-A'));
         $route->appendRoutine(new Through(static fn() => static fn(string $v): string => $v . '-B'));
         $context = $this->newContext();
-        $context->route = $route;
+        $context->configureRoute($route);
 
         $result = $this->pipeline->processThrough($context, $route, 'start');
 
@@ -111,7 +111,7 @@ final class RoutinePipelineTest extends TestCase
         $route = new Callback('GET', '/test', static fn(): string => 'ok');
         $route->appendRoutine(new Through(static fn(): null => null));
         $context = $this->newContext();
-        $context->route = $route;
+        $context->configureRoute($route);
 
         $result = $this->pipeline->processThrough($context, $route, 'unchanged');
 

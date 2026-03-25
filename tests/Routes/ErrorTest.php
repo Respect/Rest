@@ -10,6 +10,7 @@ use PHPUnit\Framework\Attributes\RunInSeparateProcess;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\Router;
 
+use function count;
 use function trigger_error;
 
 use const E_USER_WARNING;
@@ -52,5 +53,26 @@ final class ErrorTest extends TestCase
             $response,
             'An error should be caught by the router and forwarded',
         );
+    }
+
+    #[RunInSeparateProcess]
+    public function testErrorStateDoesNotLeakBetweenDispatches(): void
+    {
+        $router = new Router('', new Psr17Factory());
+        $router->onError(static fn(array $errors) => 'errors: ' . count($errors));
+        $router->get('/warn', static function (): string {
+            trigger_error('warning1', E_USER_WARNING);
+
+            return 'warned';
+        });
+        $router->get('/ok', static fn() => 'clean');
+
+        // First dispatch triggers an error
+        $resp1 = $router->handle(new ServerRequest('GET', '/warn'));
+        self::assertSame('errors: 1', (string) $resp1->getBody());
+
+        // Second dispatch should not inherit the first request's errors
+        $resp2 = $router->handle(new ServerRequest('GET', '/ok'));
+        self::assertSame('clean', (string) $resp2->getBody());
     }
 }

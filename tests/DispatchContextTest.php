@@ -136,11 +136,11 @@ final class DispatchContextTest extends TestCase
     #[Depends('testIsPossibleToConstructUsingValuesFromSuperglobals')]
     public function testContextIsAbleToDeliverAResponseWithoutSettingPathParams(DispatchContext $context): void
     {
-        $context->route = $this->getMockForRoute(
+        $context->configureRoute($this->getMockForRoute(
             'GET',
             '/notebooks',
             ['Vaio', 'MacBook', 'ThinkPad'],
-        );
+        ));
         $response = $context->response();
 
         self::assertNotNull($response, 'Response should not be null');
@@ -155,14 +155,13 @@ final class DispatchContextTest extends TestCase
     #[Depends('testIsPossibleToConstructUsingValuesFromSuperglobals')]
     public function testContextIsAbleToDeliverAResponseUsingPreviouslySetPathParams(DispatchContext $context): void
     {
-        $context->route = $this->getMockForRoute(
+        $context->configureRoute($this->getMockForRoute(
             'GET',
             '/printers',
             'Some Printers Response',
             'GET',
             ['dpi', 'price'],
-        );
-        $context->params = ['dpi', 'price'];
+        ), ['dpi', 'price']);
         $response = $context->response();
 
         self::assertNotNull($response);
@@ -179,7 +178,7 @@ final class DispatchContextTest extends TestCase
         $context = $this->newContext(new ServerRequest('GET', '/users/alganet/lists'));
         $inactiveRoute  = $this->getMockForRoute('GET', '/users/alganet/lists');
         $forwardedRoute = $this->getMockForRoute('GET', '/lists/12345', 'Some list items');
-        $context->route = $inactiveRoute;
+        $context->configureRoute($inactiveRoute);
         $context->forward($forwardedRoute);
 
         self::assertNotSame(
@@ -237,7 +236,7 @@ final class DispatchContextTest extends TestCase
         }
 
         $context = $this->newContext(new ServerRequest('GET', '/cupcakes'));
-        $context->route = $userImplementedRoute;
+        $context->configureRoute($userImplementedRoute);
         $response = $context->response();
 
         self::assertNotNull($response);
@@ -263,7 +262,7 @@ final class DispatchContextTest extends TestCase
             ->method('by')
             ->willReturn(false);
         $route->appendRoutine($routine);
-        $context->route = $route;
+        $context->configureRoute($route);
 
         $response = $context->response();
 
@@ -300,7 +299,7 @@ final class DispatchContextTest extends TestCase
                     ->withBody($factory->createStream('blocked by routine')),
             );
         $route->appendRoutine($routine);
-        $context->route = $route;
+        $context->configureRoute($route);
 
         $response = $context->response();
 
@@ -328,7 +327,7 @@ final class DispatchContextTest extends TestCase
                     return str_replace('-', ' ', $thatLogStubReturnedAbove);
             });
         $route->appendRoutine($routine);
-        $context->route = $route;
+        $context->configureRoute($route);
         $response = $context->response();
 
         self::assertNotNull($response);
@@ -342,7 +341,7 @@ final class DispatchContextTest extends TestCase
     public function testConvertingToStringCallsResponse(): void
     {
         $context = $this->newContext(new ServerRequest('GET', '/users/alganet/lists'));
-        $context->route = $this->getMockForRoute('GET', '/users/alganet/lists', 'Some list items');
+        $context->configureRoute($this->getMockForRoute('GET', '/users/alganet/lists', 'Some list items'));
         $toString = (string) $context;
 
         self::assertSame('Some list items', $toString);
@@ -369,7 +368,7 @@ final class DispatchContextTest extends TestCase
         $context = $this->newContext(new ServerRequest('GET', '/users/alganet/lists'));
         $factory = new Psr17Factory();
         $context->setResponder(new Responder($factory));
-        $context->route = $this->getMockForRoute('GET', '/users/alganet/lists', 'Some list items');
+        $context->configureRoute($this->getMockForRoute('GET', '/users/alganet/lists', 'Some list items'));
 
         $response = $context->response();
 
@@ -380,13 +379,13 @@ final class DispatchContextTest extends TestCase
     public function test_exception_rethrown_when_no_exception_route_matches(): void
     {
         $context = $this->newContext(new ServerRequest('GET', '/'));
-        $context->route = $this->getMockForRoute(
+        $context->configureRoute($this->getMockForRoute(
             'GET',
             '/',
             static function (): never {
                 throw new RuntimeException('boom');
             },
-        );
+        ));
 
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('boom');
