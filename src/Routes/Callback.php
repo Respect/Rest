@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Respect\Rest\Routes;
 
 use ReflectionFunctionAbstract;
+use Respect\Fluent\Factories\NamespaceLookup;
 use Respect\Parameter\Resolver;
 use Respect\Rest\DispatchContext;
 
@@ -16,14 +17,15 @@ class Callback extends AbstractRoute
 
     /** @param array<int, mixed> $arguments */
     public function __construct(
+        NamespaceLookup $routineLookup,
         string $method,
         string $pattern,
         /** @var callable */
         protected $callback,
         /** @var array<int, mixed> */
-        public array $arguments = [],
+        public private(set) array $arguments = [],
     ) {
-        parent::__construct($method, $pattern);
+        parent::__construct($routineLookup, $method, $pattern);
     }
 
     public function getCallbackReflection(): ReflectionFunctionAbstract

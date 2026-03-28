@@ -5,19 +5,24 @@ declare(strict_types=1);
 namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
+use Respect\Fluent\Factories\NamespaceLookup;
 use Respect\Rest\DispatchContext;
 use Respect\Rest\Routable;
 
 final class Instance extends ControllerRoute
 {
-    public string $class = '';
+    public private(set) string $class = '';
 
-    public function __construct(string $method, string $pattern, protected object $instance)
-    {
+    public function __construct(
+        NamespaceLookup $routineLookup,
+        string $method,
+        string $pattern,
+        protected object $instance,
+    ) {
         $this->class = $instance::class;
         $this->reflectionTarget = $instance;
 
-        parent::__construct($method, $pattern);
+        parent::__construct($routineLookup, $method, $pattern);
     }
 
     /** @param array<int, mixed> $params */

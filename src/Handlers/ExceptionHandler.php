@@ -4,20 +4,35 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Handlers;
 
+use Respect\Fluent\Factories\NamespaceLookup;
 use Respect\Rest\DispatchContext;
 use Respect\Rest\Routes\Callback;
 use Throwable;
 
+use function is_a;
+
 final class ExceptionHandler extends Callback
 {
-    /** @var callable */
-    public $callback;
+    private Throwable|null $exception = null;
 
-    public Throwable|null $exception = null;
-
-    public function __construct(public string $class, callable $callback)
+    public function __construct(NamespaceLookup $routineLookup, public private(set) string $class, callable $callback)
     {
-        parent::__construct('ANY', '^$', $callback);
+        parent::__construct($routineLookup, 'ANY', '^$', $callback);
+    }
+
+    public function matches(Throwable $e): bool
+    {
+        return is_a($e, $this->class);
+    }
+
+    public function capture(Throwable $e): void
+    {
+        $this->exception = $e;
+    }
+
+    public function clearException(): void
+    {
+        $this->exception = null;
     }
 
     /** @param array<int, mixed> $params */

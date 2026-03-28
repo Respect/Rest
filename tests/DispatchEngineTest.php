@@ -7,11 +7,14 @@ namespace Respect\Rest\Test;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\TestCase;
+use Respect\Fluent\Factories\NamespaceLookup;
+use Respect\Fluent\Resolvers\Ucfirst;
 use Respect\Rest\DispatchEngine;
 use Respect\Rest\RouteProvider;
 use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routes\Callback;
 use Respect\Rest\Routes\StaticValue;
+use Respect\Rest\Routines\Routinable;
 use RuntimeException;
 
 /** @covers Respect\Rest\DispatchEngine */
@@ -19,15 +22,18 @@ final class DispatchEngineTest extends TestCase
 {
     private Psr17Factory $factory;
 
+    private NamespaceLookup $lookup;
+
     protected function setUp(): void
     {
         $this->factory = new Psr17Factory();
+        $this->lookup = new NamespaceLookup(new Ucfirst(), Routinable::class, 'Respect\\Rest\\Routines');
     }
 
     public function testMatchingRouteConfiguresContext(): void
     {
         $engine = $this->engine([
-            new StaticValue('GET', '/hello', 'world'),
+            new StaticValue($this->lookup, 'GET', '/hello', 'world'),
         ]);
 
         $context = $engine->dispatch(new ServerRequest('GET', '/hello'));
@@ -41,7 +47,7 @@ final class DispatchEngineTest extends TestCase
     public function testNoMatchReturns404(): void
     {
         $engine = $this->engine([
-            new StaticValue('GET', '/exists', 'ok'),
+            new StaticValue($this->lookup, 'GET', '/exists', 'ok'),
         ]);
 
         $context = $engine->dispatch(new ServerRequest('GET', '/not-found'));
@@ -55,7 +61,7 @@ final class DispatchEngineTest extends TestCase
     public function testWrongMethodReturns405WithAllowHeader(): void
     {
         $engine = $this->engine([
-            new StaticValue('GET', '/resource', 'ok'),
+            new StaticValue($this->lookup, 'GET', '/resource', 'ok'),
         ]);
 
         $context = $engine->dispatch(new ServerRequest('DELETE', '/resource'));
@@ -70,8 +76,8 @@ final class DispatchEngineTest extends TestCase
     public function testGlobalOptionsReturns204WithAllMethods(): void
     {
         $engine = $this->engine([
-            new StaticValue('GET', '/a', 'ok'),
-            new StaticValue('POST', '/b', 'ok'),
+            new StaticValue($this->lookup, 'GET', '/a', 'ok'),
+            new StaticValue($this->lookup, 'POST', '/b', 'ok'),
         ]);
 
         $context = $engine->dispatch(new ServerRequest('OPTIONS', '*'));
@@ -89,8 +95,8 @@ final class DispatchEngineTest extends TestCase
     public function testOptionsOnSpecificPathReturns204(): void
     {
         $engine = $this->engine([
-            new StaticValue('GET', '/resource', 'ok'),
-            new StaticValue('POST', '/resource', 'ok'),
+            new StaticValue($this->lookup, 'GET', '/resource', 'ok'),
+            new StaticValue($this->lookup, 'POST', '/resource', 'ok'),
         ]);
 
         $context = $engine->dispatch(new ServerRequest('OPTIONS', '/resource'));
@@ -108,7 +114,7 @@ final class DispatchEngineTest extends TestCase
     {
         $provider = $this->createStub(RouteProvider::class);
         $provider->method('getRoutes')->willReturn([
-            new StaticValue('GET', '/resource', 'found'),
+            new StaticValue($this->lookup, 'GET', '/resource', 'found'),
         ]);
         $provider->method('getBasePath')->willReturn('/api');
 
@@ -127,7 +133,7 @@ final class DispatchEngineTest extends TestCase
     public function testHandleReturnsPsr7Response(): void
     {
         $engine = $this->engine([
-            new StaticValue('GET', '/hello', 'world'),
+            new StaticValue($this->lookup, 'GET', '/hello', 'world'),
         ]);
 
         $response = $engine->handle(new ServerRequest('GET', '/hello'));
@@ -139,7 +145,7 @@ final class DispatchEngineTest extends TestCase
     public function testHandlePropagatesUnhandledExceptions(): void
     {
         $engine = $this->engine([
-            new Callback('GET', '/boom', static function (): never {
+            new Callback($this->lookup, 'GET', '/boom', static function (): never {
                 throw new RuntimeException('fail');
             }),
         ]);

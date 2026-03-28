@@ -65,21 +65,22 @@ abstract class AbstractRoute
     public const string REGEX_OPTIONAL_PARAM = '(?:/([^/]+))?';
     public const string REGEX_INVALID_OPTIONAL_PARAM = '#\(\?\:/\(\[\^/\]\+\)\)\?/#';
 
-    public string $method = '';
+    public private(set) string $method = '';
 
-    public string $regexForMatch = '';
+    public private(set) string $regexForMatch = '';
 
-    public string $regexForReplace = '';
+    public private(set) string $regexForReplace = '';
 
     /** @var array<string, Routinable> */
-    public array $routines = [];
+    public private(set) array $routines = [];
 
-    public string|null $basePath = null;
+    public private(set) string|null $basePath = null;
 
-    private NamespaceLookup $routineLookup;
-
-    public function __construct(string $method, public string $pattern = '')
-    {
+    public function __construct(
+        private NamespaceLookup $routineLookup,
+        string $method,
+        public string $pattern,
+    ) {
         $this->method = strtoupper($method);
 
         [$this->regexForMatch, $this->regexForReplace]
@@ -147,9 +148,9 @@ abstract class AbstractRoute
         return $this;
     }
 
-    public function setRoutineLookup(NamespaceLookup $lookup): void
+    public function setBasePath(string|null $basePath): void
     {
-        $this->routineLookup = $lookup;
+        $this->basePath = $basePath;
     }
 
     public function createUri(mixed ...$params): string

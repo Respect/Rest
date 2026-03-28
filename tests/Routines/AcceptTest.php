@@ -136,6 +136,23 @@ final class AcceptTest extends TestCase
         self::assertTrue($routine->when($context, $params));
     }
 
+    public function testEmptySegmentsInAcceptHeaderAreSkipped(): void
+    {
+        $params = [];
+        $context = $this->newContext('Accept', ', , text/html, ,');
+
+        self::assertTrue($this->accept->when($context, $params));
+        self::assertSame('text/html', $context->response()?->getHeaderLine('Content-Type'));
+    }
+
+    public function testByReturnsNull(): void
+    {
+        $params = [];
+        $context = $this->newContext('Accept', 'text/html');
+
+        self::assertNull($this->accept->by($context, $params));
+    }
+
     private function newContext(string $header, string $value): DispatchContext
     {
         return new DispatchContext(

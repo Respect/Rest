@@ -4,20 +4,33 @@ declare(strict_types=1);
 
 namespace Respect\Rest\Handlers;
 
+use Respect\Fluent\Factories\NamespaceLookup;
 use Respect\Rest\DispatchContext;
 use Respect\Rest\Routes\Callback;
 
 final class ErrorHandler extends Callback
 {
-    /** @var callable */
-    public $callback;
-
     /** @var array<int, array<int, mixed>> */
-    public array $errors = [];
+    private array $errors = [];
 
-    public function __construct(callable $callback)
+    public function __construct(NamespaceLookup $routineLookup, callable $callback)
     {
-        parent::__construct('ANY', '^$', $callback);
+        parent::__construct($routineLookup, 'ANY', '^$', $callback);
+    }
+
+    public function addError(int $errno, string $errstr, string $errfile, int $errline): void
+    {
+        $this->errors[] = [$errno, $errstr, $errfile, $errline];
+    }
+
+    public function hasErrors(): bool
+    {
+        return $this->errors !== [];
+    }
+
+    public function clearErrors(): void
+    {
+        $this->errors = [];
     }
 
     /** @param array<int, mixed> $params */

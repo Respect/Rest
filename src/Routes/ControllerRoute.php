@@ -85,11 +85,7 @@ abstract class ControllerRoute extends AbstractRoute
             return 'HEAD';
         }
 
-        if ($this->getReflection('GET') !== null) {
-            return 'GET';
-        }
-
-        return $method;
+        return 'GET';
     }
 
     /** @param array<int, mixed> $params */
