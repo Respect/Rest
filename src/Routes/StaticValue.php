@@ -6,15 +6,16 @@ namespace Respect\Rest\Routes;
 
 use ReflectionFunctionAbstract;
 use ReflectionMethod;
+use Respect\Fluent\Factories\NamespaceLookup;
 use Respect\Rest\DispatchContext;
 
 final class StaticValue extends AbstractRoute
 {
     protected ReflectionMethod $reflection;
 
-    public function __construct(string $method, string $pattern, protected mixed $value)
+    public function __construct(NamespaceLookup $routineLookup, string $method, string $pattern, protected mixed $value)
     {
-        parent::__construct($method, $pattern);
+        parent::__construct($routineLookup, $method, $pattern);
 
         $this->reflection = new ReflectionMethod($this, 'returnValue');
     }

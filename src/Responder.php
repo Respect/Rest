@@ -60,12 +60,6 @@ final class Responder
     ): ResponseInterface {
         $response = $this->normalize($result);
 
-        if ($responseDraft !== null) {
-            if ($statusOverridden) {
-                $response = $response->withStatus($responseDraft->getStatusCode(), $responseDraft->getReasonPhrase());
-            }
-        }
-
         foreach ($defaultHeaders as $name => $value) {
             if ($response->hasHeader($name)) {
                 continue;
@@ -75,6 +69,10 @@ final class Responder
         }
 
         if ($responseDraft !== null) {
+            if ($statusOverridden) {
+                $response = $response->withStatus($responseDraft->getStatusCode(), $responseDraft->getReasonPhrase());
+            }
+
             foreach ($responseDraft->getHeaders() as $name => $values) {
                 if (!isset($appendedHeaderNames[strtolower($name)])) {
                     $response = $response->withHeader($name, $values);

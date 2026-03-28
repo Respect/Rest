@@ -12,7 +12,10 @@ use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
+use Respect\Fluent\Factories\NamespaceLookup;
+use Respect\Fluent\Resolvers\Ucfirst;
 use Respect\Rest\DispatchContext;
+use Respect\Rest\NotFoundException;
 use Respect\Rest\Responder;
 use Respect\Rest\Routes;
 use Respect\Rest\Routines;
@@ -392,6 +395,21 @@ final class DispatchContextTest extends TestCase
         $context->response();
     }
 
+    public function test_get_throws_not_found_for_unknown_id(): void
+    {
+        $context = $this->newContext(new ServerRequest('GET', '/'));
+
+        $this->expectException(NotFoundException::class);
+        $context->get('SomeUnknownClass');
+    }
+
+    public function test_to_string_returns_empty_when_no_route(): void
+    {
+        $context = $this->newContext(new ServerRequest('GET', '/'));
+
+        self::assertSame('', (string) $context);
+    }
+
     /**
      * @param array<int, mixed> $targetParams
      *
@@ -406,8 +424,13 @@ final class DispatchContextTest extends TestCase
     ): Routes\AbstractRoute {
         $hasTarget = $target !== null;
 
+        $lookup = new NamespaceLookup(
+            new Ucfirst(),
+            Routines\Routinable::class,
+            'Respect\\Rest\\Routines',
+        );
         $route = $this->getMockBuilder('Respect\Rest\Routes\AbstractRoute')
-            ->setConstructorArgs([$method, $pattern])
+            ->setConstructorArgs([$lookup, $method, $pattern])
             ->onlyMethods(['getReflection', 'runTarget'])
             ->getMock();
 

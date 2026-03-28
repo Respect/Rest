@@ -22,10 +22,13 @@ use Respect\Rest\Routes\AbstractRoute;
 use Respect\Rest\Routines;
 use Respect\Rest\Test\Stubs\HeadFactoryController;
 use Respect\Rest\Test\Stubs\HeadTest as HeadTestStub;
+use Respect\Rest\Test\Stubs\HeadWithExplicitHead;
+use Respect\Rest\Test\Stubs\MagicMethodController;
 use Respect\Rest\Test\Stubs\MyController;
 use Respect\Rest\Test\Stubs\MyOptionalParamRoute;
 use Respect\Rest\Test\Stubs\RouteKnowsNothing;
 use Respect\Rest\Test\Stubs\StubRoutable;
+use RuntimeException;
 use SplObjectStorage;
 use stdClass;
 
@@ -1167,6 +1170,45 @@ final class RouterTest extends TestCase
         $response = $router->dispatch(new ServerRequest('GET', '/page/about.json.en'))->response();
         self::assertNotNull($response);
         self::assertSame('{about:en}', (string) $response->getBody());
+    }
+
+    public function testFileExtensionBySkipsNonMatchingKeys(): void
+    {
+        $router = self::newRouter();
+        // .html is longer than .en, so sorted first — doesn't match .en → continue (line 43)
+        $router->get('/data/*', static fn(string $name) => $name)
+            ->fileExtension([
+                '.html' => static fn($d) => '<html>' . $d . '</html>',
+                '.en' => static fn($d) => $d . ':en',
+            ]);
+
+        $response = $router->dispatch(new ServerRequest('GET', '/data/item.en'))->response();
+        self::assertNotNull($response);
+        self::assertSame('item:en', (string) $response->getBody());
+    }
+
+    public function testFileExtensionByReturnsNullWhenNoExtensionMatchesRemaining(): void
+    {
+        $router = self::newRouter();
+        // Two FileExtension routines: one for language, one for format
+        // Use different lengths to ensure sort order is deterministic
+        $router->get('/page/*', static fn(string $slug) => $slug)
+            ->fileExtension(['.en' => static fn($d) => $d . ':en'])
+            ->fileExtension(['.json' => static fn($d) => '{' . $d . '}']);
+
+        // URL has .en only → match strips .en into remaining
+        // First FileExtension (.en): remaining=.en → matches → remaining becomes ''
+        // Second FileExtension (.json): remaining='' → returns null immediately
+        // For line 59 coverage, we need remaining non-empty but no match:
+        // Reverse order so .json FileExtension sees .en as remaining
+        $router2 = self::newRouter();
+        $router2->get('/page/*', static fn(string $slug) => $slug)
+            ->fileExtension(['.json' => static fn($d) => '{' . $d . '}'])
+            ->fileExtension(['.en' => static fn($d) => $d . ':en']);
+
+        $response = $router2->dispatch(new ServerRequest('GET', '/page/about.en'))->response();
+        self::assertNotNull($response);
+        self::assertSame('about:en', (string) $response->getBody());
     }
 
     public function testFileExtensionLenientUnknownExtension(): void
@@ -2577,6 +2619,101 @@ final class RouterTest extends TestCase
         $response = $router->dispatchContext($context)->response();
         self::assertNotNull($response);
         self::assertSame('dispatched', (string) $response->getBody());
+    }
+
+    public function test_array_path_binds_multiple_routes(): void
+    {
+        $router = self::newRouter();
+        /** @phpstan-ignore argument.type (testing dynamic __call array path support) */
+        $router->get(['/a', '/b', '/c'], static fn() => 'shared');
+
+        self::assertSame('shared', self::responseBody($router->dispatch(new ServerRequest('GET', '/a'))));
+        self::assertSame('shared', self::responseBody($router->dispatch(new ServerRequest('GET', '/b'))));
+        self::assertSame('shared', self::responseBody($router->dispatch(new ServerRequest('GET', '/c'))));
+    }
+
+    public function test_two_catchall_routes_are_sorted_by_depth(): void
+    {
+        $router = self::newRouter();
+        $router->get('/shallow/**', static fn() => 'shallow');
+        $router->get('/deep/nested/**', static fn() => 'deep');
+
+        self::assertSame('deep', self::responseBody($router->dispatch(new ServerRequest('GET', '/deep/nested/x'))));
+        self::assertSame('shallow', self::responseBody($router->dispatch(new ServerRequest('GET', '/shallow/y'))));
+    }
+
+    public function test_process_delegates_when_no_route_no_prepared_response(): void
+    {
+        $router = self::newRouter();
+        $handler = new class implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return (new Psr17Factory())->createResponse(200)
+                    ->withBody((new Psr17Factory())->createStream('delegated'));
+            }
+        };
+
+        // No routes registered, dispatch to empty path → no route, no prepared response
+        $response = $router->process(new ServerRequest('GET', ''), $handler);
+        self::assertSame('delegated', (string) $response->getBody());
+    }
+
+    public function test_process_delegates_on_status_route_404(): void
+    {
+        $router = self::newRouter();
+        $router->get('/exists', static fn() => 'ok');
+        $router->onStatus(404, static fn() => 'custom 404');
+
+        $handler = new class implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return (new Psr17Factory())->createResponse(200)
+                    ->withBody((new Psr17Factory())->createStream('from next'));
+            }
+        };
+
+        // 404 prepared response with status route → delegates to handler
+        $response = $router->process(new ServerRequest('GET', '/nope'), $handler);
+        self::assertSame(200, $response->getStatusCode());
+        self::assertSame('from next', (string) $response->getBody());
+    }
+
+    public function test_controller_route_with_explicit_head_method(): void
+    {
+        $router = self::newRouter();
+        $router->any('/', HeadWithExplicitHead::class);
+
+        $response = $router->dispatch(new ServerRequest('HEAD', '/'))->response();
+        self::assertNotNull($response);
+        self::assertSame('', (string) $response->getBody());
+
+        // GET still works normally
+        $getResponse = $router->dispatch(new ServerRequest('GET', '/'))->response();
+        self::assertNotNull($getResponse);
+        self::assertSame('get-response', (string) $getResponse->getBody());
+    }
+
+    public function test_exception_handler_skips_non_exception_handlers(): void
+    {
+        $router = self::newRouter();
+        $router->onStatus(500, static fn() => 'status handler');
+        $router->onException('RuntimeException', static fn($e) => 'caught: ' . $e->getMessage());
+        $router->get('/', static function (): never {
+            throw new RuntimeException('whoops');
+        });
+
+        $response = $router->handle(new ServerRequest('GET', '/'));
+        self::assertSame('caught: whoops', (string) $response->getBody());
+    }
+
+    public function test_magic_call_controller_dispatches_without_reflection(): void
+    {
+        $router = self::newRouter();
+        $router->get('/magic/*', MagicMethodController::class);
+
+        $response = $router->dispatch(new ServerRequest('GET', '/magic/hello'))->response();
+        self::assertNotNull($response);
+        self::assertSame('GET:hello', (string) $response->getBody());
     }
 
     private static function responseBody(DispatchContext $request): string

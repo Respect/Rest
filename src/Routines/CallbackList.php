@@ -9,7 +9,6 @@ use UnexpectedValueException;
 
 use function array_filter;
 use function array_keys;
-use function strpos;
 
 /**
  * Facilitates the keyed callback lists for routines.
@@ -46,35 +45,8 @@ class CallbackList extends ArrayObject implements Routinable
         return array_keys($this->getArrayCopy());
     }
 
-    public function hasKey(string $key): bool
-    {
-        return isset($this->$key);
-    }
-
-    /** @return array<int, string> */
-    public function filterKeysContain(string $needle): array
-    {
-        return array_filter($this->getKeys(), static function ($key) use ($needle) {
-            return strpos($key, $needle) !== false;
-        });
-    }
-
-    /** @return array<int, string> */
-    public function filterKeysNotContain(string $needle): array
-    {
-        return array_filter($this->getKeys(), static function ($key) use ($needle) {
-            return strpos($key, $needle) === false;
-        });
-    }
-
     protected function getCallback(string $key): callable
     {
         return $this->$key;
-    }
-
-    /** @param array<int, mixed> $params */
-    protected function executeCallback(string $key, array $params): mixed
-    {
-        return ($this->$key)(...$params);
     }
 }

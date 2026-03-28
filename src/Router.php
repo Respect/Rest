@@ -59,9 +59,10 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
     public function __construct(
         protected string $basePath,
         private ResponseFactoryInterface&StreamFactoryInterface $factory,
+        NamespaceLookup|null $routineLookup = null,
     ) {
         $this->basePath = rtrim($basePath, '/');
-        $this->routineLookup = new NamespaceLookup(
+        $this->routineLookup = $routineLookup ?? new NamespaceLookup(
             new Ucfirst(),
             Routinable::class,
             'Respect\\Rest\\Routines',
@@ -81,18 +82,10 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
         return $this;
     }
 
-    public function withRoutineNamespace(string $namespace): static
-    {
-        $this->routineLookup = $this->routineLookup->withNamespace($namespace);
-
-        return $this;
-    }
-
     public function appendRoute(AbstractRoute $route): static
     {
         $this->routes[] = $route;
-        $route->basePath = $this->basePath;
-        $route->setRoutineLookup($this->routineLookup);
+        $route->setBasePath($this->basePath);
 
         foreach ($this->globalRoutines as $routine) {
             $route->appendRoutine($routine);
@@ -106,7 +99,6 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
     public function appendHandler(AbstractRoute $handler): static
     {
         $this->handlers[] = $handler;
-        $handler->setRoutineLookup($this->routineLookup);
 
         foreach ($this->globalRoutines as $routine) {
             $handler->appendRoutine($routine);
@@ -122,7 +114,7 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
         callable $callback,
         array $arguments = [],
     ): Routes\Callback {
-        $route = new Routes\Callback($method, $path, $callback, $arguments);
+        $route = new Routes\Callback($this->routineLookup, $method, $path, $callback, $arguments);
         $this->appendRoute($route);
 
         return $route;
@@ -131,7 +123,7 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
     /** @param array<int, mixed> $arguments */
     public function classRoute(string $method, string $path, string $class, array $arguments = []): Routes\ClassName
     {
-        $route = new Routes\ClassName($method, $path, $class, $arguments);
+        $route = new Routes\ClassName($this->routineLookup, $method, $path, $class, $arguments);
         $this->appendRoute($route);
 
         return $route;
@@ -150,10 +142,6 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $context = $this->dispatch($request);
-
-        if ($context->route === null && !$context->hasPreparedResponse()) {
-            return $handler->handle($request);
-        }
 
         if ($context->route === null) {
             $response = $context->response();
@@ -185,7 +173,7 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
 
     public function onException(string $className, callable $callback): Handlers\ExceptionHandler
     {
-        $handler = new Handlers\ExceptionHandler($className, $callback);
+        $handler = new Handlers\ExceptionHandler($this->routineLookup, $className, $callback);
         $this->appendHandler($handler);
 
         return $handler;
@@ -193,7 +181,7 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
 
     public function onError(callable $callback): Handlers\ErrorHandler
     {
-        $handler = new Handlers\ErrorHandler($callback);
+        $handler = new Handlers\ErrorHandler($this->routineLookup, $callback);
         $this->appendHandler($handler);
 
         return $handler;
@@ -201,7 +189,7 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
 
     public function onStatus(int|null $statusCode, callable $callback): Handlers\StatusHandler
     {
-        $handler = new Handlers\StatusHandler($statusCode, $callback);
+        $handler = new Handlers\StatusHandler($this->routineLookup, $statusCode, $callback);
         $this->appendHandler($handler);
 
         return $handler;
@@ -215,7 +203,7 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
 
     public function factoryRoute(string $method, string $path, string $className, callable $factory): Routes\Factory
     {
-        $route = new Routes\Factory($method, $path, $className, $factory);
+        $route = new Routes\Factory($this->routineLookup, $method, $path, $className, $factory);
         $this->appendRoute($route);
 
         return $route;
@@ -223,7 +211,7 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
 
     public function instanceRoute(string $method, string $path, object $instance): Routes\Instance
     {
-        $route = new Routes\Instance($method, $path, $instance);
+        $route = new Routes\Instance($this->routineLookup, $method, $path, $instance);
         $this->appendRoute($route);
 
         return $route;
@@ -231,7 +219,7 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
 
     public function staticRoute(string $method, string $path, mixed $staticValue): Routes\StaticValue
     {
-        $route = new Routes\StaticValue($method, $path, $staticValue);
+        $route = new Routes\StaticValue($this->routineLookup, $method, $path, $staticValue);
         $this->appendRoute($route);
 
         return $route;
@@ -256,11 +244,6 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
         );
     }
 
-    public static function compareOcurrences(string $patternA, string $patternB, string $sub): bool
-    {
-        return substr_count($patternA, $sub) < substr_count($patternB, $sub);
-    }
-
     protected function sortRoutesByComplexity(): void
     {
         usort(
@@ -273,7 +256,7 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
                     return 0;
                 }
 
-                $slashCount = Router::compareOcurrences($pa, $pb, '/');
+                $slashCount = Router::compareOccurrences($pa, $pb, '/');
 
                 $aCatchall = preg_match('#/\*\*$#', $pa);
                 $bCatchall = preg_match('#/\*\*$#', $pb);
@@ -285,13 +268,18 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
                     return $slashCount ? 1 : -1;
                 }
 
-                if (Router::compareOcurrences($pa, $pb, AbstractRoute::PARAM_IDENTIFIER)) {
+                if (Router::compareOccurrences($pa, $pb, AbstractRoute::PARAM_IDENTIFIER)) {
                     return -1;
                 }
 
                 return $slashCount ? -1 : 1;
             },
         );
+    }
+
+    private static function compareOccurrences(string $patternA, string $patternB, string $sub): bool
+    {
+        return substr_count($patternA, $sub) < substr_count($patternB, $sub);
     }
 
     /** @param array<int, mixed> $args */
@@ -315,11 +303,7 @@ final class Router implements MiddlewareInterface, RequestHandlerInterface, Rout
         }
 
         if (is_callable($routeTarget)) {
-            if (!isset($args[2])) {
-                return $this->callbackRoute($method, $path, $routeTarget);
-            }
-
-            return $this->callbackRoute($method, $path, $routeTarget, $args[2]);
+            return $this->callbackRoute($method, $path, $routeTarget, $args[2] ?? []);
         }
 
         if ($routeTarget instanceof Routable) {

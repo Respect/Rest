@@ -7,6 +7,7 @@ namespace Respect\Rest\Test\Routines;
 use Closure;
 use PHPUnit\Framework\TestCase;
 use Respect\Rest\Test\Stubs\FunkyCallbackList;
+use UnexpectedValueException;
 
 /** @covers Respect\Rest\Routines\CallbackList */
 final class CallbackListTest extends TestCase
@@ -27,15 +28,6 @@ final class CallbackListTest extends TestCase
 
         /** @phpstan-ignore-next-line intentionally passing non-callable to test filtering */
         $this->object = new FunkyCallbackList($ar);
-    }
-
-    /** @covers Respect\Rest\Routines\CallbackList::executeCallback */
-    public function testExecuteCallback(): void
-    {
-        self::assertEquals('&lt;p&gt;&lt;/p&gt;', $this->object->funkyExecuteCallback('a', ['<p></p>']));
-        self::assertTrue($this->object->funkyExecuteCallback('b', []));
-        self::assertFalse($this->object->funkyExecuteCallback('c', ['d', 'abc']));
-        self::assertTrue($this->object->funkyExecuteCallback('e', [4]));
     }
 
     /** @covers Respect\Rest\Routines\CallbackList::getCallback */
@@ -71,38 +63,11 @@ final class CallbackListTest extends TestCase
         self::assertContains('e', $a);
     }
 
-    /** @covers Respect\Rest\Routines\CallbackList::hasKey */
-    public function testHasKey(): void
+    public function testConstructorThrowsWhenNoCallablesProvided(): void
     {
-        self::assertTrue($this->object->hasKey('a'));
-        self::assertTrue($this->object->hasKey('b'));
-        self::assertTrue($this->object->hasKey('c'));
-        self::assertFalse($this->object->hasKey('d'));
-        self::assertTrue($this->object->hasKey('e'));
-    }
-
-    /** @covers Respect\Rest\Routines\CallbackList::filterKeysContain */
-    public function testFilterKeysContain(): void
-    {
-        $a = $this->object->filterKeysContain('b');
-        self::assertCount(1, $a);
-        self::assertNotContains('a', $a);
-        self::assertContains('b', $a);
-        self::assertNotContains('c', $a);
-        self::assertNotContains('d', $a);
-        self::assertNotContains('e', $a);
-    }
-
-    /** @covers Respect\Rest\Routines\CallbackList::filterKeysNotContain */
-    public function testFilterKeysNotContain(): void
-    {
-        $a = $this->object->filterKeysNotContain('b');
-        self::assertCount(3, $a);
-        self::assertContains('a', $a);
-        self::assertNotContains('b', $a);
-        self::assertContains('c', $a);
-        self::assertNotContains('d', $a);
-        self::assertContains('e', $a);
+        $this->expectException(UnexpectedValueException::class);
+        /** @phpstan-ignore argument.type */
+        new FunkyCallbackList(['not_a_callable_string_xyz']);
     }
 
     protected function tearDown(): void

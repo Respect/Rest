@@ -6,6 +6,7 @@ namespace Respect\Rest\Routes;
 
 use InvalidArgumentException;
 use ReflectionClass;
+use Respect\Fluent\Factories\NamespaceLookup;
 use Respect\Rest\DispatchContext;
 use Respect\Rest\Routable;
 
@@ -18,14 +19,15 @@ final class ClassName extends ControllerRoute
 
     /** @param array<int, mixed> $constructorParams */
     public function __construct(
+        NamespaceLookup $routineLookup,
         string $method,
         string $pattern,
-        public string $class = '',
-        public array $constructorParams = [],
+        public private(set) string $class,
+        public private(set) array $constructorParams = [],
     ) {
         $this->reflectionTarget = $class;
 
-        parent::__construct($method, $pattern);
+        parent::__construct($routineLookup, $method, $pattern);
     }
 
     /** @param array<int, mixed> $params */

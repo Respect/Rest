@@ -250,9 +250,9 @@ final class DispatchContext implements ContainerInterface
     {
         foreach ($this->handlers as $handler) {
             if ($handler instanceof ErrorHandler) {
-                $handler->errors = [];
+                $handler->clearErrors();
             } elseif ($handler instanceof ExceptionHandler) {
-                $handler->exception = null;
+                $handler->clearException();
             }
         }
     }
@@ -277,7 +277,7 @@ final class DispatchContext implements ContainerInterface
                         string $errfile = '',
                         int $errline = 0,
                     ) use ($handler): bool {
-                        $handler->errors[] = [$errno, $errstr, $errfile, $errline];
+                        $handler->addError($errno, $errstr, $errfile, $errline);
 
                         return true;
                     },
@@ -291,7 +291,7 @@ final class DispatchContext implements ContainerInterface
     private function forwardCollectedErrors(): ResponseInterface|null
     {
         foreach ($this->handlers as $handler) {
-            if ($handler instanceof ErrorHandler && $handler->errors) {
+            if ($handler instanceof ErrorHandler && $handler->hasErrors()) {
                 return $this->forward($handler);
             }
         }
@@ -306,8 +306,8 @@ final class DispatchContext implements ContainerInterface
                 continue;
             }
 
-            if (is_a($e, $handler->class)) {
-                $handler->exception = $e;
+            if ($handler->matches($e)) {
+                $handler->capture($e);
 
                 return $this->forward($handler);
             }
