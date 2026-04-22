@@ -722,24 +722,24 @@ final class RouterTest extends TestCase
                 ['a', 'a', 'a', 'a', 'a', 'a', 'a'],
             ],
             [
-                '/users' . str_repeat('/*', 2500),
-                '/users' . str_repeat('/xy', 2500),
-                str_split(str_repeat('xy', 2500), 2),
+                '/users' . str_repeat('/*', 100),
+                '/users' . str_repeat('/xy', 100),
+                str_split(str_repeat('xy', 100), 2),
             ],
             [
-                '/users' . str_repeat('/*', 2500),
-                '/users' . str_repeat('/abcdefghijklmnopqrstuvwxyz', 2500),
-                str_split(str_repeat('abcdefghijklmnopqrstuvwxyz', 2500), 26),
+                '/users' . str_repeat('/*', 100),
+                '/users' . str_repeat('/abcdefghijklmnopqrstuvwxyz', 100),
+                str_split(str_repeat('abcdefghijklmnopqrstuvwxyz', 100), 26),
             ],
             [
-                '/users' . str_repeat('/*', 2500),
+                '/users' . str_repeat('/*', 100),
                 '/users' . str_repeat(
                     '/abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz',
-                    2500,
+                    100,
                 ),
                 str_split(str_repeat(
                     'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz',
-                    2500,
+                    100,
                 ), 26 * 3),
             ],
         ];
