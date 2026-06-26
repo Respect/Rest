@@ -6,7 +6,7 @@ namespace Respect\Rest\Routes;
 
 use ReflectionFunctionAbstract;
 use Respect\Fluent\Factories\NamespaceLookup;
-use Respect\Parameter\Resolver;
+use Respect\Parameter\ContainerResolver;
 use Respect\Rest\DispatchContext;
 
 use function array_merge;
@@ -30,7 +30,7 @@ class Callback extends AbstractRoute
 
     public function getCallbackReflection(): ReflectionFunctionAbstract
     {
-        return Resolver::reflectCallable($this->callback);
+        return ContainerResolver::reflectCallable($this->callback);
     }
 
     public function getReflection(string $method): ReflectionFunctionAbstract

@@ -9,6 +9,7 @@ use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
+use Respect\Parameter\ContainerResolver;
 use Respect\Parameter\Resolver;
 use Respect\Rest\Handlers\ErrorHandler;
 use Respect\Rest\Handlers\ExceptionHandler;
@@ -224,7 +225,7 @@ final class DispatchContext implements ContainerInterface
 
     public function resolver(): Resolver
     {
-        return $this->resolver ??= new Resolver($this);
+        return $this->resolver ??= new ContainerResolver($this);
     }
 
     public function has(string $id): bool

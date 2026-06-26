@@ -7,7 +7,7 @@ namespace Respect\Rest\Routines;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use ReflectionFunctionAbstract;
-use Respect\Parameter\Resolver;
+use Respect\Parameter\ContainerResolver;
 use Respect\Rest\DispatchContext;
 
 use function array_merge;
@@ -63,7 +63,7 @@ final class AuthBasic extends AbstractRoutine implements ProxyableBy
 
     private function callbackAcceptsPsr7(): bool
     {
-        return Resolver::acceptsType(
+        return ContainerResolver::acceptsType(
             $this->getCallbackReflection(),
             ServerRequestInterface::class,
         );
@@ -71,6 +71,6 @@ final class AuthBasic extends AbstractRoutine implements ProxyableBy
 
     private function getCallbackReflection(): ReflectionFunctionAbstract
     {
-        return $this->reflection ??= Resolver::reflectCallable($this->getCallback());
+        return $this->reflection ??= ContainerResolver::reflectCallable($this->getCallback());
     }
 }
