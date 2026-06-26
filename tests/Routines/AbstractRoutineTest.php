@@ -42,6 +42,6 @@ final class AbstractRoutineTest extends TestCase
     public function test_invalid_constructor_arguments(): void
     {
         self::expectException(TypeError::class);
-        new Stub('this_function_name_does_not_exist'); // @phpstan-ignore argument.type
+        new Stub('this_function_name_does_not_exist'); // @phpstan-ignore argument.type, new.resultUnused
     }
 }

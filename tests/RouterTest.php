@@ -115,9 +115,9 @@ final class RouterTest extends TestCase
             'When there are no arguments the Routes\Callback should have none as well',
         );
 
-        self::assertEquals(
-            $callbackRoute,
-            $concreteCallbackRoute,
+        self::assertSame(
+            [$concreteCallbackRoute->method, $concreteCallbackRoute->pattern, $concreteCallbackRoute->arguments],
+            [$callbackRoute->method, $callbackRoute->pattern, $callbackRoute->arguments],
             'The magic and concrete instances of Routes\Callback should be equivalent',
         );
     }
@@ -147,9 +147,9 @@ final class RouterTest extends TestCase
             'The "extra" appended to the magic constructor should be present on the arguments list',
         );
 
-        self::assertEquals(
-            $callbackRoute,
-            $concreteCallbackRoute,
+        self::assertSame(
+            [$concreteCallbackRoute->method, $concreteCallbackRoute->pattern, $concreteCallbackRoute->arguments],
+            [$callbackRoute->method, $callbackRoute->pattern, $callbackRoute->arguments],
             'The magic and concrete instances of Routes\Callback should be equivalent',
         );
     }

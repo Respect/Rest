@@ -436,12 +436,11 @@ final class DispatchContextTest extends TestCase
 
         if ($hasTarget) {
             if ($targetParams) {
-                $expectation = $route->expects($this->any())
+                $expectation = $route->expects($this->atLeastOnce())
                     ->method('runTarget')
                     ->with($targetMethod, $targetParams);
             } else {
-                $expectation = $route->expects($this->any())
-                    ->method('runTarget');
+                $expectation = $route->method('runTarget');
             }
 
             if (is_callable($target)) {
